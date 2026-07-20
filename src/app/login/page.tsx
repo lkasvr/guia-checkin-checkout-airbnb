@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 
 export const metadata: Metadata = {
-  title: "Entrar · Anfyi",
+  title: "Entrar",
   robots: { index: false, follow: false },
 };
 

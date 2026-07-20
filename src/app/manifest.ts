@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Guia da Casa · Ap 1305C",
-    short_name: "Ap 1305C",
+    name: "Anfyi · Guia de hospedagem",
+    short_name: "Anfyi",
     description:
-      "Check-in, Wi-Fi, regras da casa e dicas de Brasília — Apartamento 1305C, DF Plaza, Águas Claras.",
+      "Seu guia de hospedagem: check-in, Wi-Fi, regras da casa e dicas locais — tudo em um link.",
     lang: "pt-BR",
     start_url: "/",
     scope: "/",

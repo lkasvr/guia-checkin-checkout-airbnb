@@ -9,37 +9,27 @@ const prata = Prata({
   display: "swap",
 });
 
-const DESC_PT =
-  "Check-in, Wi-Fi, regras da casa e dicas de Brasília — o guia completo do Apartamento 1305C, Residencial DF Plaza, Águas Claras.";
-const DESC_SHARE =
-  "Check-in, Wi-Fi, regras da casa e dicas de Brasília — tudo o que você precisa na chegada, em PT e EN.";
-
+// Metadata NEUTRO da marca — cada guia (/s/[slug]) sobrescreve com o seu via
+// generateMetadata. Assim nenhuma página herda a identidade de um apartamento.
 export const metadata: Metadata = {
-  metadataBase: new URL("https://1305c.anfyi.com.br"),
-  title: "Guia da Casa · Ap 1305C",
-  description: DESC_PT,
-  applicationName: "Guia da Casa · Ap 1305C",
+  metadataBase: new URL("https://anfyi.com.br"),
+  title: {
+    default: "Anfyi · Guias digitais para anfitriões",
+    template: "%s · Anfyi",
+  },
+  description:
+    "Guias de hospedagem bonitos e bilíngues para o seu apartamento — check-in, Wi-Fi, regras e dicas locais, em um único link.",
+  applicationName: "Anfyi",
   manifest: "/manifest.webmanifest",
   robots: { index: false, follow: false },
   openGraph: {
     type: "website",
-    url: "https://1305c.anfyi.com.br",
-    siteName: "Guia da Casa · Ap 1305C",
-    title: "Guia da Casa · Apartamento 1305C",
-    description: DESC_SHARE,
+    siteName: "Anfyi",
     locale: "pt_BR",
     alternateLocale: "en_US",
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Guia da Casa · Apartamento 1305C",
-    description: DESC_SHARE,
-  },
-  appleWebApp: {
-    capable: true,
-    title: "Ap 1305C",
-    statusBarStyle: "default",
-  },
+  twitter: { card: "summary_large_image" },
+  appleWebApp: { capable: true, title: "Anfyi", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Anfyi · Guias digitais para anfitriões",
+  title: { absolute: "Anfyi · Guias digitais para anfitriões" },
   description:
     "Guias de hospedagem bonitos e bilíngues para o seu apartamento — check-in, Wi-Fi, regras e dicas locais, tudo em um link.",
   robots: { index: true, follow: true },

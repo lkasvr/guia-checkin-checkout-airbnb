@@ -43,6 +43,15 @@ body {
   }
 }
 
+/* Tailwind v4 não aplica mais cursor:pointer em botões por padrão — restaura a
+   mãozinha em elementos clicáveis (mantendo o cursor padrão nos desabilitados). */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 /* texto rico vindo dos dados (renderizado via <Rich/>) */
 .rich strong,
 .rich b {
