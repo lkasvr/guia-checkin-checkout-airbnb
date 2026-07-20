@@ -855,7 +855,16 @@ footer .ap{
   window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); });
   /* service worker só quando hospedado (https); no arquivo local é ignorado */
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    navigator.serviceWorker.register('sw.js').catch(function(){});
+    /* se um SW novo assumir o controle, recarrega uma vez para pegar a versão nova.
+       (não recarrega na primeira instalação, só em atualizações) */
+    var hadController = !!navigator.serviceWorker.controller;
+    var refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      if (!hadController || refreshing) return;
+      refreshing = true;
+      location.reload();
+    });
+    navigator.serviceWorker.register('sw.js').then(function(reg){ reg.update(); }).catch(function(){});
   }
 
   var M = window.Motion || {};
