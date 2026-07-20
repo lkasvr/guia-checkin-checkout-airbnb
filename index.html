@@ -252,6 +252,36 @@ h2{
 .steps p{font-size:16.5px}
 .steps strong{font-weight:700}
 .steps .hint{display:block;font-size:14.5px;color:var(--soft);margin-top:3px}
+.chatlink{
+  color:var(--terra);font-weight:700;
+  text-decoration:underline;text-underline-offset:2px;
+  text-decoration-thickness:1.5px;
+  white-space:nowrap;
+}
+.chatlink::after{content:"↗";font-size:.8em;margin-left:1px;vertical-align:.05em}
+
+/* diagrama da cafeteira */
+.diagram{
+  margin-top:16px;padding-top:14px;
+  border-top:1px dashed var(--line);
+  display:flex;gap:16px;align-items:flex-start;
+}
+.diagram img{
+  flex:0 0 108px;width:108px;height:auto;
+  border:1px solid var(--line);border-radius:12px;
+  background:#fff;padding:6px;
+}
+.diagram .legend{
+  list-style:none;margin:0;padding:0;flex:1;min-width:0;
+  font-size:13.5px;line-height:1.35;
+}
+.diagram .legend li{display:flex;gap:8px;padding:2px 0}
+.diagram .legend b{
+  flex:0 0 20px;height:20px;border-radius:50%;
+  background:var(--blush);color:var(--coffee);
+  font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
 
 .alert{
   display:flex;gap:12px;align-items:flex-start;
@@ -516,16 +546,16 @@ footer .ap{
           <span class="en"><strong>By Uber/taxi?</strong> Get off at DF Plaza Shopping, at the <strong>Coco Bambu restaurant entrance (2nd floor)</strong>.<span class="hint">This entrance is just a few meters from the Tower C lobby.</span></span>
         </p></li>
         <li><span class="dot">2</span><p>
-          <span class="pt">Vá à <strong>portaria 24h da Torre C</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo chat).</span>
-          <span class="en">Go to the <strong>24h Tower C lobby</strong>, next to the <strong>Spoleto</strong> restaurant, and show your <strong>ID</strong> (the same one sent via chat).</span>
+          <span class="pt">Vá à <strong>portaria 24h da Torre C</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo <a class="chatlink" href="https://www.airbnb.com/guest/messages" target="_blank" rel="noopener">chat</a>).</span>
+          <span class="en">Go to the <strong>24h Tower C lobby</strong>, next to the <strong>Spoleto</strong> restaurant, and show your <strong>ID</strong> (the same one sent via <a class="chatlink" href="https://www.airbnb.com/guest/messages" target="_blank" rel="noopener">chat</a>).</span>
         </p></li>
         <li><span class="dot">3</span><p>
           <span class="pt">Suba ao <strong>13º andar</strong> — apartamento <strong>1305C</strong>.</span>
           <span class="en">Go up to the <strong>13th floor</strong> — apartment <strong>1305C</strong>.</span>
         </p></li>
         <li><span class="dot">4</span><p>
-          <span class="pt">Digite na fechadura eletrônica a <strong>senha enviada pelo chat</strong>. Pronto, sinta-se em casa!</span>
-          <span class="en">Enter the <strong>code sent via chat</strong> on the electronic lock. That's it — welcome home!</span>
+          <span class="pt">Digite na fechadura eletrônica a <strong>senha enviada pelo <a class="chatlink" href="https://www.airbnb.com/guest/messages" target="_blank" rel="noopener">chat</a></strong>. Pronto, sinta-se em casa!</span>
+          <span class="en">Enter the <strong>code sent via <a class="chatlink" href="https://www.airbnb.com/guest/messages" target="_blank" rel="noopener">chat</a></strong> on the electronic lock. That's it — welcome home!</span>
         </p></li>
       </ol>
     </div>
@@ -671,6 +701,21 @@ footer .ap{
           <li><span class="dot">3</span><p><span class="pt">Centralize a <strong>jarra de inox</strong> na base de aquecimento.</span><span class="en">Center the <strong>steel carafe</strong> on the warming base.</span></p></li>
           <li><span class="dot">4</span><p><span class="pt">Ligue na tomada <strong>(220V!)</strong> e pressione o botão lateral em <strong>“I”</strong>. A luz acende e o café começa a passar.</span><span class="en">Plug it in <strong>(220V!)</strong> and flip the side switch to <strong>“I”</strong>. The light turns on and brewing starts.</span></p></li>
         </ol>
+        <figure class="diagram">
+          <img src="data:image/webp;base64,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" alt="Diagrama das partes da cafeteira">
+          <ol class="legend">
+            <li><b>1</b><span class="pt">Tampa do reservatório</span><span class="en">Water tank lid</span></li>
+            <li><b>2</b><span class="pt">Filtro lavável</span><span class="en">Washable filter</span></li>
+            <li><b>3</b><span class="pt">Suporte do filtro</span><span class="en">Filter holder</span></li>
+            <li><b>4</b><span class="pt">Corta-pingo</span><span class="en">Drip-stop</span></li>
+            <li><b>5</b><span class="pt">Reservatório de água</span><span class="en">Water reservoir</span></li>
+            <li><b>6</b><span class="pt">Marcador de nível</span><span class="en">Level indicator</span></li>
+            <li><b>7</b><span class="pt">Jarra</span><span class="en">Carafe</span></li>
+            <li><b>8</b><span class="pt">Base de aquecimento</span><span class="en">Warming base</span></li>
+            <li><b>9</b><span class="pt">Botão liga/desliga</span><span class="en">On/Off switch</span></li>
+            <li><b>10</b><span class="pt">Cabo de força</span><span class="en">Power cord</span></li>
+          </ol>
+        </figure>
       </div>
     </details>
   </section>
