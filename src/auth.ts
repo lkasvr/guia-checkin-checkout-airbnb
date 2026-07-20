@@ -1,14 +1,16 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { cache } from "react";
 import { prisma } from "@/lib/db";
 
-// Hash descartável usado quando o e-mail não existe: garante que o
-// bcrypt.compare rode sempre, normalizando o tempo de resposta e evitando
-// enumeração de e-mails por canal lateral de tempo. (rate limiting = follow-up)
-const DUMMY_HASH = bcrypt.hashSync("unused-placeholder", 10);
+// Hash 10-rounds pré-computado (constante): comparado quando o e-mail não
+// existe, para o bcrypt.compare rodar sempre e normalizar o tempo de resposta
+// (evita enumeração de e-mail por timing). Literal em vez de hashSync para não
+// custar CPU de bcrypt no cold start de cada função. (rate limiting = follow-up)
+const DUMMY_HASH = "$2b$10$Po83ok8l.3lU6L8NMOjhd.G0y.QhsPkOmWbkxffRLGrBDM1qHDZFi";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const nextAuth = NextAuth({
   session: { strategy: "jwt" },
   trustHost: true,
   pages: { signIn: "/login" },
@@ -40,3 +42,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+export const { handlers, signIn, signOut } = nextAuth;
+
+// Deduplica a verificação do JWT dentro de um mesmo render (layout + page
+// chamam auth() no mesmo request) via cache() do React.
+export const auth = cache(nextAuth.auth);

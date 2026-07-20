@@ -22,6 +22,7 @@ const STATUS_LABEL: Record<StayStatus, string> = {
 
 const field =
   "rounded-xl border border-line bg-bg px-3 py-2 text-[15px] text-ink outline-none focus:border-coffee";
+const labelCls = "flex flex-col gap-1 text-[13px] font-semibold text-soft";
 
 export default async function ApartmentPage({
   params,
@@ -33,7 +34,24 @@ export default async function ApartmentPage({
 
   const apartment = await prisma.apartment.findFirst({
     where: { id, hostId: session!.user.id },
-    include: { stays: { orderBy: { checkInAt: "desc" } } },
+    select: {
+      id: true,
+      slug: true,
+      label: true,
+      active: true,
+      stays: {
+        orderBy: { checkInAt: "desc" },
+        select: {
+          id: true,
+          guestName: true,
+          doorCode: true,
+          checkInAt: true,
+          checkOutAt: true,
+          status: true,
+          accessCode: true,
+        },
+      },
+    },
   });
   if (!apartment) notFound();
 
@@ -80,19 +98,19 @@ export default async function ApartmentPage({
           action={createStay.bind(null, apartment.id)}
           className="mt-4 grid gap-3 sm:grid-cols-2"
         >
-          <label className="flex flex-col gap-1 text-[13px] font-semibold text-soft">
+          <label className={labelCls}>
             Hóspede
             <input name="guestName" className={field} placeholder="Nome" />
           </label>
-          <label className="flex flex-col gap-1 text-[13px] font-semibold text-soft">
+          <label className={labelCls}>
             Senha da fechadura
             <input name="doorCode" className={field} placeholder="ex.: 246810" />
           </label>
-          <label className="flex flex-col gap-1 text-[13px] font-semibold text-soft">
+          <label className={labelCls}>
             Check-in
             <input name="checkInAt" type="datetime-local" required className={field} />
           </label>
-          <label className="flex flex-col gap-1 text-[13px] font-semibold text-soft">
+          <label className={labelCls}>
             Check-out
             <input name="checkOutAt" type="datetime-local" required className={field} />
           </label>
@@ -112,7 +130,7 @@ export default async function ApartmentPage({
             className="rounded-2xl border border-line bg-card p-4"
           >
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="flex flex-col gap-1 text-[13px] font-semibold text-soft">
+              <label className={labelCls}>
                 Hóspede
                 <input
                   name="guestName"
@@ -120,7 +138,7 @@ export default async function ApartmentPage({
                   className={field}
                 />
               </label>
-              <label className="flex flex-col gap-1 text-[13px] font-semibold text-soft">
+              <label className={labelCls}>
                 Senha da fechadura
                 <input
                   name="doorCode"
@@ -128,7 +146,7 @@ export default async function ApartmentPage({
                   className={field}
                 />
               </label>
-              <label className="flex flex-col gap-1 text-[13px] font-semibold text-soft">
+              <label className={labelCls}>
                 Check-in
                 <input
                   name="checkInAt"
@@ -138,7 +156,7 @@ export default async function ApartmentPage({
                   className={field}
                 />
               </label>
-              <label className="flex flex-col gap-1 text-[13px] font-semibold text-soft">
+              <label className={labelCls}>
                 Check-out
                 <input
                   name="checkOutAt"
@@ -148,7 +166,7 @@ export default async function ApartmentPage({
                   className={field}
                 />
               </label>
-              <label className="flex flex-col gap-1 text-[13px] font-semibold text-soft">
+              <label className={labelCls}>
                 Status
                 <select name="status" defaultValue={s.status} className={field}>
                   {Object.values(StayStatus).map((v) => (

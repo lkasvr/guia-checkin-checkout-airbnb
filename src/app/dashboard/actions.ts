@@ -24,24 +24,28 @@ function readStayWindow(formData: FormData): { checkInAt: Date; checkOutAt: Date
   return { checkInAt, checkOutAt };
 }
 
-/** Garante que o apartamento pertence ao anfitrião logado (isolamento por tenant). */
-async function requireApartment(apartmentId: string) {
+/** Id do anfitrião logado (ou lança). Base do isolamento por tenant. */
+async function requireUserId(): Promise<string> {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Não autenticado");
+  return session.user.id;
+}
+
+/** Garante que o apartamento pertence ao anfitrião logado. */
+async function requireApartment(apartmentId: string): Promise<void> {
+  const hostId = await requireUserId();
   const apt = await prisma.apartment.findFirst({
-    where: { id: apartmentId, hostId: session.user.id },
+    where: { id: apartmentId, hostId },
     select: { id: true },
   });
   if (!apt) throw new Error("Apartamento não encontrado");
-  return apt.id;
 }
 
 /** Confirma que a estadia pertence a um apartamento do anfitrião logado. */
 async function requireStay(stayId: string) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Não autenticado");
+  const hostId = await requireUserId();
   const stay = await prisma.stay.findFirst({
-    where: { id: stayId, apartment: { hostId: session.user.id } },
+    where: { id: stayId, apartment: { hostId } },
     select: { id: true, apartmentId: true },
   });
   if (!stay) throw new Error("Estadia não encontrada");

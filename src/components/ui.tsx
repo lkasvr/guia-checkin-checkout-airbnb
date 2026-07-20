@@ -4,6 +4,13 @@ import { motion, useReducedMotion } from "motion/react";
 import type { ElementType, ReactNode } from "react";
 import { useLang } from "@/lib/i18n";
 
+/** Cartão base (borda + fundo + sombra sutil), compartilhado entre guia e arrival. */
+export const CARD =
+  "mb-3.5 overflow-hidden rounded-[22px] border border-line bg-card shadow-[0_1px_0_rgb(59_45_36/0.04)]";
+/** Bolinha numerada dos passos (check-in, acordeões, arrival). */
+export const DOT =
+  "flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-blush font-display text-[17px] text-coffee";
+
 /** Renderiza texto rico confiável (nosso próprio conteúdo) com <strong>, .hint e .chatlink. */
 export function Rich({
   html,

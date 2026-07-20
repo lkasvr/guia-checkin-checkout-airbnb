@@ -4,8 +4,8 @@ export const ROOT_DOMAIN = "anfyi.com.br";
 /** Slug padrão para hosts fora da marca (localhost, *.vercel.app). */
 export const DEFAULT_SLUG = "1305c";
 
-/** Rótulos que nunca são slug de apartamento. */
-const RESERVED = new Set(["www", "app", "api"]);
+/** Rótulos que nunca são slug de apartamento. ("app" já é tratado antes, como dashboard.) */
+const RESERVED = new Set(["www", "api"]);
 
 export type HostRoute =
   | { kind: "apex" } // anfyi.com.br / www — landing da marca

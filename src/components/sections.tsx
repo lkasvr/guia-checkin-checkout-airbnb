@@ -5,12 +5,7 @@ import { motion, type Variants } from "motion/react";
 import { useCallback, useRef, useState } from "react";
 import type { Apartment } from "@/data/types";
 import { useLang } from "@/lib/i18n";
-import { LangToggle, Reveal, Rich, SectionHead } from "@/components/ui";
-
-const CARD =
-  "mb-3.5 overflow-hidden rounded-[22px] border border-line bg-card shadow-[0_1px_0_rgb(59_45_36/0.04)]";
-const DOT =
-  "flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-blush font-display text-[17px] text-coffee";
+import { CARD, DOT, LangToggle, Reveal, Rich, SectionHead } from "@/components/ui";
 
 /* ----------------------------- HERO ----------------------------- */
 
@@ -589,7 +584,7 @@ export function Footer({ ap }: { ap: Apartment }) {
               {ap.footer.phones}
             </p>
             <span className="mt-5 inline-block rounded-full border border-ink px-[22px] py-2 font-display text-[15px] tracking-[0.08em]">
-              Ap 1305C
+              Ap {ap.unit}
             </span>
           </div>
         </div>

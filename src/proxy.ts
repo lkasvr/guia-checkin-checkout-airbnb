@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { parseHost } from "@/lib/tenant";
+import { DEFAULT_SLUG, parseHost } from "@/lib/tenant";
 
 /**
  * Roteia por Host (Next 16 proxy):
@@ -42,7 +42,7 @@ export function proxy(req: NextRequest) {
 
     case "external":
       if (pathname === "/") {
-        url.pathname = "/s/1305c";
+        url.pathname = `/s/${DEFAULT_SLUG}`;
         return NextResponse.rewrite(url);
       }
       return NextResponse.next();

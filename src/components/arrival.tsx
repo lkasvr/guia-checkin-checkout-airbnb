@@ -1,22 +1,11 @@
 "use client";
 
 import { MotionConfig } from "motion/react";
-import type { Apartment } from "@/data/types";
+import type { Apartment, Step } from "@/data/types";
 import { LanguageProvider, useLang } from "@/lib/i18n";
-import { LangToggle, Reveal, Rich } from "@/components/ui";
+import { CARD, DOT, LangToggle, Reveal, Rich } from "@/components/ui";
 import { PROPERTY_TZ } from "@/lib/tz";
-
-export type StayInfo = {
-  guestName: string | null;
-  doorCode: string | null;
-  checkInISO: string;
-  checkOutISO: string;
-};
-
-const CARD =
-  "mb-3.5 overflow-hidden rounded-[22px] border border-line bg-card shadow-[0_1px_0_rgb(59_45_36/0.04)]";
-const DOT =
-  "flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-blush font-display text-[17px] text-coffee";
+import type { StayInfo } from "@/lib/apartments";
 
 export default function ArrivalPage(props: {
   content: Apartment;
@@ -30,9 +19,9 @@ export default function ArrivalPage(props: {
         <main className="mx-auto max-w-[640px] px-[18px] pb-12">
           {props.stay ? (
             props.mode === "checkin" ? (
-              <Checkin {...props} stay={props.stay} />
+              <Checkin content={props.content} stay={props.stay} slug={props.slug} />
             ) : (
-              <Checkout {...props} stay={props.stay} />
+              <Checkout content={props.content} stay={props.stay} slug={props.slug} />
             )
           ) : (
             <Unavailable content={props.content} slug={props.slug} />
@@ -53,12 +42,12 @@ function Topbar() {
 
 function StayDates({ stay }: { stay: StayInfo }) {
   const { lang, t } = useLang();
-  const fmt = (iso: string) =>
-    new Intl.DateTimeFormat(lang === "pt" ? "pt-BR" : "en-US", {
-      day: "2-digit",
-      month: "short",
-      timeZone: PROPERTY_TZ,
-    }).format(new Date(iso));
+  const dateFmt = new Intl.DateTimeFormat(lang === "pt" ? "pt-BR" : "en-US", {
+    day: "2-digit",
+    month: "short",
+    timeZone: PROPERTY_TZ,
+  });
+  const fmt = (iso: string) => dateFmt.format(new Date(iso));
   return (
     <div className="mt-4 flex gap-2">
       <div className="flex-1 rounded-2xl border border-line bg-card p-[12px_14px] text-center">
@@ -111,7 +100,7 @@ function Header({
   );
 }
 
-function Steps({ steps }: { steps: Apartment["checkin"]["cards"][number]["steps"] }) {
+function Steps({ steps }: { steps: Step[] }) {
   const { t } = useLang();
   return (
     <ol className="list-none">
