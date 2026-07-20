@@ -60,7 +60,7 @@ export function Hero({ ap }: { ap: Apartment }) {
         >
           {t(ap.name)}
           <br />
-          <span className="text-terra">1305C</span>
+          <span className="text-terra">{ap.unit}</span>
         </motion.h1>
         <motion.div variants={heroItem}>
           <Rich

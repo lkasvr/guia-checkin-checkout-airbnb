@@ -7,6 +7,7 @@ export const ap1305c: Apartment = {
   slug: "1305c",
   lang: { default: "pt" },
   name: { pt: "Apartamento", en: "Apartment" },
+  unit: "1305C",
   eyebrow: { pt: "Guia de boas-vindas", en: "Welcome guide" },
   building: "Residencial DF Plaza",
 
@@ -132,6 +133,43 @@ export const ap1305c: Apartment = {
             pt: "▶ Tutorial em vídeo · como chegar e estacionar",
             en: "▶ Video tutorial · arriving & parking",
           },
+        },
+      },
+    ],
+  },
+
+  checkout: {
+    sub: {
+      pt: "Antes de partir, alguns passos rápidos. Boa viagem!",
+      en: "A few quick steps before you leave. Safe travels!",
+    },
+    steps: [
+      {
+        n: "1",
+        body: {
+          pt: "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a anfitriã.",
+          en: "<strong>Check-out is until 11am</strong>. Need a late checkout? Message the host.",
+        },
+      },
+      {
+        n: "2",
+        body: {
+          pt: "Deixe o <strong>Cartão Branco</strong> de garagem sobre a mesa de jantar (a não devolução gera taxa de R$ 300).",
+          en: "Leave the <strong>White garage Card</strong> on the dining table (non-return incurs a R$ 300 fee).",
+        },
+      },
+      {
+        n: "3",
+        body: {
+          pt: "Ensaque o lixo e deixe na lixeira comum do corredor, perto dos elevadores.",
+          en: "Bag the trash and drop it in the shared hallway bin, near the elevators.",
+        },
+      },
+      {
+        n: "4",
+        body: {
+          pt: "Feche as janelas, desligue o ar-condicionado e confira se não esqueceu nada. É só fechar a porta ao sair.",
+          en: "Close the windows, turn off the A/C and double-check for forgotten items. Just shut the door on your way out.",
         },
       },
     ],

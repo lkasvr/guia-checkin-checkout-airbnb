@@ -3,7 +3,7 @@
    - Assets estáticos (/_next/static, imagens, ícones): cache-first.
    - Vídeo (.mp4): não intercepta (não cacheia os 14 MB; toca direto do CDN).
 */
-const CACHE = "guia-1305c-v3";
+const CACHE = "guia-1305c-v4";
 const ASSETS = ["/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -50,9 +50,11 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // cache-first para o restante (assets hasheados do Next, imagens, ícones)
+  // cache-first para o restante (assets hasheados do Next, imagens, ícones).
+  // Match EXATO (com query): as imagens são servidas por /_next/image?url=... — mesmo
+  // path, só a query muda. Com ignoreSearch todas colapsariam na 1ª cacheada (o hero).
   e.respondWith(
-    caches.match(req, { ignoreSearch: true }).then(
+    caches.match(req).then(
       (hit) =>
         hit ||
         fetch(req).then((res) => {

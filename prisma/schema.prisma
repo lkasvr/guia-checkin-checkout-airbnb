@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────── Auth.js: anfitrião (tenant) ───────────────────
+
+model User {
+  id            String      @id @default(cuid())
+  name          String?
+  email         String      @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String? // login email+senha (bcrypt)
+  role          UserRole    @default(HOST)
+  apartments    Apartment[]
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+enum UserRole {
+  HOST
+  ADMIN
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────── Apartamento (escopado ao host) ───────────────────
+
+model Apartment {
+  id        String        @id @default(cuid())
+  hostId    String
+  slug      String        @unique // subdomínio: <slug>.anfyi.com.br
+  active    Boolean       @default(true)
+  label     String // rótulo interno ("Ap 1305C · DF Plaza")
+  content   Json // guia bilíngue em JSONB — shape = ApartmentContent (src/data/types.ts)
+  host      User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  stays     Stay[]
+  catalog   CatalogItem[]
+  orders    Order[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([hostId])
+  @@index([active])
+}
+
+// ─────────── Estadia: dados dinâmicos + janela de disponibilidade ───────────
+
+model Stay {
+  id          String     @id @default(cuid())
+  apartmentId String
+  guestName   String?
+  checkInAt   DateTime // início da hospedagem
+  checkOutAt  DateTime // fim da hospedagem
+  doorCode    String? // senha da fechadura (revelada só dentro do período)
+  accessCode  String     @unique // código/magic-link do hóspede p/ a área autenticada
+  status      StayStatus @default(SCHEDULED)
+  vars        Json? // variáveis extras configuráveis por estadia
+  apartment   Apartment  @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  orders      Order[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([apartmentId])
+  @@index([apartmentId, checkInAt, checkOutAt])
+}
+
+enum StayStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELED
+}
+
+// ─────────── Catálogo & Pedidos (schema pronto; UI em etapa futura) ───────────
+
+model CatalogItem {
+  id          String      @id @default(cuid())
+  apartmentId String
+  kind        CatalogKind @default(SERVICE)
+  name        Json // bilíngue { pt, en }
+  description Json?
+  priceCents  Int         @default(0)
+  currency    String      @default("BRL")
+  active      Boolean     @default(true)
+  sortOrder   Int         @default(0)
+  apartment   Apartment   @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([apartmentId])
+}
+
+enum CatalogKind {
+  SERVICE
+  PRODUCT
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  apartmentId String
+  stayId      String?
+  status      OrderStatus @default(PENDING)
+  totalCents  Int         @default(0)
+  note        String?
+  apartment   Apartment   @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  stay        Stay?       @relation(fields: [stayId], references: [id], onDelete: SetNull)
+  items       OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([apartmentId])
+  @@index([stayId])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  DELIVERED
+  CANCELED
+}
+
+model OrderItem {
+  id             String       @id @default(cuid())
+  orderId        String
+  catalogItemId  String?
+  nameSnapshot   String // nome no momento do pedido
+  unitPriceCents Int
+  qty            Int          @default(1)
+  order          Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  catalogItem    CatalogItem? @relation(fields: [catalogItemId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+}

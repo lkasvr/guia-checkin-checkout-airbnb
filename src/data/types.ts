@@ -55,6 +55,8 @@ export type Apartment = {
   slug: string;
   lang: { default: "pt" | "en" };
   name: L;
+  /** Identificador público da unidade exibido no título (ex.: "1305C"). */
+  unit: string;
   eyebrow: L;
   building: string;
   hero: { img: string; sub: L; facts: Fact[] };
@@ -63,6 +65,7 @@ export type Apartment = {
   wifi: { network: string; password: string; speed: L };
 
   checkin: { sub: L; cards: CheckinCard[] };
+  checkout?: { sub: L; steps: Step[] };
   rules: { sub: L; items: Rule[] };
   contacts: { sub: L; items: Contact[] };
   home: { sub: L; slides: Slide[]; accordions: Accordion[] };
