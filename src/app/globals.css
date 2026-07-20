@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@theme {
+  /* paleta inspirada nas fotos do apartamento */
+  --color-bg: #faf5ee;
+  --color-bg-soft: #f2e9de;
+  --color-card: #fffdf9;
+  --color-blush: #eddbd0;
+  --color-rose: #c99f8f;
+  --color-caramel: #c08b52;
+  --color-wood: #8f674f;
+  --color-coffee: #583422;
+  --color-ink: #3b2d24;
+  --color-soft: #84705f;
+  --color-terra: #a8452e;
+  --color-terra-deep: #84331f;
+  --color-terra-soft: #f6e2d8;
+  --color-line: rgb(59 45 36 / 0.14);
+
+  --font-display: var(--font-prata), Didot, "Bodoni MT", "Playfair Display",
+    Georgia, "Times New Roman", serif;
+  --font-body: "Avenir Next", Avenir, "Segoe UI", Seravek, Ubuntu, Cantarell,
+    "Noto Sans", sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* texto rico vindo dos dados (renderizado via <Rich/>) */
+.rich strong,
+.rich b {
+  font-weight: 700;
+}
+.rich .hint {
+  display: block;
+  font-size: 14.5px;
+  color: var(--color-soft);
+  margin-top: 3px;
+}
+
+/* link do chat do Airbnb dentro do texto rico */
+.chatlink {
+  color: var(--color-terra);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1.5px;
+  white-space: nowrap;
+}
+.chatlink::after {
+  content: "↗";
+  font-size: 0.8em;
+  margin-left: 1px;
+  vertical-align: 0.05em;
+}
+
+/* esconde a scrollbar das trilhas horizontais (nav / carrossel) */
+.no-scrollbar {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
