@@ -24,20 +24,37 @@ const nextAuth = NextAuth({
         const email = String(creds?.email ?? "").toLowerCase().trim();
         const password = String(creds?.password ?? "");
         if (!email || !password) return null;
+
+        // Superadmin da plataforma: credenciais no env, sem linha no banco.
+        const adminEmail = process.env.SUPERADMIN_EMAIL?.toLowerCase().trim();
+        const adminHash = process.env.SUPERADMIN_PASSWORD_HASH;
+        if (adminEmail && adminHash && email === adminEmail) {
+          const ok = await bcrypt.compare(password, adminHash);
+          return ok
+            ? { id: "superadmin", email, name: "Superadmin", role: "ADMIN" as const }
+            : null;
+        }
+
+        // Anfitrião: credenciais no banco.
         const user = await prisma.user.findUnique({ where: { email } });
         const ok = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
         if (!ok || !user?.passwordHash) return null;
-        return { id: user.id, email: user.email, name: user.name };
+        return { id: user.id, email: user.email, name: user.name, role: user.role };
       },
     }),
   ],
   callbacks: {
     jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.id = user.id;
+        token.role = user.role ?? "HOST";
+      }
       return token;
     },
     session({ session, token }) {
       if (token.id) session.user.id = String(token.id);
+      session.user.role =
+        (token.role as "HOST" | "ADMIN" | undefined) ?? "HOST";
       return session;
     },
   },

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { parseLocalBR } from "@/lib/tz";
+import type { Apartment } from "@/data/types";
 import { StayStatus } from "@/generated/prisma/client";
 
 function str(v: FormDataEntryValue | null): string {
@@ -103,4 +104,50 @@ export async function deleteStay(stayId: string) {
   await prisma.stay.delete({ where: { id: stayId } });
   revalidatePath(`/dashboard/apartments/${stay.apartmentId}`);
   revalidatePath("/dashboard");
+}
+
+/**
+ * Edição pelo anfitrião da identidade + textos do guia — campos que alimentam
+ * o cabeçalho e o metadata (título/OG). O restante do conteúdo é preservado.
+ */
+export async function updateApartmentContent(
+  apartmentId: string,
+  formData: FormData,
+) {
+  await requireApartment(apartmentId);
+  const apt = await prisma.apartment.findUnique({
+    where: { id: apartmentId },
+    select: { content: true },
+  });
+  if (!apt) throw new Error("Apartamento não encontrado");
+  const content = apt.content as unknown as Apartment;
+
+  const namePt = str(formData.get("name_pt"));
+  const unit = str(formData.get("unit"));
+  if (!namePt || !unit) throw new Error("Nome e unidade são obrigatórios");
+
+  const next: Apartment = {
+    ...content,
+    name: { pt: namePt, en: str(formData.get("name_en")) || namePt },
+    unit,
+    building: str(formData.get("building")),
+    eyebrow: {
+      pt: str(formData.get("eyebrow_pt")) || content.eyebrow.pt,
+      en: str(formData.get("eyebrow_en")) || content.eyebrow.en,
+    },
+    hero: {
+      ...content.hero,
+      sub: {
+        pt: str(formData.get("hero_sub_pt")),
+        en: str(formData.get("hero_sub_en")),
+      },
+    },
+  };
+
+  await prisma.apartment.update({
+    where: { id: apartmentId },
+    data: { content: next as object },
+  });
+  revalidatePath(`/dashboard/apartments/${apartmentId}`);
+  revalidatePath(`/dashboard/apartments/${apartmentId}/edit`);
 }

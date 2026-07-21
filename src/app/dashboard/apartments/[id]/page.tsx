@@ -72,6 +72,12 @@ export default async function ApartmentPage({
         >
           {apartment.slug}.anfyi.com.br ↗
         </a>
+        <Link
+          href={`/dashboard/apartments/${apartment.id}/edit`}
+          className="text-[14px] font-semibold text-soft underline underline-offset-2"
+        >
+          Editar guia
+        </Link>
         <form
           action={setApartmentActive.bind(null, apartment.id, !apartment.active)}
           className="ml-auto"

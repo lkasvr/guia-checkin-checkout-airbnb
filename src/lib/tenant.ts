@@ -10,6 +10,7 @@ const RESERVED = new Set(["www", "api"]);
 export type HostRoute =
   | { kind: "apex" } // anfyi.com.br / www — landing da marca
   | { kind: "dashboard" } // app.anfyi.com.br — área do anfitrião
+  | { kind: "admin" } // admin.anfyi.com.br — superadmin da plataforma
   | { kind: "guide"; slug: string } // <slug>.anfyi.com.br — hall principal
   | { kind: "checkin"; slug: string } // checkin<slug> / checkin-<slug>
   | { kind: "checkout"; slug: string } // checkout<slug> / checkout-<slug>
@@ -28,6 +29,7 @@ export function parseHost(host: string | null | undefined): HostRoute {
   const label = h.slice(0, -suffix.length).split(".")[0];
   if (!label) return { kind: "apex" };
   if (label === "app") return { kind: "dashboard" };
+  if (label === "admin") return { kind: "admin" };
   if (RESERVED.has(label)) return { kind: "apex" };
 
   const m = label.match(/^(checkin|checkout)-?(.+)$/);

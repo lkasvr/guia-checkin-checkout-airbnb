@@ -31,6 +31,14 @@ export function proxy(req: NextRequest) {
       }
       return NextResponse.next();
 
+    case "admin":
+      // admin.anfyi.com.br → área do superadmin; raiz vai ao /admin
+      if (pathname === "/") {
+        url.pathname = "/admin";
+        return NextResponse.rewrite(url);
+      }
+      return NextResponse.next();
+
     case "checkin":
     case "checkout":
       url.pathname = `/s/${route.slug}/${route.kind}`;
