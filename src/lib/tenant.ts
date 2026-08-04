@@ -11,9 +11,7 @@ export type HostRoute =
   | { kind: "apex" } // anfyi.com.br / www — landing da marca
   | { kind: "dashboard" } // app.anfyi.com.br — área do anfitrião
   | { kind: "admin" } // admin.anfyi.com.br — superadmin da plataforma
-  | { kind: "guide"; slug: string } // <slug>.anfyi.com.br — hall principal
-  | { kind: "checkin"; slug: string } // checkin<slug> / checkin-<slug>
-  | { kind: "checkout"; slug: string } // checkout<slug> / checkout-<slug>
+  | { kind: "guide"; slug: string } // <slug>.anfyi.com.br — o guia (página única)
   | { kind: "external" }; // localhost, *.vercel.app, etc.
 
 /** Interpreta o Host e decide o destino. */
@@ -32,10 +30,7 @@ export function parseHost(host: string | null | undefined): HostRoute {
   if (label === "admin") return { kind: "admin" };
   if (RESERVED.has(label)) return { kind: "apex" };
 
-  const m = label.match(/^(checkin|checkout)-?(.+)$/);
-  if (m) {
-    const kind = m[1] as "checkin" | "checkout";
-    return { kind, slug: m[2] };
-  }
+  // Chegada e saída vivem dentro do guia (página única); não há mais
+  // subdomínio checkin<slug>/checkout<slug>.
   return { kind: "guide", slug: label };
 }

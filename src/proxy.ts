@@ -5,9 +5,7 @@ import { DEFAULT_SLUG, parseHost } from "@/lib/tenant";
  * Roteia por Host (Next 16 proxy):
  * - anfyi.com.br / www  → /marketing
  * - app.anfyi.com.br    → /dashboard/*
- * - checkin<slug>.…     → /s/<slug>/checkin
- * - checkout<slug>.…    → /s/<slug>/checkout
- * - <slug>.anfyi.com.br → /s/<slug>
+ * - <slug>.anfyi.com.br → /s/<slug> (guia completo: chegada e saída inclusas)
  * - localhost / *.vercel.app → só a raiz vira o guia padrão; resto passa direto (dev)
  */
 export function proxy(req: NextRequest) {
@@ -38,11 +36,6 @@ export function proxy(req: NextRequest) {
         return NextResponse.rewrite(url);
       }
       return NextResponse.next();
-
-    case "checkin":
-    case "checkout":
-      url.pathname = `/s/${route.slug}/${route.kind}`;
-      return NextResponse.rewrite(url);
 
     case "guide":
       url.pathname = `/s/${route.slug}${pathname === "/" ? "" : pathname}`;

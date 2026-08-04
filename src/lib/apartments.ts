@@ -1,53 +1,41 @@
 import { cache } from "react";
 import { prisma } from "@/lib/db";
+import { isSameDayBR } from "@/lib/tz";
 import type { Apartment } from "@/data/types";
 
-export type ApartmentRecord = {
-  id: string;
-  slug: string;
-  label: string;
-  content: Apartment;
-};
-
-/** Apartamento ativo pelo slug (subdomínio) — usado no guia público.
- *  cache() dedup: generateMetadata + a página compartilham a mesma consulta. */
-export const getApartmentBySlug = cache(
-  async (slug: string): Promise<ApartmentRecord | null> => {
-    const row = await prisma.apartment.findFirst({
-      where: { slug, active: true },
-      select: { id: true, slug: true, label: true, content: true },
-    });
-    if (!row) return null;
-    return {
-      id: row.id,
-      slug: row.slug,
-      label: row.label,
-      content: row.content as unknown as Apartment,
-    };
-  },
-);
-
-/** Dados da estadia vigente entregues às páginas de check-in/checkout. */
+/** Estadia vigente, entregue ao guia. Só existe dentro da janela da hospedagem. */
 export type StayInfo = {
   guestName: string | null;
   doorCode: string | null;
   checkInISO: string;
   checkOutISO: string;
+  /** hoje é o dia-calendário do check-out (Brasília) — reordena o guia */
+  isCheckoutDay: boolean;
 };
 
-export type ArrivalData = { content: Apartment; stay: StayInfo | null };
+export type GuideData = {
+  id: string;
+  slug: string;
+  label: string;
+  content: Apartment;
+  /** null quando não há hospedagem em curso: é o guia "limpo" da prospecção */
+  stay: StayInfo | null;
+};
 
 /**
- * Carrega o conteúdo do apartamento + a estadia vigente (agora dentro da janela,
- * não cancelada) numa ÚNICA consulta — para as páginas time-gated de check-in
- * e checkout. Retorna null se o apartamento não existe ou está inativo.
+ * Carrega o apartamento ativo pelo slug + a estadia vigente (agora dentro da
+ * janela, não cancelada) numa ÚNICA consulta. Retorna null se o apartamento não
+ * existe ou está inativo; `stay` é null quando não há hospedagem em curso.
  * cache() dedup: generateMetadata + a página compartilham a mesma consulta.
  */
-export const getArrival = cache(
-  async (slug: string, now: Date = new Date()): Promise<ArrivalData | null> => {
+export const getGuide = cache(
+  async (slug: string, now: Date = new Date()): Promise<GuideData | null> => {
     const row = await prisma.apartment.findFirst({
       where: { slug, active: true },
       select: {
+        id: true,
+        slug: true,
+        label: true,
         content: true,
         stays: {
           where: {
@@ -67,8 +55,12 @@ export const getArrival = cache(
       },
     });
     if (!row) return null;
+
     const s = row.stays[0];
     return {
+      id: row.id,
+      slug: row.slug,
+      label: row.label,
       content: row.content as unknown as Apartment,
       stay: s
         ? {
@@ -76,6 +68,7 @@ export const getArrival = cache(
             doorCode: s.doorCode,
             checkInISO: s.checkInAt.toISOString(),
             checkOutISO: s.checkOutAt.toISOString(),
+            isCheckoutDay: isSameDayBR(now, s.checkOutAt),
           }
         : null,
     };

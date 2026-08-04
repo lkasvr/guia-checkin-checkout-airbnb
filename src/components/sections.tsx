@@ -5,7 +5,7 @@ import { motion, type Variants } from "motion/react";
 import { useCallback, useRef, useState } from "react";
 import type { Apartment } from "@/data/types";
 import { useLang } from "@/lib/i18n";
-import { CARD, DOT, LangToggle, Reveal, Rich, SectionHead } from "@/components/ui";
+import { CARD, LangToggle, Reveal, Rich, SectionHead, Steps } from "@/components/ui";
 
 /* ----------------------------- HERO ----------------------------- */
 
@@ -133,17 +133,7 @@ export function CheckIn({ ap }: { ap: Apartment }) {
               )}
             </h3>
 
-            <ol className="list-none">
-              {card.steps.map((s, si) => (
-                <li
-                  key={si}
-                  className="flex items-start gap-3.5 py-3 [&+li]:border-t [&+li]:border-dashed [&+li]:border-line"
-                >
-                  <span className={`${DOT} mt-0.5`}>{s.n}</span>
-                  <Rich as="p" html={t(s.body)} className="text-[16.5px]" />
-                </li>
-              ))}
-            </ol>
+            <Steps steps={card.steps} />
 
             {card.alerts?.map((a, ai) => (
               <div
@@ -174,6 +164,34 @@ export function CheckIn({ ap }: { ap: Apartment }) {
           </div>
         </Reveal>
       ))}
+    </section>
+  );
+}
+
+/* ------------------------------ SAÍDA --------------------------- */
+
+/**
+ * Seção de saída. Fica sempre no guia — o hóspede pode querer sair antes —
+ * mas sobe para o topo no dia do check-out (ver ordenação em Guide.tsx).
+ * Marcador "✦" em vez de número para não renumerar as seções 1–8.
+ */
+export function Checkout({ ap }: { ap: Apartment }) {
+  const { t } = useLang();
+  const checkout = ap.checkout;
+  if (!checkout) return null;
+
+  return (
+    <section id="saida" className="pt-[54px]">
+      <Reveal>
+        <SectionHead n="✦">{t({ pt: "Saída", en: "Check-out" })}</SectionHead>
+        <p className="mb-[22px] mt-2.5 text-[16px] text-soft">{t(checkout.sub)}</p>
+      </Reveal>
+
+      <Reveal>
+        <div className={`${CARD} p-[24px_22px]`}>
+          <Steps steps={checkout.steps} />
+        </div>
+      </Reveal>
     </section>
   );
 }
@@ -403,17 +421,7 @@ export function Home({ ap }: { ap: Apartment }) {
               </span>
             </summary>
             <div className="px-[18px] pb-4">
-              <ol className="list-none">
-                {acc.steps.map((s, si) => (
-                  <li
-                    key={si}
-                    className="flex items-start gap-3.5 py-3 [&+li]:border-t [&+li]:border-dashed [&+li]:border-line"
-                  >
-                    <span className={`${DOT} mt-0.5`}>{s.n}</span>
-                    <Rich as="p" html={t(s.body)} className="text-[15.5px]" />
-                  </li>
-                ))}
-              </ol>
+              <Steps steps={acc.steps} className="text-[15.5px]" />
 
               {acc.diagram && (
                 <figure className="mt-4 flex items-start gap-4 border-t border-dashed border-line pt-3.5">
@@ -482,6 +490,11 @@ export function Amenities({ ap }: { ap: Apartment }) {
 
 /* -------------------------- TOUR / DINING ----------------------- */
 
+/** Google Maps URLs API: abre o app já com a rota traçada até o destino. */
+function mapsRoute(destination: string) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
+}
+
 function PlaceCards({
   id,
   n,
@@ -522,6 +535,31 @@ function PlaceCards({
               <span className="mt-2.5 inline-block rounded-full bg-terra-soft px-2.5 py-1 text-[11.5px] font-bold uppercase tracking-[0.1em] text-terra">
                 {p.meta}
               </span>
+
+              {(p.maps || p.site) && (
+                <div className="mt-3.5 flex flex-wrap gap-2">
+                  {p.maps && (
+                    <a
+                      href={mapsRoute(p.maps)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full bg-ink px-[18px] py-2.5 text-[13.5px] font-bold text-bg no-underline transition-transform active:scale-95"
+                    >
+                      {t({ pt: "Como chegar ↗", en: "Directions ↗" })}
+                    </a>
+                  )}
+                  {p.site && (
+                    <a
+                      href={p.site}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full border border-line bg-bg px-[18px] py-2.5 text-[13.5px] font-bold text-ink no-underline transition-transform active:scale-95"
+                    >
+                      {t({ pt: "Site ↗", en: "Website ↗" })}
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </Reveal>

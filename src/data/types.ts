@@ -47,7 +47,16 @@ export type Accordion = {
 
 export type Amenity = { img: string; title: L; text: L; wide?: boolean };
 
-export type Place = { img?: string; title: string; text: L; meta: string };
+export type Place = {
+  img?: string;
+  title: string;
+  text: L;
+  meta: string;
+  /** página oficial do lugar (abre em nova aba) */
+  site?: string;
+  /** destino da rota no Google Maps, em texto (ex.: "Nazo, Av. das Araucárias 635") */
+  maps?: string;
+};
 
 export type NavItem = { href: string; label: L };
 

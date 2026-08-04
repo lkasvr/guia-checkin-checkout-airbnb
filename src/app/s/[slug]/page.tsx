@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Guide from "@/components/Guide";
-import { getApartmentBySlug } from "@/lib/apartments";
+import { getGuide } from "@/lib/apartments";
 import { apartmentMetadata } from "@/lib/metadata";
 
-// dados por tenant lidos do banco a cada request
+// depende da estadia vigente (senha, datas, ordem das seções): sempre a cada request
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
@@ -13,9 +13,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const apartment = await getApartmentBySlug(slug);
-  if (!apartment) return {};
-  const c = apartment.content;
+  const guide = await getGuide(slug);
+  if (!guide) return {};
+  const c = guide.content;
   return apartmentMetadata(
     slug,
     c,
@@ -29,7 +29,7 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const apartment = await getApartmentBySlug(slug);
-  if (!apartment) notFound();
-  return <Guide apartment={apartment.content} />;
+  const guide = await getGuide(slug);
+  if (!guide) notFound();
+  return <Guide apartment={guide.content} stay={guide.stay} />;
 }

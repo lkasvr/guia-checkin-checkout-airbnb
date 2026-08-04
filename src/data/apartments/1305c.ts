@@ -14,8 +14,8 @@ export const ap1305c: Apartment = {
   hero: {
     img: "/media/hero.webp",
     sub: {
-      pt: "<strong>Residencial DF Plaza</strong> · Águas Claras, Brasília. Sinta-se em casa — este guia resolve sua chegada em minutos.",
-      en: "<strong>DF Plaza Residence</strong> · Águas Claras, Brasília. Make yourself at home — this guide gets you settled in minutes.",
+      pt: "<strong>Residencial DF Plaza</strong> · Águas Claras, Brasília. Aqui está tudo sobre a chegada, o Wi-Fi e o dia a dia no apartamento.",
+      en: "<strong>DF Plaza Residence</strong> · Águas Claras, Brasília. Everything about your arrival, the Wi-Fi and daily life in the apartment.",
     },
     facts: [
       { k: { pt: "Torre C", en: "Tower C" }, v: { pt: "13º andar", en: "13th floor" } },
@@ -46,8 +46,8 @@ export const ap1305c: Apartment = {
 
   checkin: {
     sub: {
-      pt: "Direto ao ponto: da portaria à porta do apartamento.",
-      en: "Straight to the point: from the lobby to your door.",
+      pt: "Da portaria até a porta do apartamento.",
+      en: "From the lobby to your apartment door.",
     },
     cards: [
       {
@@ -70,15 +70,15 @@ export const ap1305c: Apartment = {
           {
             n: "3",
             body: {
-              pt: "Suba ao <strong>13º andar</strong> — apartamento <strong>1305C</strong>.",
-              en: "Go up to the <strong>13th floor</strong> — apartment <strong>1305C</strong>.",
+              pt: "Suba ao <strong>13º andar</strong>, apartamento <strong>1305C</strong>.",
+              en: "Go up to the <strong>13th floor</strong>, apartment <strong>1305C</strong>.",
             },
           },
           {
             n: "4",
             body: {
-              pt: `Digite na fechadura eletrônica a <strong>senha enviada pelo ${CHAT}</strong>. Pronto, sinta-se em casa!`,
-              en: `Enter the <strong>code sent via ${CHAT}</strong> on the electronic lock. That's it — welcome home!`,
+              pt: `Digite na fechadura eletrônica a <strong>senha enviada pelo ${CHAT}</strong>. Pronto, pode entrar.`,
+              en: `Enter the <strong>code sent via ${CHAT}</strong> on the electronic lock. That's it, you're in.`,
             },
           },
         ],
@@ -91,8 +91,8 @@ export const ap1305c: Apartment = {
           {
             n: "1",
             body: {
-              pt: 'Estacione primeiro no <strong>Carrefour</strong> para descarregar as malas.<span class="hint">Grátis por 15 min — ou com compra de R$ 30.</span>',
-              en: 'Park first at the <strong>Carrefour</strong> lot to unload your luggage.<span class="hint">Free for 15 min — or with a R$ 30 purchase.</span>',
+              pt: 'Estacione primeiro no <strong>Carrefour</strong> para descarregar as malas.<span class="hint">Grátis por 30 min, ou com compra acima de R$ 50.</span>',
+              en: 'Park first at the <strong>Carrefour</strong> lot to unload your luggage.<span class="hint">Free for 30 min, or with a purchase over R$ 50.</span>',
             },
           },
           {
@@ -114,8 +114,8 @@ export const ap1305c: Apartment = {
           {
             icon: "📍",
             body: {
-              pt: "<strong>Dica de ouro:</strong> o GPS oscila no subsolo. Guarde: subsolo −3, vaga 269, próxima ao elevador da torre.",
-              en: "<strong>Golden tip:</strong> GPS is unreliable underground. Remember: level −3, spot 269, near the tower elevator.",
+              pt: "<strong>Anote:</strong> o GPS oscila no subsolo. Subsolo −3, vaga 269, próxima ao elevador da torre.",
+              en: "<strong>Write it down:</strong> GPS is unreliable underground. Level −3, spot 269, near the tower elevator.",
             },
           },
           {
@@ -140,8 +140,8 @@ export const ap1305c: Apartment = {
 
   checkout: {
     sub: {
-      pt: "Antes de partir, alguns passos rápidos. Boa viagem!",
-      en: "A few quick steps before you leave. Safe travels!",
+      pt: "Alguns passos rápidos antes de você sair. Boa viagem!",
+      en: "A few quick steps before you go. Safe travels!",
     },
     steps: [
       {
@@ -177,8 +177,8 @@ export const ap1305c: Apartment = {
 
   rules: {
     sub: {
-      pt: "Cuide do nosso lar com o mesmo carinho que cuidamos de você.",
-      en: "Care for our home the way we care for you.",
+      pt: "Combinações simples para a boa convivência no prédio.",
+      en: "Simple ground rules for getting along in the building.",
     },
     items: [
       {
@@ -188,6 +188,15 @@ export const ap1305c: Apartment = {
         text: {
           pt: "Em todo o apartamento, inclusive na varanda.",
           en: "Anywhere in the apartment, including the balcony.",
+        },
+      },
+      {
+        icon: "🧺",
+        hot: true,
+        title: { pt: "Uso da varanda", en: "Balcony use" },
+        text: {
+          pt: "É terminantemente proibido estender roupas, toalhas ou objetos na sacada. O descumprimento gera multa de um salário mínimo aplicada pelo condomínio.",
+          en: "Hanging clothes, towels or any objects on the balcony is strictly prohibited. Violations carry a fine of one minimum wage, charged by the building association.",
         },
       },
       {
@@ -276,32 +285,32 @@ export const ap1305c: Apartment = {
 
   home: {
     sub: {
-      pt: "Projetada em cada detalhe para o seu conforto.",
-      en: "Designed down to the last detail for your comfort.",
+      pt: "O que tem no apartamento e como usar.",
+      en: "What's in the apartment and how to use it.",
     },
     slides: [
       {
         img: "/media/cama.webp",
         title: { pt: "Quarto premium", en: "Premium bedroom" },
         text: {
-          pt: "Cama espaçosa com enxoval de primeira linha, blackout duplo e ar-condicionado potente.",
-          en: "Spacious bed with top-tier linens, double blackout curtains and powerful A/C.",
+          pt: "Cama de casal com enxoval novo, cortina blackout dupla e ar-condicionado.",
+          en: "Double bed with fresh linens, double blackout curtains and air conditioning.",
         },
       },
       {
         img: "/media/cozinha.webp",
         title: { pt: "Cozinha equipada", en: "Full kitchen" },
         text: {
-          pt: "Fogão de indução, micro-ondas, panelas premium, cafeteira elétrica e sanduicheira Oster.",
-          en: "Induction cooktop, microwave, premium cookware, coffee maker and Oster sandwich press.",
+          pt: "Fogão de indução, micro-ondas, panelas, cafeteira elétrica e sanduicheira Oster.",
+          en: "Induction cooktop, microwave, cookware, coffee maker and an Oster sandwich press.",
         },
       },
       {
         img: "/media/sala.webp",
         title: { pt: "Lazer & home office", en: "Leisure & home office" },
         text: {
-          pt: 'Smart TV 65" com streamings de cortesia e mesa de trabalho dedicada.',
-          en: '65" Smart TV with complimentary streaming and a dedicated work desk.',
+          pt: 'Smart TV 65" com os streamings liberados e mesa de trabalho.',
+          en: '65" smart TV with streaming included and a work desk.',
         },
       },
     ],
@@ -320,8 +329,8 @@ export const ap1305c: Apartment = {
           {
             n: "2",
             body: {
-              pt: "Use as <strong>panelas da casa</strong> (fundo magnético) sobre a boca — o fogão só ativa com o peso e material corretos.",
-              en: "Use the <strong>apartment's pans</strong> (magnetic bottom) on the burner — it only activates with the right weight and material.",
+              pt: "Use as <strong>panelas da casa</strong> (fundo magnético) sobre a boca. O fogão só ativa com o peso e o material corretos.",
+              en: "Use the <strong>apartment's pans</strong> (magnetic bottom) on the burner. It only turns on with the right weight and material.",
             },
           },
           {
@@ -395,8 +404,8 @@ export const ap1305c: Apartment = {
 
   amenities: {
     sub: {
-      pt: "Tudo no <strong>Andar M (Mezanino)</strong> — é só descer de elevador.",
-      en: "Everything on <strong>Floor M (Mezzanine)</strong> — just take the elevator.",
+      pt: "Tudo no <strong>Andar M (Mezanino)</strong>, é só descer de elevador.",
+      en: "All on <strong>Floor M (Mezzanine)</strong>, just take the elevator down.",
     },
     items: [
       {
@@ -452,22 +461,22 @@ export const ap1305c: Apartment = {
         img: "/media/cowork.webp",
         title: { pt: "Coworking", en: "Coworking" },
         text: {
-          pt: "Silencioso e climatizado, ideal para reuniões rápidas.",
-          en: "Quiet and air-conditioned, great for quick meetings.",
+          pt: "Silencioso e climatizado, ideal para home office e estudos.",
+          en: "Quiet and air-conditioned, ideal for remote work and studying.",
         },
       },
     ],
   },
 
   tourism: {
-    sub: { pt: "Os clássicos que valem o passeio.", en: "The classics worth the trip." },
+    sub: { pt: "Quatro paradas que valem o deslocamento.", en: "Four stops worth the trip." },
     items: [
       {
         img: "/media/catedral.webp",
         title: "Catedral Metropolitana",
         text: {
-          pt: "Obra-prima de Oscar Niemeyer com vitrais deslumbrantes. Ideal para fotos ao pôr do sol.",
-          en: "An Oscar Niemeyer masterpiece with stunning stained glass. Perfect for sunset photos.",
+          pt: "Projeto de Oscar Niemeyer, com os vitrais de Marianne Peretti. O fim de tarde é a melhor hora para fotos.",
+          en: "Designed by Oscar Niemeyer, with stained glass by Marianne Peretti. Late afternoon is the best time for photos.",
         },
         meta: "Arquitetura",
       },
@@ -475,8 +484,8 @@ export const ap1305c: Apartment = {
         img: "/media/candangos.webp",
         title: "Praça dos Três Poderes",
         text: {
-          pt: "Onde o design encontra a política. Visite o Panteão da Pátria e o mastro da maior bandeira hasteada do mundo.",
-          en: "Where design meets politics. Visit the Pantheon and the mast of the world's largest hoisted flag.",
+          pt: "Na mesma praça ficam o Panteão da Pátria e o mastro da maior bandeira hasteada do mundo.",
+          en: "The Pantheon of the Fatherland and the mast of the world's largest flown flag share the same square.",
         },
         meta: "Arquitetura",
       },
@@ -484,16 +493,18 @@ export const ap1305c: Apartment = {
         img: "/media/congresso.webp",
         title: "Congresso Nacional",
         text: {
-          pt: "Visita guiada de ~50 min pelo Salão Verde, plenários e exposições de arte. Agende online com antecedência — funciona diariamente, exceto terças e quartas.",
-          en: "A ~50-min guided tour of the Green Hall, chambers and art exhibits. Book online in advance — open daily except Tuesdays and Wednesdays.",
+          pt: "Visita guiada de cerca de 50 minutos pelo Salão Verde, plenários e exposições. Os dias e horários mudam conforme a agenda legislativa, então confirme e reserve no site oficial.",
+          en: "A guided tour of about 50 minutes through the Green Hall, chambers and exhibitions. Days and times follow the legislative calendar, so check and book on the official site.",
         },
         meta: "Tour",
+        site: "https://www2.congressonacional.leg.br/visite",
       },
       {
+        img: "/media/pontao.webp",
         title: "Pontão do Lago Sul",
         text: {
-          pt: "O melhor “beach club” sem mar: restaurantes sofisticados e um calçadão perfeito à beira do Lago Paranoá.",
-          en: "The best “beach club” with no sea: refined restaurants and a lovely promenade along Lake Paranoá.",
+          pt: "Restaurantes, quiosques e um calçadão na beira do Lago Paranoá. O pôr do sol ali é o programa.",
+          en: "Restaurants, kiosks and a promenade on the shore of Lake Paranoá. Sunset there is the whole point.",
         },
         meta: "Natureza & lazer",
       },
@@ -502,44 +513,50 @@ export const ap1305c: Apartment = {
 
   dining: {
     sub: {
-      pt: "Há muito no DF Plaza Shopping — mas, saindo dele, estas são as nossas favoritas.",
-      en: "There's plenty at DF Plaza Shopping — but beyond it, these are our favorites.",
+      pt: "O shopping tem várias opções. Saindo dele, estas são as nossas preferidas.",
+      en: "The mall has plenty of options. Beyond it, these are our favorites.",
     },
     items: [
       {
         img: "/media/elpaso.webp",
         title: "El Paso",
         text: {
-          pt: "Cozinha mexicana & tex-mex, ambiente vibrante e cheio de sabor.",
-          en: "Mexican & tex-mex cuisine in a vibrant, flavor-packed setting.",
+          pt: "Mexicano e tex-mex, com porções fartas para dividir.",
+          en: "Mexican and tex-mex, with generous plates to share.",
         },
         meta: "404 Sul · 110 Norte · Terraço Shopping",
+        site: "https://elpaso.com.br/",
+        maps: "El Paso Cocina Mexicana, Terraço Shopping, Brasília",
       },
       {
         img: "/media/nazo.webp",
-        title: "Nazo Sushi",
+        title: "Nazo Japanese Food",
         text: {
-          pt: "Japonesa contemporânea: técnica tradicional com toques modernos em ambiente minimalista.",
-          en: "Contemporary Japanese: traditional technique with modern touches in a minimalist space.",
+          pt: "Japonês com rodízio na esteira e também à la carte.",
+          en: "Japanese with conveyor-belt rodízio and an à la carte menu.",
         },
         meta: "Av. das Araucárias, 635 · Águas Claras",
+        site: "https://www.nazojapanesefood.com.br/",
+        maps: "Nazo Japanese Food, Av. das Araucárias 635, Águas Claras, Brasília",
       },
       {
         img: "/media/mandaka.webp",
         title: "Mandaká",
         text: {
-          pt: "Bar & cozinha nordestina — a descontração de um bar com grelhados premium.",
-          en: "Northeastern-Brazilian bar & kitchen — laid-back vibes with premium grilled dishes.",
+          pt: "Cozinha nordestina e carne de sol, com grelhados para dividir.",
+          en: "Northeastern Brazilian cooking and carne de sol, with grilled dishes to share.",
         },
         meta: "Max Mall · R. 7 Norte, 01 · Águas Claras",
+        site: "https://www.mandaka.com.br/",
+        maps: "Mandaka, Max Mall, R. 7 Norte, Águas Claras, Brasília",
       },
     ],
   },
 
   footer: {
     msg: {
-      pt: "Esperamos que você desfrute de uma experiência inesquecível.",
-      en: "We hope you enjoy an unforgettable stay.",
+      pt: "Boa estadia. Qualquer coisa, é só chamar a gente.",
+      en: "Enjoy your stay. Anything you need, just message us.",
     },
     whoPrefix: { pt: "Com carinho, ", en: "Warmly, " },
     whoName: "Anna Júlia P. Oliveira",

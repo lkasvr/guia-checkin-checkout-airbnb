@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import type { ElementType, ReactNode } from "react";
+import type { Step } from "@/data/types";
 import { useLang } from "@/lib/i18n";
 
 /** Cartão base (borda + fundo + sombra sutil), compartilhado entre guia e arrival. */
@@ -49,6 +50,30 @@ export function Reveal({
     >
       {children}
     </motion.div>
+  );
+}
+
+/** Lista de passos com bolinha numerada — chegada, saída e acordeões da casa. */
+export function Steps({
+  steps,
+  className = "text-[16.5px]",
+}: {
+  steps: Step[];
+  className?: string;
+}) {
+  const { t } = useLang();
+  return (
+    <ol className="list-none">
+      {steps.map((s, i) => (
+        <li
+          key={i}
+          className="flex items-start gap-3.5 py-3 [&+li]:border-t [&+li]:border-dashed [&+li]:border-line"
+        >
+          <span className={`${DOT} mt-0.5`}>{s.n}</span>
+          <Rich as="p" html={t(s.body)} className={className} />
+        </li>
+      ))}
+    </ol>
   );
 }
 
