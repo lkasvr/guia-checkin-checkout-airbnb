@@ -46,3 +46,6 @@ next-env.d.ts
 
 # claude code (configuração pessoal desta máquina)
 .claude/settings.local.json
+
+# anotações locais com segredos (nunca versionar)
+*.local.md
