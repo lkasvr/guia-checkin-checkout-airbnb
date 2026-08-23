@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { createHost, resetHostPassword } from "@/app/admin/actions";
+import { createHost } from "@/app/admin/actions";
+import { ResetPasswordForm } from "@/app/admin/reset-password-form";
 
 export const dynamic = "force-dynamic";
 
@@ -95,28 +96,12 @@ export default async function AdminHome() {
               <summary className="cursor-pointer text-[13.5px] font-semibold text-soft">
                 Redefinir senha
               </summary>
-              <form
-                action={resetHostPassword.bind(null, h.id)}
-                className="mt-3 flex flex-col gap-2 sm:flex-row"
-              >
-                <input
-                  name="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  autoComplete="new-password"
-                  aria-label={`Nova senha de ${h.name ?? h.email}`}
-                  placeholder="Nova senha (mín. 8 caracteres)"
-                  className={`${field} flex-1`}
-                />
-                <button className="rounded-full bg-ink px-5 py-2 text-[14px] font-bold text-bg">
-                  Salvar
-                </button>
-              </form>
-              <p className="mt-2 text-[13px] text-soft">
-                O anfitrião passa a usar esta senha no próximo login. Quem já
-                estiver com sessão aberta continua logado até o token expirar.
-              </p>
+              <ResetPasswordForm
+                hostId={h.id}
+                hostEmail={h.email}
+                hostNome={h.name ?? h.email}
+                inputClassName={field}
+              />
             </details>
           </div>
         ))}

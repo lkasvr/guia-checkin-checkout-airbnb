@@ -10,6 +10,15 @@ function str(v: FormDataEntryValue | null): string {
   return typeof v === "string" ? v.trim() : "";
 }
 
+/**
+ * Senha nunca passa por trim: `src/auth.ts:25` compara o valor cru que o
+ * navegador envia, então aparar aqui gravaria o hash de uma string diferente
+ * da que o anfitrião vai digitar — e um espaço colado junto o trancaria fora.
+ */
+function rawStr(v: FormDataEntryValue | null): string {
+  return typeof v === "string" ? v : "";
+}
+
 /** Só o superadmin (role ADMIN, via env) passa. */
 async function requireAdmin(): Promise<void> {
   const session = await auth();
@@ -21,7 +30,7 @@ export async function createHost(formData: FormData) {
 
   const name = str(formData.get("name"));
   const email = str(formData.get("email")).toLowerCase();
-  const password = str(formData.get("password"));
+  const password = rawStr(formData.get("password"));
   if (!name || !email || !password) {
     throw new Error("Nome, e-mail e senha são obrigatórios");
   }
@@ -95,12 +104,25 @@ export async function createHost(formData: FormData) {
   revalidatePath("/admin");
 }
 
-/** `hostId` vem por `.bind()` no servidor, não pelo formulário. */
-export async function resetHostPassword(hostId: string, formData: FormData) {
+/** Resultado exibido no formulário; `null` é o estado inicial, antes do envio. */
+export type ResetPasswordState = { ok: true } | { erro: string } | null;
+
+/**
+ * `hostId` vem por `.bind()` no servidor, não pelo formulário. Devolve o erro
+ * em vez de lançar: o app não tem `error.tsx`, então uma exceção aqui trocaria
+ * o painel inteiro pela tela de falha genérica do Next.
+ */
+export async function resetHostPassword(
+  hostId: string,
+  _anterior: ResetPasswordState,
+  formData: FormData,
+): Promise<ResetPasswordState> {
   await requireAdmin();
 
-  const password = str(formData.get("password"));
-  if (password.length < 8) throw new Error("A senha deve ter ao menos 8 caracteres");
+  const password = rawStr(formData.get("password"));
+  if (password.length < 8) {
+    return { erro: "A senha deve ter ao menos 8 caracteres." };
+  }
 
   // `role: "HOST"` no filtro: esta tela administra anfitriões, e uma conta ADMIN
   // não deve ter a senha trocada por aqui. Como o superadmin não tem linha no
@@ -109,10 +131,11 @@ export async function resetHostPassword(hostId: string, formData: FormData) {
     where: { id: hostId, role: "HOST" },
     data: { passwordHash: await bcrypt.hash(password, 10) },
   });
-  if (count === 0) throw new Error("Anfitrião não encontrado");
+  if (count === 0) return { erro: "Anfitrião não encontrado." };
 
   // A sessão é JWT (sem tabela de sessão consultada a cada request), então quem
   // já estiver logado continua logado com o token antigo até ele expirar; a
   // senha nova vale do próximo login em diante.
   revalidatePath("/admin");
+  return { ok: true };
 }
