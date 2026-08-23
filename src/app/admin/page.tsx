@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { createHost } from "@/app/admin/actions";
+import { createHost, resetHostPassword } from "@/app/admin/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -70,27 +70,54 @@ export default async function AdminHome() {
       <h2 className="mt-8 font-display text-[21px] font-normal">Cadastrados</h2>
       <div className="mt-3 grid gap-3">
         {hosts.map((h) => (
-          <div
-            key={h.id}
-            className="flex items-center gap-4 rounded-2xl border border-line bg-card p-4"
-          >
-            <div className="min-w-0 flex-1">
-              <b className="text-[16.5px]">{h.name ?? h.email}</b>
-              <span className="block text-[14px] text-soft">
-                {h.email} ·{" "}
-                {h.apartments.length
-                  ? h.apartments.map((a) => a.slug).join(", ")
-                  : "sem apartamentos"}
-              </span>
+          <div key={h.id} className="rounded-2xl border border-line bg-card p-4">
+            <div className="flex items-center gap-4">
+              <div className="min-w-0 flex-1">
+                <b className="text-[16.5px]">{h.name ?? h.email}</b>
+                <span className="block text-[14px] text-soft">
+                  {h.email} ·{" "}
+                  {h.apartments.length
+                    ? h.apartments.map((a) => a.slug).join(", ")
+                    : "sem apartamentos"}
+                </span>
+              </div>
+              {h.apartments[0] && (
+                <a
+                  href={`https://${h.apartments[0].slug}.anfyi.com.br`}
+                  className="whitespace-nowrap text-[13.5px] font-semibold text-terra underline underline-offset-2"
+                >
+                  {h.apartments[0].slug} ↗
+                </a>
+              )}
             </div>
-            {h.apartments[0] && (
-              <a
-                href={`https://${h.apartments[0].slug}.anfyi.com.br`}
-                className="whitespace-nowrap text-[13.5px] font-semibold text-terra underline underline-offset-2"
+
+            <details className="mt-3 border-t border-line pt-3">
+              <summary className="cursor-pointer text-[13.5px] font-semibold text-soft">
+                Redefinir senha
+              </summary>
+              <form
+                action={resetHostPassword.bind(null, h.id)}
+                className="mt-3 flex flex-col gap-2 sm:flex-row"
               >
-                {h.apartments[0].slug} ↗
-              </a>
-            )}
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  aria-label={`Nova senha de ${h.name ?? h.email}`}
+                  placeholder="Nova senha (mín. 8 caracteres)"
+                  className={`${field} flex-1`}
+                />
+                <button className="rounded-full bg-ink px-5 py-2 text-[14px] font-bold text-bg">
+                  Salvar
+                </button>
+              </form>
+              <p className="mt-2 text-[13px] text-soft">
+                O anfitrião passa a usar esta senha no próximo login. Quem já
+                estiver com sessão aberta continua logado até o token expirar.
+              </p>
+            </details>
           </div>
         ))}
         {hosts.length === 0 && (

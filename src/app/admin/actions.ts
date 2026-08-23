@@ -94,3 +94,25 @@ export async function createHost(formData: FormData) {
   }
   revalidatePath("/admin");
 }
+
+/** `hostId` vem por `.bind()` no servidor, não pelo formulário. */
+export async function resetHostPassword(hostId: string, formData: FormData) {
+  await requireAdmin();
+
+  const password = str(formData.get("password"));
+  if (password.length < 8) throw new Error("A senha deve ter ao menos 8 caracteres");
+
+  // `role: "HOST"` no filtro: esta tela administra anfitriões, e uma conta ADMIN
+  // não deve ter a senha trocada por aqui. Como o superadmin não tem linha no
+  // banco (src/auth.ts), hoje isso só fecha a porta — mas fecha antes de abrir.
+  const { count } = await prisma.user.updateMany({
+    where: { id: hostId, role: "HOST" },
+    data: { passwordHash: await bcrypt.hash(password, 10) },
+  });
+  if (count === 0) throw new Error("Anfitrião não encontrado");
+
+  // A sessão é JWT (sem tabela de sessão consultada a cada request), então quem
+  // já estiver logado continua logado com o token antigo até ele expirar; a
+  // senha nova vale do próximo login em diante.
+  revalidatePath("/admin");
+}
