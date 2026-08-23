@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { createHost } from "@/app/admin/actions";
+import { ResetPasswordForm } from "@/app/admin/reset-password-form";
 
 export const dynamic = "force-dynamic";
 
@@ -70,27 +71,38 @@ export default async function AdminHome() {
       <h2 className="mt-8 font-display text-[21px] font-normal">Cadastrados</h2>
       <div className="mt-3 grid gap-3">
         {hosts.map((h) => (
-          <div
-            key={h.id}
-            className="flex items-center gap-4 rounded-2xl border border-line bg-card p-4"
-          >
-            <div className="min-w-0 flex-1">
-              <b className="text-[16.5px]">{h.name ?? h.email}</b>
-              <span className="block text-[14px] text-soft">
-                {h.email} ·{" "}
-                {h.apartments.length
-                  ? h.apartments.map((a) => a.slug).join(", ")
-                  : "sem apartamentos"}
-              </span>
+          <div key={h.id} className="rounded-2xl border border-line bg-card p-4">
+            <div className="flex items-center gap-4">
+              <div className="min-w-0 flex-1">
+                <b className="text-[16.5px]">{h.name ?? h.email}</b>
+                <span className="block text-[14px] text-soft">
+                  {h.email} ·{" "}
+                  {h.apartments.length
+                    ? h.apartments.map((a) => a.slug).join(", ")
+                    : "sem apartamentos"}
+                </span>
+              </div>
+              {h.apartments[0] && (
+                <a
+                  href={`https://${h.apartments[0].slug}.anfyi.com.br`}
+                  className="whitespace-nowrap text-[13.5px] font-semibold text-terra underline underline-offset-2"
+                >
+                  {h.apartments[0].slug} ↗
+                </a>
+              )}
             </div>
-            {h.apartments[0] && (
-              <a
-                href={`https://${h.apartments[0].slug}.anfyi.com.br`}
-                className="whitespace-nowrap text-[13.5px] font-semibold text-terra underline underline-offset-2"
-              >
-                {h.apartments[0].slug} ↗
-              </a>
-            )}
+
+            <details className="mt-3 border-t border-line pt-3">
+              <summary className="cursor-pointer text-[13.5px] font-semibold text-soft">
+                Redefinir senha
+              </summary>
+              <ResetPasswordForm
+                hostId={h.id}
+                hostEmail={h.email}
+                hostNome={h.name ?? h.email}
+                inputClassName={field}
+              />
+            </details>
           </div>
         ))}
         {hosts.length === 0 && (
