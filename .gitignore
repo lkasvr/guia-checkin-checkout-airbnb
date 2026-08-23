@@ -43,3 +43,9 @@ next-env.d.ts
 # prisma generated client
 /src/generated/
 .env*.local
+
+# claude code (configuração pessoal desta máquina)
+.claude/settings.local.json
+
+# anotações locais com segredos (nunca versionar)
+*.local.md

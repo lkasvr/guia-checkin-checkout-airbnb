@@ -1,8 +1,10 @@
 import { config as loadEnv } from "dotenv";
 import { defineConfig } from "prisma/config";
 
-// Next.js usa .env.local; o CLI do Prisma não carrega env sozinho (v7).
-loadEnv({ path: [".env.local", ".env"] });
+// Next.js usa .env.local; o CLI do Prisma não carrega env sozinho (v7). A ordem
+// espelha a do Next (primeiro arquivo vence): .env.development.local guarda os
+// segredos locais e sobrevive ao `vercel env pull`, que reescreve o .env.local.
+loadEnv({ path: [".env.development.local", ".env.local", ".env"] });
 
 // CLI (migrate/db pull/seed) usa a conexão DIRETA do Neon (sem pooler).
 // O runtime usa a pooled via adapter em src/lib/db.ts.
