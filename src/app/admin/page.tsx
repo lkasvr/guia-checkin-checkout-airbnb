@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { createHost } from "@/app/admin/actions";
+import { createHost, createApartment } from "@/app/admin/actions";
 import { ResetPasswordForm } from "@/app/admin/reset-password-form";
 
 export const dynamic = "force-dynamic";
@@ -91,6 +91,28 @@ export default async function AdminHome() {
                 </a>
               )}
             </div>
+
+            <details className="mt-3 border-t border-line pt-3">
+              <summary className="cursor-pointer text-[13.5px] font-semibold text-soft">
+                Novo apartamento
+              </summary>
+              <form
+                action={createApartment.bind(null, h.id)}
+                className="mt-3 grid gap-3 sm:grid-cols-2"
+              >
+                <label className={labelCls}>
+                  Slug
+                  <input name="slug" required className={field} placeholder="ex.: 2610b" />
+                </label>
+                <label className={labelCls}>
+                  Rótulo
+                  <input name="label" className={field} placeholder="Ap 2610B · Ed. Exemplo" />
+                </label>
+                <button className="rounded-full bg-ink px-6 py-3 text-[15px] font-bold text-bg sm:col-span-2">
+                  Criar apartamento
+                </button>
+              </form>
+            </details>
 
             <details className="mt-3 border-t border-line pt-3">
               <summary className="cursor-pointer text-[13.5px] font-semibold text-soft">

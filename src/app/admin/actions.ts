@@ -104,6 +104,56 @@ export async function createHost(formData: FormData) {
   revalidatePath("/admin");
 }
 
+/**
+ * Cria um apartamento adicional para um anfitrião já cadastrado, com o mesmo
+ * conteúdo inicial em branco usado no 1º apê criado junto com a conta
+ * (`starterContent`). O anfitrião completa os detalhes depois pelo painel.
+ */
+export async function createApartment(hostId: string, formData: FormData) {
+  await requireAdmin();
+
+  const host = await prisma.user.findUnique({
+    where: { id: hostId },
+    select: { role: true },
+  });
+  if (!host || host.role !== "HOST") throw new Error("Anfitrião não encontrado");
+
+  const slug = str(formData.get("slug")).toLowerCase();
+  if (!slug) throw new Error("Informe o slug do apartamento");
+  const label = str(formData.get("label")) || `Ap ${slug.toUpperCase()}`;
+
+  const taken = await prisma.apartment.findUnique({
+    where: { slug },
+    select: { id: true },
+  });
+  if (taken) throw new Error(`O slug "${slug}" já está em uso`);
+
+  try {
+    await prisma.apartment.create({
+      data: {
+        hostId,
+        slug,
+        label,
+        active: true,
+        content: starterContent("Apartamento", slug.toUpperCase(), label) as object,
+      },
+    });
+  } catch (e) {
+    // Corrida entre a checagem acima e o insert: o índice único do banco
+    // ainda protege; traduz o P2002 do Prisma na mesma mensagem amigável.
+    if (
+      e &&
+      typeof e === "object" &&
+      "code" in e &&
+      (e as { code?: string }).code === "P2002"
+    ) {
+      throw new Error(`O slug "${slug}" já está em uso`);
+    }
+    throw e;
+  }
+  revalidatePath("/admin");
+}
+
 /** Resultado exibido no formulário; `null` é o estado inicial, antes do envio. */
 export type ResetPasswordState = { ok: true } | { erro: string } | null;
 
