@@ -73,7 +73,12 @@ export type Apartment = {
 
   wifi: { network: string; password: string; speed: L };
 
-  checkin: { sub: L; cards: CheckinCard[] };
+  checkin: {
+    sub: L;
+    cards: CheckinCard[];
+    /** Senha fixa do apartamento, exibida sempre; ausente = senha por hóspede (via Stay). */
+    doorCode?: { mode: "fixed"; code: string } | { mode: "per_stay" };
+  };
   checkout?: { sub: L; steps: Step[] };
   rules: { sub: L; items: Rule[] };
   contacts: { sub: L; items: Contact[] };

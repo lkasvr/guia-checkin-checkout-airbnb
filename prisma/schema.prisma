@@ -72,6 +72,7 @@ model Apartment {
   active    Boolean       @default(true)
   label     String // rótulo interno ("Ap 1305C · DF Plaza")
   content   Json // guia bilíngue em JSONB — shape = ApartmentContent (src/data/types.ts)
+  internalNotes String? // observações e itens em manutenção — uso interno, nunca aparece no guia público
   host      User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
   stays     Stay[]
   catalog   CatalogItem[]

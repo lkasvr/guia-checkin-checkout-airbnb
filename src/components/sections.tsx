@@ -109,6 +109,24 @@ export function CheckIn({ ap }: { ap: Apartment }) {
         <p className="mb-[22px] mt-2.5 text-[16px] text-soft">{t(ap.checkin.sub)}</p>
       </Reveal>
 
+      {ap.checkin.doorCode?.mode === "fixed" && (
+        <Reveal>
+          <div className="mb-[18px] flex items-center gap-3.5 rounded-[18px] border border-line bg-card p-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-blush text-[22px]">
+              🔑
+            </span>
+            <div>
+              <b className="block text-[13px] font-bold uppercase tracking-[0.08em] text-soft">
+                {t({ pt: "Senha da fechadura", en: "Door lock code" })}
+              </b>
+              <span className="block select-all font-mono text-[20px] font-bold text-ink">
+                {ap.checkin.doorCode.code}
+              </span>
+            </div>
+          </div>
+        </Reveal>
+      )}
+
       {ap.checkin.cards.map((card, ci) => (
         <Reveal key={ci}>
           <div className={`${CARD} ${card.banner ? "px-[22px] pb-6 pt-0" : "p-[24px_22px]"}`}>

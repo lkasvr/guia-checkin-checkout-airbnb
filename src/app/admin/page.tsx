@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { createHost, createApartment } from "@/app/admin/actions";
+import { createHost } from "@/app/admin/actions";
 import { ResetPasswordForm } from "@/app/admin/reset-password-form";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,10 @@ export default async function AdminHome() {
       id: true,
       name: true,
       email: true,
-      apartments: { select: { slug: true }, orderBy: { createdAt: "asc" } },
+      apartments: {
+        select: { id: true, slug: true, label: true },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
@@ -72,47 +75,42 @@ export default async function AdminHome() {
       <div className="mt-3 grid gap-3">
         {hosts.map((h) => (
           <div key={h.id} className="rounded-2xl border border-line bg-card p-4">
-            <div className="flex items-center gap-4">
-              <div className="min-w-0 flex-1">
-                <b className="text-[16.5px]">{h.name ?? h.email}</b>
-                <span className="block text-[14px] text-soft">
-                  {h.email} ·{" "}
-                  {h.apartments.length
-                    ? h.apartments.map((a) => a.slug).join(", ")
-                    : "sem apartamentos"}
-                </span>
-              </div>
-              {h.apartments[0] && (
-                <a
-                  href={`https://${h.apartments[0].slug}.anfyi.com.br`}
-                  className="whitespace-nowrap text-[13.5px] font-semibold text-terra underline underline-offset-2"
-                >
-                  {h.apartments[0].slug} ↗
-                </a>
-              )}
+            <div className="min-w-0">
+              <b className="text-[16.5px]">{h.name ?? h.email}</b>
+              <span className="block text-[14px] text-soft">{h.email}</span>
             </div>
 
-            <details className="mt-3 border-t border-line pt-3">
-              <summary className="cursor-pointer text-[13.5px] font-semibold text-soft">
-                Novo apartamento
-              </summary>
-              <form
-                action={createApartment.bind(null, h.id)}
-                className="mt-3 grid gap-3 sm:grid-cols-2"
+            <div className="mt-3 grid gap-1.5">
+              {h.apartments.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-center gap-3 rounded-xl border border-line bg-bg px-3 py-2"
+                >
+                  <span className="min-w-0 flex-1 truncate text-[14px]">{a.label}</span>
+                  <a
+                    href={`https://${a.slug}.anfyi.com.br`}
+                    className="whitespace-nowrap text-[13px] font-semibold text-terra underline underline-offset-2"
+                  >
+                    {a.slug} ↗
+                  </a>
+                  <Link
+                    href={`/admin/apartments/${a.id}/edit`}
+                    className="whitespace-nowrap text-[13px] font-semibold text-soft underline underline-offset-2"
+                  >
+                    Editar
+                  </Link>
+                </div>
+              ))}
+              {h.apartments.length === 0 && (
+                <p className="text-[14px] text-soft">Sem apartamentos ainda.</p>
+              )}
+              <Link
+                href={`/admin/apartments/new?hostId=${h.id}`}
+                className="mt-1 text-[13.5px] font-semibold text-terra underline underline-offset-2"
               >
-                <label className={labelCls}>
-                  Slug
-                  <input name="slug" required className={field} placeholder="ex.: 2610b" />
-                </label>
-                <label className={labelCls}>
-                  Rótulo
-                  <input name="label" className={field} placeholder="Ap 2610B · Ed. Exemplo" />
-                </label>
-                <button className="rounded-full bg-ink px-6 py-3 text-[15px] font-bold text-bg sm:col-span-2">
-                  Criar apartamento
-                </button>
-              </form>
-            </details>
+                + Novo apartamento
+              </Link>
+            </div>
 
             <details className="mt-3 border-t border-line pt-3">
               <summary className="cursor-pointer text-[13.5px] font-semibold text-soft">

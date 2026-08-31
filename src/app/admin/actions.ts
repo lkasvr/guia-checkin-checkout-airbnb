@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { starterContent } from "@/data/starter";
+import { buildApartmentContent, type ApartmentFormInput } from "@/data/buildApartmentContent";
+import { slugify } from "@/lib/slug";
+import type { Apartment } from "@/data/types";
 
 function str(v: FormDataEntryValue | null): string {
   return typeof v === "string" ? v.trim() : "";
@@ -104,29 +107,43 @@ export async function createHost(formData: FormData) {
   revalidatePath("/admin");
 }
 
+export type ApartmentWizardPayload = ApartmentFormInput & { slug: string; label: string };
+
+/** Traduz o P2002 (índice único) do Prisma numa mensagem amigável de slug em uso. */
+function throwIfSlugTaken(e: unknown, slug: string): never {
+  if (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "P2002") {
+    throw new Error(`O slug "${slug}" já está em uso`);
+  }
+  throw e as Error;
+}
+
 /**
- * Cria um apartamento adicional para um anfitrião já cadastrado, com o mesmo
- * conteúdo inicial em branco usado no 1º apê criado junto com a conta
- * (`starterContent`). O anfitrião completa os detalhes depois pelo painel.
+ * Cria um apartamento adicional para um anfitrião já cadastrado, com o
+ * conteúdo do guia já preenchido a partir do formulário detalhado do
+ * superadmin (Wi-Fi, regras, contatos, fechadura etc.) — ver
+ * `buildApartmentContent`. Fotos e estilo continuam com o padrão genérico
+ * nesta etapa.
  */
-export async function createApartment(hostId: string, formData: FormData) {
+export async function createApartmentDetailed(
+  hostId: string,
+  payload: ApartmentWizardPayload,
+) {
   await requireAdmin();
 
   const host = await prisma.user.findUnique({
     where: { id: hostId },
-    select: { role: true },
+    select: { name: true, email: true, role: true },
   });
   if (!host || host.role !== "HOST") throw new Error("Anfitrião não encontrado");
 
-  const slug = str(formData.get("slug")).toLowerCase();
+  const slug = slugify(payload.slug);
   if (!slug) throw new Error("Informe o slug do apartamento");
-  const label = str(formData.get("label")) || `Ap ${slug.toUpperCase()}`;
+  const label = payload.label.trim() || `Ap ${payload.unit.toUpperCase()}`;
 
-  const taken = await prisma.apartment.findUnique({
-    where: { slug },
-    select: { id: true },
-  });
+  const taken = await prisma.apartment.findUnique({ where: { slug }, select: { id: true } });
   if (taken) throw new Error(`O slug "${slug}" já está em uso`);
+
+  const content = buildApartmentContent(payload, host.name ?? host.email);
 
   try {
     await prisma.apartment.create({
@@ -135,23 +152,64 @@ export async function createApartment(hostId: string, formData: FormData) {
         slug,
         label,
         active: true,
-        content: starterContent("Apartamento", slug.toUpperCase(), label) as object,
+        content: content as object,
+        internalNotes: payload.internalNotes || null,
       },
     });
   } catch (e) {
-    // Corrida entre a checagem acima e o insert: o índice único do banco
-    // ainda protege; traduz o P2002 do Prisma na mesma mensagem amigável.
-    if (
-      e &&
-      typeof e === "object" &&
-      "code" in e &&
-      (e as { code?: string }).code === "P2002"
-    ) {
-      throw new Error(`O slug "${slug}" já está em uso`);
-    }
-    throw e;
+    throwIfSlugTaken(e, slug);
   }
   revalidatePath("/admin");
+}
+
+/**
+ * Atualiza um apartamento existente com os mesmos campos do formulário
+ * detalhado — preserva as seções que o formulário não cobre (home,
+ * amenities, tourism, dining) em vez de zerá-las.
+ */
+export async function updateApartmentDetailed(
+  apartmentId: string,
+  payload: ApartmentWizardPayload,
+) {
+  await requireAdmin();
+
+  const apt = await prisma.apartment.findUnique({
+    where: { id: apartmentId },
+    select: { content: true, hostId: true, host: { select: { name: true, email: true } } },
+  });
+  if (!apt) throw new Error("Apartamento não encontrado");
+
+  const slug = slugify(payload.slug);
+  if (!slug) throw new Error("Informe o slug do apartamento");
+  const label = payload.label.trim() || `Ap ${payload.unit.toUpperCase()}`;
+
+  const taken = await prisma.apartment.findFirst({
+    where: { slug, NOT: { id: apartmentId } },
+    select: { id: true },
+  });
+  if (taken) throw new Error(`O slug "${slug}" já está em uso`);
+
+  const content = buildApartmentContent(
+    payload,
+    apt.host.name ?? apt.host.email,
+    apt.content as unknown as Apartment,
+  );
+
+  try {
+    await prisma.apartment.update({
+      where: { id: apartmentId },
+      data: {
+        slug,
+        label,
+        content: content as object,
+        internalNotes: payload.internalNotes || null,
+      },
+    });
+  } catch (e) {
+    throwIfSlugTaken(e, slug);
+  }
+  revalidatePath("/admin");
+  revalidatePath(`/admin/apartments/${apartmentId}/edit`);
 }
 
 /** Resultado exibido no formulário; `null` é o estado inicial, antes do envio. */
