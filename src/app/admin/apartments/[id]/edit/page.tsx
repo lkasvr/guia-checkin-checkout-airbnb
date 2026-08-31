@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { ApartmentWizard } from "@/app/admin/apartments/wizard";
+import { parseHeroFacts, toBuildingTemplate } from "@/data/buildApartmentContent";
 import type { Apartment } from "@/data/types";
 
 export const dynamic = "force-dynamic";
@@ -11,35 +12,51 @@ export default async function EditApartmentPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const apt = await prisma.apartment.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      slug: true,
-      label: true,
-      content: true,
-      internalNotes: true,
-      hostId: true,
-      host: { select: { name: true, email: true } },
-    },
-  });
+  const [apt, buildings] = await Promise.all([
+    prisma.apartment.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        slug: true,
+        label: true,
+        content: true,
+        internalNotes: true,
+        hostId: true,
+        host: { select: { name: true, email: true } },
+      },
+    }),
+    prisma.building.findMany({
+      select: {
+        id: true,
+        name: true,
+        amenities: true,
+        tourism: true,
+        dining: true,
+        checkinTemplate: true,
+        checkoutTemplate: true,
+      },
+      orderBy: { name: "asc" },
+    }),
+  ]);
   if (!apt) notFound();
   const content = apt.content as unknown as Apartment;
   const hostName = apt.host.name ?? apt.host.email;
 
-  // Só os campos abaixo dão pra reconstruir com segurança a partir do
-  // conteúdo salvo (texto simples, sem HTML). Regras, contatos e passo a
-  // passo de check-in usam HTML rico hoje — não são recuperáveis pro
-  // formulário simplificado, então ficam em branco aqui (ver aviso abaixo).
+  // Torre/andar/vaga/hóspedes/horários só voltam quando os facts batem com o
+  // formato que este formulário gera (ver `parseHeroFacts`) — em conteúdo
+  // escrito à mão ficam em branco, coberto pelo aviso abaixo. Regras,
+  // contatos e passo a passo de check-in usam HTML rico hoje — não são
+  // recuperáveis pro formulário simplificado, ficam em branco também.
+  const facts = parseHeroFacts(content.hero.facts);
   const initial = {
     building: content.building,
     unit: content.unit,
-    tower: "",
-    floor: "",
-    parking: "",
-    maxGuests: "",
-    checkinTime: "",
-    checkoutTime: "",
+    tower: facts.tower,
+    floor: facts.floor,
+    parking: facts.parking,
+    maxGuests: facts.maxGuests,
+    checkinTime: facts.checkinTime,
+    checkoutTime: facts.checkoutTime,
     doorCodeMode:
       content.checkin.doorCode?.mode === "fixed" ? ("fixed" as const) : ("per_stay" as const),
     doorCode: content.checkin.doorCode?.mode === "fixed" ? content.checkin.doorCode.code : "",
@@ -81,6 +98,7 @@ export default async function EditApartmentPage({
         apartmentId={apt.id}
         initial={initial}
         existingContent={content}
+        buildings={buildings.map((b) => ({ id: b.id, name: b.name, ...toBuildingTemplate(b) }))}
       />
     </>
   );

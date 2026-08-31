@@ -5,7 +5,12 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { starterContent } from "@/data/starter";
-import { buildApartmentContent, type ApartmentFormInput } from "@/data/buildApartmentContent";
+import {
+  buildApartmentContent,
+  toBuildingTemplate,
+  type ApartmentFormInput,
+  type BuildingTemplate,
+} from "@/data/buildApartmentContent";
 import { slugify } from "@/lib/slug";
 import type { Apartment } from "@/data/types";
 
@@ -23,9 +28,36 @@ function rawStr(v: FormDataEntryValue | null): string {
 }
 
 /** Só o superadmin (role ADMIN, via env) passa. */
-async function requireAdmin(): Promise<void> {
+export async function requireAdmin(): Promise<void> {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") throw new Error("Acesso restrito");
+}
+
+/**
+ * Acha o prédio pelo nome (sem diferenciar maiúsculas/espaço nas pontas) ou
+ * cria um novo em branco. Nome vazio = apartamento sem prédio (`null`),
+ * comportamento igual ao de antes desse recurso existir.
+ */
+async function resolveBuilding(
+  name: string,
+): Promise<({ id: string } & BuildingTemplate) | null> {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+
+  const blank = starterContent("_", "_", "_");
+  const building = await prisma.building.upsert({
+    where: { name: trimmed },
+    update: {},
+    create: {
+      name: trimmed,
+      amenities: blank.amenities as object,
+      tourism: blank.tourism as object,
+      dining: blank.dining as object,
+      checkinTemplate: blank.checkin as object,
+      checkoutTemplate: blank.checkout as object,
+    },
+  });
+  return { id: building.id, ...toBuildingTemplate(building) };
 }
 
 export async function createHost(formData: FormData) {
@@ -143,7 +175,8 @@ export async function createApartmentDetailed(
   const taken = await prisma.apartment.findUnique({ where: { slug }, select: { id: true } });
   if (taken) throw new Error(`O slug "${slug}" já está em uso`);
 
-  const content = buildApartmentContent(payload, host.name ?? host.email);
+  const building = await resolveBuilding(payload.building);
+  const content = buildApartmentContent(payload, host.name ?? host.email, undefined, building);
 
   try {
     await prisma.apartment.create({
@@ -154,6 +187,7 @@ export async function createApartmentDetailed(
         active: true,
         content: content as object,
         internalNotes: payload.internalNotes || null,
+        buildingId: building?.id ?? null,
       },
     });
   } catch (e) {
@@ -189,10 +223,12 @@ export async function updateApartmentDetailed(
   });
   if (taken) throw new Error(`O slug "${slug}" já está em uso`);
 
+  const building = await resolveBuilding(payload.building);
   const content = buildApartmentContent(
     payload,
     apt.host.name ?? apt.host.email,
     apt.content as unknown as Apartment,
+    building,
   );
 
   try {
@@ -203,6 +239,7 @@ export async function updateApartmentDetailed(
         label,
         content: content as object,
         internalNotes: payload.internalNotes || null,
+        buildingId: building?.id ?? null,
       },
     });
   } catch (e) {

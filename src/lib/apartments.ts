@@ -2,6 +2,7 @@ import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { isSameDayBR } from "@/lib/tz";
 import type { Apartment } from "@/data/types";
+import { overlayBuildingLiveContent } from "@/data/buildApartmentContent";
 
 /** Estadia vigente, entregue ao guia. Só existe dentro da janela da hospedagem. */
 export type StayInfo = {
@@ -37,6 +38,7 @@ export const getGuide = cache(
         slug: true,
         label: true,
         content: true,
+        building: { select: { amenities: true, tourism: true, dining: true } },
         stays: {
           where: {
             status: { not: "CANCELED" },
@@ -57,11 +59,19 @@ export const getGuide = cache(
     if (!row) return null;
 
     const s = row.stays[0];
+    const rawContent = row.content as unknown as Apartment;
+    const content = row.building
+      ? overlayBuildingLiveContent(rawContent, {
+          amenities: row.building.amenities as unknown as Apartment["amenities"],
+          tourism: row.building.tourism as unknown as Apartment["tourism"],
+          dining: row.building.dining as unknown as Apartment["dining"],
+        })
+      : rawContent;
     return {
       id: row.id,
       slug: row.slug,
       label: row.label,
-      content: row.content as unknown as Apartment,
+      content,
       stay: s
         ? {
             guestName: s.guestName,

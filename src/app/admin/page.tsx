@@ -10,6 +10,10 @@ const field =
 const labelCls = "flex flex-col gap-1 text-[13px] font-semibold text-soft";
 
 export default async function AdminHome() {
+  const buildings = await prisma.building.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, _count: { select: { apartments: true } } },
+  });
   const hosts = await prisma.user.findMany({
     where: { role: "HOST" },
     orderBy: { createdAt: "asc" },
@@ -70,6 +74,34 @@ export default async function AdminHome() {
           </button>
         </form>
       </section>
+
+      <h2 className="mt-8 font-display text-[21px] font-normal">Prédios</h2>
+      <p className="mt-1 text-[15px] text-soft">
+        Lazer, guia da cidade e onde comer — compartilhado entre os apartamentos do mesmo prédio.
+        Um prédio novo é criado automaticamente ao preencher o Edifício na criação de um apartamento.
+      </p>
+      <div className="mt-3 grid gap-1.5">
+        {buildings.map((b) => (
+          <div
+            key={b.id}
+            className="flex items-center gap-3 rounded-xl border border-line bg-card px-3 py-2"
+          >
+            <span className="min-w-0 flex-1 truncate text-[14px]">{b.name}</span>
+            <span className="whitespace-nowrap text-[13px] text-soft">
+              {b._count.apartments} {b._count.apartments === 1 ? "apartamento" : "apartamentos"}
+            </span>
+            <Link
+              href={`/admin/buildings/${b.id}/edit`}
+              className="whitespace-nowrap text-[13px] font-semibold text-terra underline underline-offset-2"
+            >
+              Editar
+            </Link>
+          </div>
+        ))}
+        {buildings.length === 0 && (
+          <p className="text-[14px] text-soft">Nenhum prédio ainda.</p>
+        )}
+      </div>
 
       <h2 className="mt-8 font-display text-[21px] font-normal">Cadastrados</h2>
       <div className="mt-3 grid gap-3">

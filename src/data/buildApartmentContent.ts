@@ -1,7 +1,140 @@
-import type { Apartment, L, Rule } from "@/data/types";
+import type { Apartment, Alert, CheckinCard, L, Rule, Step } from "@/data/types";
 import { starterContent } from "@/data/starter";
 
 const t = (pt: string, en?: string): L => ({ pt, en: en ?? pt });
+
+/** Conteúdo de prédio relevante pra montar um apartamento (`Building`, ver schema.prisma). */
+export type BuildingTemplate = {
+  amenities: Apartment["amenities"];
+  tourism: Apartment["tourism"];
+  dining: Apartment["dining"];
+  checkinTemplate: Apartment["checkin"];
+  checkoutTemplate: NonNullable<Apartment["checkout"]>;
+};
+
+/** Troca `{{TOKEN}}` pelo valor correspondente — usado no template de check-in/check-out do prédio. */
+function fillTokens(text: string, tokens: Record<string, string>): string {
+  return Object.entries(tokens).reduce(
+    (acc, [key, value]) => acc.replaceAll(`{{${key}}}`, value),
+    text,
+  );
+}
+function fillL(l: L, tokens: Record<string, string>): L {
+  return { pt: fillTokens(l.pt, tokens), en: fillTokens(l.en, tokens) };
+}
+function fillSteps(steps: Step[], tokens: Record<string, string>): Step[] {
+  return steps.map((s) => ({ ...s, body: fillL(s.body, tokens) }));
+}
+function fillAlerts(alerts: Alert[] | undefined, tokens: Record<string, string>) {
+  return alerts?.map((a) => ({ ...a, body: fillL(a.body, tokens) }));
+}
+function fillCard(card: CheckinCard, tokens: Record<string, string>): CheckinCard {
+  return {
+    ...card,
+    title: fillL(card.title, tokens),
+    tag: card.tag && fillL(card.tag, tokens),
+    steps: fillSteps(card.steps, tokens),
+    alerts: fillAlerts(card.alerts, tokens),
+    video: card.video && { ...card.video, label: fillL(card.video.label, tokens) },
+  };
+}
+
+/**
+ * Aplica os valores da unidade (torre, andar, número, vaga, horário de
+ * saída) no template de check-in/check-out do prédio — o resultado é gravado
+ * como conteúdo próprio do apartamento (não fica "ao vivo" ligado ao prédio,
+ * diferente de amenities/tourism/dining).
+ */
+function applyBuildingTemplate(
+  building: BuildingTemplate,
+  input: Pick<ApartmentFormInput, "tower" | "floor" | "unit" | "parking" | "checkoutTime">,
+): { checkin: Apartment["checkin"]; checkout: NonNullable<Apartment["checkout"]> } {
+  const tokens: Record<string, string> = {
+    TORRE: input.tower,
+    ANDAR: input.floor,
+    UNIDADE: input.unit,
+    VAGA: input.parking,
+    CHECKOUT_HORA: input.checkoutTime || "11h",
+  };
+  const { checkinTemplate: ci, checkoutTemplate: co } = building;
+  return {
+    checkin: {
+      sub: fillL(ci.sub, tokens),
+      cards: ci.cards.map((c) => fillCard(c, tokens)),
+    },
+    checkout: {
+      sub: fillL(co.sub, tokens),
+      steps: fillSteps(co.steps, tokens),
+    },
+  };
+}
+
+/**
+ * Tenta recuperar torre/andar/vaga/nº de hóspedes/horários a partir de
+ * `hero.facts` — só funciona quando os facts têm o formato que esta mesma
+ * função gera (`v.pt` bate com uma das legendas fixas abaixo); facts
+ * escritos à mão (ex.: o 1305C original) não batem e ficam em branco, o que
+ * é o comportamento seguro já esperado hoje.
+ */
+export function parseHeroFacts(facts: Apartment["hero"]["facts"]): {
+  tower: string;
+  floor: string;
+  parking: string;
+  maxGuests: string;
+  checkinTime: string;
+  checkoutTime: string;
+} {
+  const FIXED_CAPTIONS = ["Garagem", "Capacidade máxima", "Check-in", "Check-out"];
+  const find = (caption: string) => facts.find((f) => f.v.pt === caption);
+  // A legenda do fact de torre/andar não é fixa (é o próprio andar) — é
+  // reconhecido por eliminação: o único fact cuja legenda não é uma das fixas.
+  const towerFact = facts.find((f) => !FIXED_CAPTIONS.includes(f.v.pt));
+  const guests = find("Capacidade máxima");
+  return {
+    tower: towerFact?.k.pt ?? "",
+    floor: towerFact && towerFact.v.pt !== "—" ? towerFact.v.pt : "",
+    parking: find("Garagem")?.k.pt ?? "",
+    maxGuests: guests ? guests.k.pt.replace(/\s*hóspedes$/, "") : "",
+    checkinTime: find("Check-in")?.k.pt ?? "",
+    checkoutTime: find("Check-out")?.k.pt ?? "",
+  };
+}
+
+/** Converte as colunas JSON cruas do Prisma (`Building`) pro formato tipado. */
+export function toBuildingTemplate(row: {
+  amenities: unknown;
+  tourism: unknown;
+  dining: unknown;
+  checkinTemplate: unknown;
+  checkoutTemplate: unknown;
+}): BuildingTemplate {
+  return {
+    amenities: row.amenities as Apartment["amenities"],
+    tourism: row.tourism as Apartment["tourism"],
+    dining: row.dining as Apartment["dining"],
+    checkinTemplate: row.checkinTemplate as Apartment["checkin"],
+    checkoutTemplate: row.checkoutTemplate as NonNullable<Apartment["checkout"]>,
+  };
+}
+
+/**
+ * Sobrepõe o Lazer/Brasília/Onde Comer do prédio no conteúdo do apartamento
+ * — usado tanto no carregamento do guia público (`src/lib/apartments.ts`)
+ * quanto na prévia do formulário, pra garantir que os dois mostrem a mesma
+ * coisa. Ao vivo: sempre usa o valor atual do prédio, nunca o que estiver
+ * salvo em `content` (que fica só como base pra apartamento sem prédio).
+ */
+export function overlayBuildingLiveContent(
+  content: Apartment,
+  building: Pick<BuildingTemplate, "amenities" | "tourism" | "dining">,
+): Apartment {
+  return {
+    ...content,
+    amenities: building.amenities,
+    tourism: building.tourism,
+    dining: building.dining,
+  };
+}
 
 export type ApartmentFormInput = {
   building: string;
@@ -67,7 +200,14 @@ export function buildApartmentContent(
   input: ApartmentFormInput,
   hostName: string,
   base: Apartment = starterContent("Apartamento", input.unit, input.building),
+  building?: BuildingTemplate | null,
 ): Apartment {
+  // Só aplica o template do prédio se ele tiver check-in escrito (prédio novo
+  // nasce em branco, aí o comportamento é igual a não ter prédio nenhum).
+  const templated =
+    building && building.checkinTemplate.cards.length > 0
+      ? applyBuildingTemplate(building, input)
+      : null;
 
   const facts: Apartment["hero"]["facts"] = [];
   if (input.tower) facts.push({ k: t(input.tower), v: t(input.floor || "—") });
@@ -137,13 +277,13 @@ export function buildApartmentContent(
     building: input.building,
     hero: { ...base.hero, facts },
     checkin: {
-      ...base.checkin,
+      ...(templated ? templated.checkin : base.checkin),
       doorCode:
         input.doorCodeMode === "fixed" && input.doorCode
           ? { mode: "fixed", code: input.doorCode }
           : { mode: "per_stay" },
     },
-    checkout: base.checkout,
+    checkout: templated ? templated.checkout : base.checkout,
     wifi: {
       network: input.wifiNetwork,
       password: input.wifiPassword,

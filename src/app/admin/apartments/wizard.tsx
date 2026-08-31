@@ -3,7 +3,12 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Guide from "@/components/Guide";
-import { buildApartmentContent, type ApartmentFormInput } from "@/data/buildApartmentContent";
+import {
+  buildApartmentContent,
+  overlayBuildingLiveContent,
+  type ApartmentFormInput,
+  type BuildingTemplate,
+} from "@/data/buildApartmentContent";
 import { slugify } from "@/lib/slug";
 import {
   createApartmentDetailed,
@@ -43,6 +48,8 @@ const EMPTY: FormState = {
   label: "",
 };
 
+type BuildingOption = { id: string; name: string } & BuildingTemplate;
+
 export function ApartmentWizard({
   hostId,
   hostName,
@@ -50,6 +57,7 @@ export function ApartmentWizard({
   apartmentId,
   initial,
   existingContent,
+  buildings,
 }: {
   hostId: string;
   hostName: string;
@@ -57,6 +65,7 @@ export function ApartmentWizard({
   apartmentId?: string;
   initial?: FormState;
   existingContent?: Apartment;
+  buildings: BuildingOption[];
 }) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
@@ -76,10 +85,15 @@ export function ApartmentWizard({
     });
   }
 
-  const preview = useMemo<Apartment>(
-    () => buildApartmentContent(form, hostName, existingContent),
-    [form, hostName, existingContent],
+  const matchedBuilding = useMemo(
+    () => buildings.find((b) => b.name.trim().toLowerCase() === form.building.trim().toLowerCase()),
+    [buildings, form.building],
   );
+
+  const preview = useMemo<Apartment>(() => {
+    const content = buildApartmentContent(form, hostName, existingContent, matchedBuilding);
+    return matchedBuilding ? overlayBuildingLiveContent(content, matchedBuilding) : content;
+  }, [form, hostName, existingContent, matchedBuilding]);
 
   function confirm() {
     setError(null);
@@ -149,10 +163,23 @@ export function ApartmentWizard({
           Edifício
           <input
             className={field}
+            list="buildings-list"
             value={form.building}
             onChange={(e) => set("building", e.target.value)}
             placeholder="ex.: DF Plaza Shopping"
           />
+          <datalist id="buildings-list">
+            {buildings.map((b) => (
+              <option key={b.id} value={b.name} />
+            ))}
+          </datalist>
+          {form.building.trim() && (
+            <span className="text-[12.5px] text-soft">
+              {matchedBuilding
+                ? "✓ prédio já cadastrado — Lazer, guia da cidade e onde comer vêm dele"
+                : "Prédio novo — você cadastra o Lazer dele depois em \"Editar prédio\""}
+            </span>
+          )}
         </label>
         <label className={labelCls}>
           Número do apartamento
@@ -160,16 +187,26 @@ export function ApartmentWizard({
             className={field}
             value={form.unit}
             onChange={(e) => set("unit", e.target.value)}
-            placeholder="ex.: 1305C"
+            placeholder="ex.: 1305"
           />
         </label>
         <label className={labelCls}>
           Torre / bloco
-          <input className={field} value={form.tower} onChange={(e) => set("tower", e.target.value)} />
+          <input
+            className={field}
+            value={form.tower}
+            onChange={(e) => set("tower", e.target.value)}
+            placeholder="ex.: Torre C"
+          />
         </label>
         <label className={labelCls}>
           Andar
-          <input className={field} value={form.floor} onChange={(e) => set("floor", e.target.value)} />
+          <input
+            className={field}
+            value={form.floor}
+            onChange={(e) => set("floor", e.target.value)}
+            placeholder="ex.: 13º andar"
+          />
         </label>
         <label className={labelCls}>
           Vaga(s) na garagem
@@ -188,6 +225,7 @@ export function ApartmentWizard({
             className={field}
             value={form.maxGuests}
             onChange={(e) => set("maxGuests", e.target.value)}
+            placeholder="ex.: 4"
           />
         </label>
         <label className={labelCls}>
@@ -267,6 +305,7 @@ export function ApartmentWizard({
             className={field}
             value={form.wifiNetwork}
             onChange={(e) => set("wifiNetwork", e.target.value)}
+            placeholder="ex.: DF_Plaza_1305C"
           />
         </label>
         <label className={labelCls}>
@@ -275,6 +314,7 @@ export function ApartmentWizard({
             className={field}
             value={form.wifiPassword}
             onChange={(e) => set("wifiPassword", e.target.value)}
+            placeholder="ex.: casa1305plaza"
           />
         </label>
       </div>
@@ -335,6 +375,7 @@ export function ApartmentWizard({
             className={field}
             value={form.coHostName}
             onChange={(e) => set("coHostName", e.target.value)}
+            placeholder="ex.: Marcos"
           />
         </label>
         <label className={labelCls}>
@@ -343,6 +384,7 @@ export function ApartmentWizard({
             className={field}
             value={form.coHostWhatsapp}
             onChange={(e) => set("coHostWhatsapp", e.target.value)}
+            placeholder="+55 61 98888-8888"
           />
         </label>
       </div>
@@ -358,6 +400,7 @@ export function ApartmentWizard({
           className={field}
           value={form.internalNotes}
           onChange={(e) => set("internalNotes", e.target.value)}
+          placeholder={"A janela do quarto 2 emperra\nVentilador da varanda em manutenção"}
         />
       </label>
 

@@ -73,7 +73,9 @@ model Apartment {
   label     String // rótulo interno ("Ap 1305C · DF Plaza")
   content   Json // guia bilíngue em JSONB — shape = ApartmentContent (src/data/types.ts)
   internalNotes String? // observações e itens em manutenção — uso interno, nunca aparece no guia público
+  buildingId String?
   host      User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  building  Building?     @relation(fields: [buildingId], references: [id])
   stays     Stay[]
   catalog   CatalogItem[]
   orders    Order[]
@@ -82,6 +84,25 @@ model Apartment {
 
   @@index([hostId])
   @@index([active])
+  @@index([buildingId])
+}
+
+// ─────────── Prédio: conteúdo compartilhado entre apartamentos ───────────
+
+model Building {
+  id               String      @id @default(cuid())
+  name             String      @unique
+  // Ao vivo: editar aqui reflete em todos os apartamentos ligados na hora.
+  amenities        Json // { sub: L, items: Amenity[] } — mesma forma de Apartment.content.amenities
+  tourism          Json // { sub: L, items: Place[] }
+  dining           Json // { sub: L, items: Place[] }
+  // Template: copiado (com marcadores {{TORRE}} etc. substituídos) para
+  // Apartment.content.checkin/checkout na criação/edição — não é ao vivo.
+  checkinTemplate  Json
+  checkoutTemplate Json
+  apartments       Apartment[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 // ─────────── Estadia: dados dinâmicos + janela de disponibilidade ───────────
