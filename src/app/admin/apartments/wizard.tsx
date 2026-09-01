@@ -10,6 +10,7 @@ import {
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
 import { slugify } from "@/lib/slug";
+import { formatPhoneBR } from "@/lib/phone";
 import {
   createApartmentDetailed,
   updateApartmentDetailed,
@@ -64,6 +65,70 @@ const EMPTY: FormState = {
   slug: "",
   label: "",
 };
+
+/**
+ * Campo de texto livre + lista clicável dos prédios já cadastrados (filtra
+ * enquanto digita). Digitar um nome que não bate com nenhum da lista é
+ * válido — cria um prédio novo. `<input list>`/`<datalist>` nativo tem
+ * suporte inconsistente entre navegadores pra "clicar e já ver as opções",
+ * por isso um combobox próprio aqui.
+ */
+function BuildingCombobox({
+  value,
+  onChange,
+  buildings,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  buildings: { id: string; name: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const query = value.trim().toLowerCase();
+  const filtered = query
+    ? buildings.filter((b) => b.name.toLowerCase().includes(query))
+    : buildings;
+
+  return (
+    <div className="relative">
+      <input
+        className={field}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder="ex.: DF Plaza Shopping"
+        autoComplete="off"
+      />
+      {open && buildings.length > 0 && (
+        <div className="absolute z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-xl border border-line bg-card shadow-[0_6px_20px_rgb(59_45_36/0.14)]">
+          {filtered.length > 0 ? (
+            filtered.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onChange(b.name);
+                  setOpen(false);
+                }}
+                className="block w-full px-3 py-2 text-left text-[14px] text-ink hover:bg-blush"
+              >
+                {b.name}
+              </button>
+            ))
+          ) : (
+            <p className="px-3 py-2 text-[13px] text-soft">
+              Nenhum prédio com esse nome — será criado um novo.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 type OverridableSection = "rules" | "home" | "amenities" | "tourism" | "dining";
 
@@ -287,18 +352,11 @@ export function ApartmentWizard({
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className={labelCls}>
           Edifício
-          <input
-            className={field}
-            list="buildings-list"
+          <BuildingCombobox
             value={form.building}
-            onChange={(e) => set("building", e.target.value)}
-            placeholder="ex.: DF Plaza Shopping"
+            onChange={(v) => set("building", v)}
+            buildings={buildings}
           />
-          <datalist id="buildings-list">
-            {buildings.map((b) => (
-              <option key={b.id} value={b.name} />
-            ))}
-          </datalist>
           {form.building.trim() && (
             <span className="text-[12.5px] text-soft">
               {matchedBuilding
@@ -605,7 +663,7 @@ export function ApartmentWizard({
           <input
             className={field}
             value={form.hostWhatsapp}
-            onChange={(e) => set("hostWhatsapp", e.target.value)}
+            onChange={(e) => set("hostWhatsapp", formatPhoneBR(e.target.value))}
             placeholder="+55 61 99999-9999"
           />
         </label>
@@ -624,7 +682,7 @@ export function ApartmentWizard({
           <input
             className={field}
             value={form.coHostWhatsapp}
-            onChange={(e) => set("coHostWhatsapp", e.target.value)}
+            onChange={(e) => set("coHostWhatsapp", formatPhoneBR(e.target.value))}
             placeholder="+55 61 98888-8888"
           />
         </label>
