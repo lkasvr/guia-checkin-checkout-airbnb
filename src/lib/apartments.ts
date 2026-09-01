@@ -2,7 +2,10 @@ import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { isSameDayBR } from "@/lib/tz";
 import type { Apartment } from "@/data/types";
-import { overlayBuildingLiveContent } from "@/data/buildApartmentContent";
+import {
+  overlayBuildingLiveContent,
+  type ApartmentOverrides,
+} from "@/data/buildApartmentContent";
 
 /** Estadia vigente, entregue ao guia. Só existe dentro da janela da hospedagem. */
 export type StayInfo = {
@@ -23,6 +26,8 @@ export type GuideData = {
   stay: StayInfo | null;
 };
 
+const BLANK_L = { pt: "", en: "" };
+
 /**
  * Carrega o apartamento ativo pelo slug + a estadia vigente (agora dentro da
  * janela, não cancelada) numa ÚNICA consulta. Retorna null se o apartamento não
@@ -38,7 +43,10 @@ export const getGuide = cache(
         slug: true,
         label: true,
         content: true,
-        building: { select: { amenities: true, tourism: true, dining: true } },
+        overrides: true,
+        building: {
+          select: { rules: true, home: true, amenities: true, tourism: true, dining: true },
+        },
         stays: {
           where: {
             status: { not: "CANCELED" },
@@ -60,12 +68,26 @@ export const getGuide = cache(
 
     const s = row.stays[0];
     const rawContent = row.content as unknown as Apartment;
+    const overrides = (row.overrides as ApartmentOverrides | null) ?? {};
     const content = row.building
-      ? overlayBuildingLiveContent(rawContent, {
-          amenities: row.building.amenities as unknown as Apartment["amenities"],
-          tourism: row.building.tourism as unknown as Apartment["tourism"],
-          dining: row.building.dining as unknown as Apartment["dining"],
-        })
+      ? overlayBuildingLiveContent(
+          rawContent,
+          {
+            rules: (row.building.rules as unknown as Apartment["rules"] | null) ?? {
+              sub: BLANK_L,
+              items: [],
+            },
+            home: (row.building.home as unknown as Apartment["home"] | null) ?? {
+              sub: BLANK_L,
+              slides: [],
+              accordions: [],
+            },
+            amenities: row.building.amenities as unknown as Apartment["amenities"],
+            tourism: row.building.tourism as unknown as Apartment["tourism"],
+            dining: row.building.dining as unknown as Apartment["dining"],
+          },
+          overrides,
+        )
       : rawContent;
     return {
       id: row.id,

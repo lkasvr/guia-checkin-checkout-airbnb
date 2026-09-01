@@ -1,15 +1,44 @@
 import type { Apartment, Alert, CheckinCard, L, Rule, Step } from "@/data/types";
 import { starterContent } from "@/data/starter";
+import {
+  amenitiesToContent,
+  checkinToContent,
+  checkoutToContent,
+  homeToContent,
+  placesToContent,
+  rulesToContent,
+  type AmenitiesValue,
+  type CheckinValue,
+  type CheckoutValue,
+  type HomeValue,
+  type PlacesValue,
+  type RulesValue,
+} from "@/data/sectionContent";
 
 const t = (pt: string, en?: string): L => ({ pt, en: en ?? pt });
 
 /** Conteúdo de prédio relevante pra montar um apartamento (`Building`, ver schema.prisma). */
 export type BuildingTemplate = {
+  rules: Apartment["rules"];
+  home: Apartment["home"];
   amenities: Apartment["amenities"];
   tourism: Apartment["tourism"];
   dining: Apartment["dining"];
   checkinTemplate: Apartment["checkin"];
   checkoutTemplate: NonNullable<Apartment["checkout"]>;
+};
+
+/**
+ * `true` numa seção = este apartamento usa o `content` próprio dela em vez
+ * de herdar ao vivo do prédio (`Apartment.overrides`, ver schema.prisma).
+ * Ausente/false = herda, comportamento padrão.
+ */
+export type ApartmentOverrides = {
+  rules?: boolean;
+  home?: boolean;
+  amenities?: boolean;
+  tourism?: boolean;
+  dining?: boolean;
 };
 
 /** Troca `{{TOKEN}}` pelo valor correspondente — usado no template de check-in/check-out do prédio. */
@@ -100,8 +129,13 @@ export function parseHeroFacts(facts: Apartment["hero"]["facts"]): {
   };
 }
 
+const BLANK_RULES: Apartment["rules"] = { sub: t(""), items: [] };
+const BLANK_HOME: Apartment["home"] = { sub: t(""), slides: [], accordions: [] };
+
 /** Converte as colunas JSON cruas do Prisma (`Building`) pro formato tipado. */
 export function toBuildingTemplate(row: {
+  rules: unknown;
+  home: unknown;
   amenities: unknown;
   tourism: unknown;
   dining: unknown;
@@ -109,6 +143,8 @@ export function toBuildingTemplate(row: {
   checkoutTemplate: unknown;
 }): BuildingTemplate {
   return {
+    rules: (row.rules as Apartment["rules"] | null) ?? BLANK_RULES,
+    home: (row.home as Apartment["home"] | null) ?? BLANK_HOME,
     amenities: row.amenities as Apartment["amenities"],
     tourism: row.tourism as Apartment["tourism"],
     dining: row.dining as Apartment["dining"],
@@ -118,21 +154,28 @@ export function toBuildingTemplate(row: {
 }
 
 /**
- * Sobrepõe o Lazer/Brasília/Onde Comer do prédio no conteúdo do apartamento
- * — usado tanto no carregamento do guia público (`src/lib/apartments.ts`)
+ * Sobrepõe o conteúdo compartilhado do prédio no conteúdo do apartamento —
+ * usado tanto no carregamento do guia público (`src/lib/apartments.ts`)
  * quanto na prévia do formulário, pra garantir que os dois mostrem a mesma
- * coisa. Ao vivo: sempre usa o valor atual do prédio, nunca o que estiver
- * salvo em `content` (que fica só como base pra apartamento sem prédio).
+ * coisa. Por seção, `overrides.<secao>` decide: `true` = usa o `content`
+ * próprio do apartamento (personalizado); ausente/false = herda ao vivo do
+ * prédio. Regras nunca-personalizadas continuam somadas (genéricas do
+ * prédio + específicas do apartamento) em vez de substituídas.
  */
 export function overlayBuildingLiveContent(
   content: Apartment,
-  building: Pick<BuildingTemplate, "amenities" | "tourism" | "dining">,
+  building: Pick<BuildingTemplate, "rules" | "home" | "amenities" | "tourism" | "dining">,
+  overrides: ApartmentOverrides = {},
 ): Apartment {
   return {
     ...content,
-    amenities: building.amenities,
-    tourism: building.tourism,
-    dining: building.dining,
+    rules: overrides.rules
+      ? content.rules
+      : { sub: building.rules.sub, items: [...building.rules.items, ...content.rules.items] },
+    home: overrides.home ? content.home : building.home,
+    amenities: overrides.amenities ? content.amenities : building.amenities,
+    tourism: overrides.tourism ? content.tourism : building.tourism,
+    dining: overrides.dining ? content.dining : building.dining,
   };
 }
 
@@ -156,6 +199,16 @@ export type ApartmentFormInput = {
   coHostName: string;
   coHostWhatsapp: string;
   internalNotes: string;
+  /** Quais seções este apartamento personalizou (em vez de herdar do prédio). */
+  overrides: ApartmentOverrides;
+  overrideRules?: RulesValue;
+  overrideHome?: HomeValue;
+  overrideAmenities?: AmenitiesValue;
+  overrideTourism?: PlacesValue;
+  overrideDining?: PlacesValue;
+  /** Edição manual do check-in/check-out depois da substituição automática do template. */
+  checkinOverride?: CheckinValue;
+  checkoutOverride?: CheckoutValue;
 };
 
 /** Só dígitos, com `+55` na frente — formato `tel:` a partir do que a pessoa digitou. */
@@ -277,20 +330,43 @@ export function buildApartmentContent(
     building: input.building,
     hero: { ...base.hero, facts },
     checkin: {
-      ...(templated ? templated.checkin : base.checkin),
+      ...(input.checkinOverride
+        ? checkinToContent(input.checkinOverride)
+        : templated
+          ? templated.checkin
+          : base.checkin),
       doorCode:
         input.doorCodeMode === "fixed" && input.doorCode
           ? { mode: "fixed", code: input.doorCode }
           : { mode: "per_stay" },
     },
-    checkout: templated ? templated.checkout : base.checkout,
+    checkout: input.checkoutOverride
+      ? checkoutToContent(input.checkoutOverride)
+      : templated
+        ? templated.checkout
+        : base.checkout,
     wifi: {
       network: input.wifiNetwork,
       password: input.wifiPassword,
       speed: base.wifi.speed,
     },
-    rules: { ...base.rules, items: rules },
+    rules:
+      input.overrides.rules && input.overrideRules
+        ? rulesToContent(input.overrideRules)
+        : { ...base.rules, items: rules },
     contacts: { ...base.contacts, items: contacts },
     footer: { ...base.footer, whoName: hostName, phones },
+    ...(input.overrides.home && input.overrideHome
+      ? { home: homeToContent(input.overrideHome) }
+      : {}),
+    ...(input.overrides.amenities && input.overrideAmenities
+      ? { amenities: amenitiesToContent(input.overrideAmenities) }
+      : {}),
+    ...(input.overrides.tourism && input.overrideTourism
+      ? { tourism: placesToContent(input.overrideTourism) }
+      : {}),
+    ...(input.overrides.dining && input.overrideDining
+      ? { dining: placesToContent(input.overrideDining) }
+      : {}),
   };
 }

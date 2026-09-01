@@ -50,6 +50,8 @@ async function resolveBuilding(
     update: {},
     create: {
       name: trimmed,
+      rules: blank.rules as object,
+      home: blank.home as object,
       amenities: blank.amenities as object,
       tourism: blank.tourism as object,
       dining: blank.dining as object,
@@ -188,6 +190,7 @@ export async function createApartmentDetailed(
         content: content as object,
         internalNotes: payload.internalNotes || null,
         buildingId: building?.id ?? null,
+        overrides: payload.overrides as object,
       },
     });
   } catch (e) {
@@ -240,6 +243,7 @@ export async function updateApartmentDetailed(
         content: content as object,
         internalNotes: payload.internalNotes || null,
         buildingId: building?.id ?? null,
+        overrides: payload.overrides as object,
       },
     });
   } catch (e) {

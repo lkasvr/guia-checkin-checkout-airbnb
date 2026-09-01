@@ -3,41 +3,126 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
+  createBuilding,
   updateBuilding,
-  type BuildingAmenityInput,
   type BuildingEditPayload,
-  type BuildingPlaceInput,
 } from "@/app/admin/buildings/actions";
+import {
+  AmenityListEditor,
+  CheckinCardsEditor,
+  CheckoutStepsEditor,
+  HomeEditor,
+  PlaceListEditor,
+  RulesListEditor,
+} from "@/app/admin/section-editors";
+import type { BuildingTemplate } from "@/data/buildApartmentContent";
+import {
+  amenitiesFromContent,
+  checkinFromContent,
+  checkoutFromContent,
+  homeFromContent,
+  placesFromContent,
+  rulesFromContent,
+} from "@/data/sectionContent";
 
 const field =
   "rounded-xl border border-line bg-bg px-3 py-2 text-[15px] text-ink outline-none focus:border-coffee";
 const labelCls = "flex flex-col gap-1 text-[13px] font-semibold text-soft";
-const rowCls = "grid gap-2 rounded-xl border border-line p-3 sm:grid-cols-2";
-const removeCls = "text-[13px] font-semibold text-terra";
+const sectionTitle = "mt-6 font-display text-[19px] font-normal";
 
-const emptyAmenity: BuildingAmenityInput = { title: "", text: "", wide: false };
-const emptyPlace: BuildingPlaceInput = { title: "", text: "", meta: "", site: "", maps: "" };
+export type BuildingOption = { id: string; name: string } & BuildingTemplate;
+
+type Section = keyof BuildingEditPayload;
+
+function CopyFromSelector({
+  buildings,
+  onApply,
+}: {
+  buildings: BuildingOption[];
+  onApply: (sourceId: string) => void;
+}) {
+  const [selected, setSelected] = useState("");
+  if (buildings.length === 0) return null;
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-2">
+      <select
+        className={`${field} text-[13.5px]`}
+        value={selected}
+        onChange={(e) => setSelected(e.target.value)}
+      >
+        <option value="">Copiar de…</option>
+        {buildings.map((b) => (
+          <option key={b.id} value={b.id}>
+            {b.name}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        disabled={!selected}
+        onClick={() => selected && onApply(selected)}
+        className="rounded-full border border-line bg-card px-4 py-2 text-[13px] font-semibold text-soft disabled:opacity-50"
+      >
+        Aplicar
+      </button>
+    </div>
+  );
+}
 
 export function BuildingEditor({
+  mode,
   buildingId,
   buildingName,
   initial,
+  buildings,
 }: {
-  buildingId: string;
-  buildingName: string;
+  mode: "create" | "edit";
+  buildingId?: string;
+  buildingName?: string;
   initial: BuildingEditPayload;
+  /** Todos os outros prédios já cadastrados — alimenta o "Copiar de" em cada seção. */
+  buildings: BuildingOption[];
 }) {
   const router = useRouter();
-  const [form, setForm] = useState(initial);
+  const [name, setName] = useState(buildingName ?? "");
+  const [form, setForm] = useState<BuildingEditPayload>(initial);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  function copyFrom(section: Section, sourceId: string) {
+    const src = buildings.find((b) => b.id === sourceId);
+    if (!src) return;
+    setForm((f) => {
+      switch (section) {
+        case "rules":
+          return { ...f, rules: rulesFromContent(src.rules) };
+        case "home":
+          return { ...f, home: homeFromContent(src.home) };
+        case "checkin":
+          return { ...f, checkin: checkinFromContent(src.checkinTemplate) };
+        case "checkout":
+          return { ...f, checkout: checkoutFromContent(src.checkoutTemplate) };
+        case "amenities":
+          return { ...f, amenities: amenitiesFromContent(src.amenities) };
+        case "tourism":
+          return { ...f, tourism: placesFromContent(src.tourism) };
+        case "dining":
+          return { ...f, dining: placesFromContent(src.dining) };
+      }
+    });
+  }
 
   function save() {
     setError(null);
     startTransition(async () => {
       try {
-        await updateBuilding(buildingId, form);
-        router.push("/admin");
+        if (mode === "create") {
+          const created = await createBuilding(name, form);
+          router.push(`/admin/buildings/${created.id}/edit`);
+        } else {
+          await updateBuilding(buildingId!, form);
+          router.push("/admin");
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Não foi possível salvar.");
       }
@@ -46,111 +131,91 @@ export function BuildingEditor({
 
   return (
     <div>
-      <h1 className="font-display text-[30px] font-normal">Editar prédio</h1>
-      <p className="mt-1 text-[15px] text-soft">
-        <b className="text-ink">{buildingName}</b>. Lazer, guia da cidade e onde comer são
-        compartilhados — mudar aqui atualiza todos os apartamentos deste prédio.
-      </p>
+      <h1 className="font-display text-[30px] font-normal">
+        {mode === "create" ? "Novo prédio" : "Editar prédio"}
+      </h1>
+      {mode === "create" ? (
+        <label className={`${labelCls} mt-3`}>
+          Nome do prédio
+          <input
+            className={field}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="ex.: Blend Apartments"
+          />
+        </label>
+      ) : (
+        <p className="mt-1 text-[15px] text-soft">
+          <b className="text-ink">{buildingName}</b>. Regras, A Casa, Lazer, guia da cidade e
+          onde comer são compartilhados — mudar aqui atualiza todos os apartamentos deste
+          prédio (menos o que algum apartamento tiver personalizado). Check-in/check-out são
+          template — só valem pra apartamentos criados/editados depois desta mudança.
+        </p>
+      )}
 
-      <h2 className="mt-6 font-display text-[19px] font-normal">Lazer</h2>
-      <label className={`${labelCls} mt-3`}>
-        Texto de apoio
-        <input
-          className={field}
-          value={form.amenitiesSub}
-          placeholder="ex.: Tudo no Andar M (Mezanino), é só descer de elevador."
-          onChange={(e) => setForm((f) => ({ ...f, amenitiesSub: e.target.value }))}
-        />
-      </label>
-      <div className="mt-3 grid gap-2">
-        {form.amenities.map((a, i) => (
-          <div key={i} className={rowCls}>
-            <label className={labelCls}>
-              Título
-              <input
-                className={field}
-                value={a.title}
-                placeholder="ex.: Piscina infinita · 25 m"
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    amenities: f.amenities.map((x, j) =>
-                      j === i ? { ...x, title: e.target.value } : x,
-                    ),
-                  }))
-                }
-              />
-            </label>
-            <label className={labelCls}>
-              Texto
-              <input
-                className={field}
-                value={a.text}
-                placeholder="ex.: Traje de banho obrigatório."
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    amenities: f.amenities.map((x, j) =>
-                      j === i ? { ...x, text: e.target.value } : x,
-                    ),
-                  }))
-                }
-              />
-            </label>
-            <div className="flex items-center justify-between sm:col-span-2">
-              <label className="flex items-center gap-2 text-[13px] text-soft">
-                <input
-                  type="checkbox"
-                  checked={a.wide}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      amenities: f.amenities.map((x, j) =>
-                        j === i ? { ...x, wide: e.target.checked } : x,
-                      ),
-                    }))
-                  }
-                />
-                Card largo (destaque)
-              </label>
-              <button
-                type="button"
-                className={removeCls}
-                onClick={() =>
-                  setForm((f) => ({ ...f, amenities: f.amenities.filter((_, j) => j !== i) }))
-                }
-              >
-                Remover
-              </button>
-            </div>
-          </div>
-        ))}
-        <button
-          type="button"
-          className="justify-self-start text-[13.5px] font-semibold text-terra underline underline-offset-2"
-          onClick={() =>
-            setForm((f) => ({ ...f, amenities: [...f.amenities, { ...emptyAmenity }] }))
-          }
-        >
-          + Item de lazer
-        </button>
+      <h2 className={sectionTitle}>Regras da Casa</h2>
+      <p className="mt-1 text-[13px] text-soft">
+        Regras gerais do condomínio (silêncio, lixo, garagem...). Cada apartamento ainda soma
+        suas próprias regras específicas a estas.
+      </p>
+      <div className="mt-3">
+        <CopyFromSelector buildings={buildings} onApply={(id) => copyFrom("rules", id)} />
+        <RulesListEditor value={form.rules} onChange={(rules) => setForm((f) => ({ ...f, rules }))} />
       </div>
 
-      <PlaceList
-        title="Guia da cidade"
-        sub={form.tourismSub}
-        onSub={(v) => setForm((f) => ({ ...f, tourismSub: v }))}
-        items={form.tourism}
-        onItems={(items) => setForm((f) => ({ ...f, tourism: items }))}
-      />
+      <h2 className={sectionTitle}>A Casa</h2>
+      <p className="mt-1 text-[13px] text-soft">
+        Destaques do apartamento-modelo e equipamentos com instrução de uso (ex.: cafeteira).
+      </p>
+      <div className="mt-3">
+        <CopyFromSelector buildings={buildings} onApply={(id) => copyFrom("home", id)} />
+        <HomeEditor value={form.home} onChange={(home) => setForm((f) => ({ ...f, home }))} />
+      </div>
 
-      <PlaceList
-        title="Onde Comer"
-        sub={form.diningSub}
-        onSub={(v) => setForm((f) => ({ ...f, diningSub: v }))}
-        items={form.dining}
-        onItems={(items) => setForm((f) => ({ ...f, dining: items }))}
-      />
+      <h2 className={sectionTitle}>Check-in</h2>
+      <div className="mt-3">
+        <CopyFromSelector buildings={buildings} onApply={(id) => copyFrom("checkin", id)} />
+        <CheckinCardsEditor
+          value={form.checkin}
+          onChange={(checkin) => setForm((f) => ({ ...f, checkin }))}
+        />
+      </div>
+
+      <h2 className={sectionTitle}>Check-out</h2>
+      <div className="mt-3">
+        <CopyFromSelector buildings={buildings} onApply={(id) => copyFrom("checkout", id)} />
+        <CheckoutStepsEditor
+          value={form.checkout}
+          onChange={(checkout) => setForm((f) => ({ ...f, checkout }))}
+        />
+      </div>
+
+      <h2 className={sectionTitle}>Lazer</h2>
+      <div className="mt-3">
+        <CopyFromSelector buildings={buildings} onApply={(id) => copyFrom("amenities", id)} />
+        <AmenityListEditor
+          value={form.amenities}
+          onChange={(amenities) => setForm((f) => ({ ...f, amenities }))}
+        />
+      </div>
+
+      <h2 className={sectionTitle}>Guia da cidade</h2>
+      <div className="mt-3">
+        <CopyFromSelector buildings={buildings} onApply={(id) => copyFrom("tourism", id)} />
+        <PlaceListEditor
+          value={form.tourism}
+          onChange={(tourism) => setForm((f) => ({ ...f, tourism }))}
+        />
+      </div>
+
+      <h2 className={sectionTitle}>Onde Comer</h2>
+      <div className="mt-3">
+        <CopyFromSelector buildings={buildings} onApply={(id) => copyFrom("dining", id)} />
+        <PlaceListEditor
+          value={form.dining}
+          onChange={(dining) => setForm((f) => ({ ...f, dining }))}
+        />
+      </div>
 
       {error && (
         <p className="mt-4 rounded-xl border border-[rgb(168_69_46/0.35)] bg-terra-soft p-3 text-[14px] text-terra">
@@ -160,106 +225,11 @@ export function BuildingEditor({
 
       <button
         onClick={save}
-        disabled={pending}
+        disabled={pending || (mode === "create" && !name.trim())}
         className="mt-7 w-full rounded-full bg-ink px-6 py-3 text-[15px] font-bold text-bg disabled:opacity-60"
       >
-        {pending ? "Salvando…" : "Salvar"}
+        {pending ? "Salvando…" : mode === "create" ? "Criar prédio" : "Salvar"}
       </button>
     </div>
-  );
-}
-
-function PlaceList({
-  title,
-  sub,
-  onSub,
-  items,
-  onItems,
-}: {
-  title: string;
-  sub: string;
-  onSub: (v: string) => void;
-  items: BuildingPlaceInput[];
-  onItems: (items: BuildingPlaceInput[]) => void;
-}) {
-  return (
-    <>
-      <h2 className="mt-6 font-display text-[19px] font-normal">{title}</h2>
-      <label className={`${labelCls} mt-3`}>
-        Texto de apoio
-        <input className={field} value={sub} onChange={(e) => onSub(e.target.value)} />
-      </label>
-      <div className="mt-3 grid gap-2">
-        {items.map((p, i) => (
-          <div key={i} className={rowCls}>
-            <label className={labelCls}>
-              Nome
-              <input
-                className={field}
-                value={p.title}
-                onChange={(e) =>
-                  onItems(items.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))
-                }
-              />
-            </label>
-            <label className={labelCls}>
-              Categoria
-              <input
-                className={field}
-                value={p.meta}
-                placeholder="ex.: Arquitetura"
-                onChange={(e) =>
-                  onItems(items.map((x, j) => (j === i ? { ...x, meta: e.target.value } : x)))
-                }
-              />
-            </label>
-            <label className={`${labelCls} sm:col-span-2`}>
-              Texto
-              <input
-                className={field}
-                value={p.text}
-                onChange={(e) =>
-                  onItems(items.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)))
-                }
-              />
-            </label>
-            <label className={labelCls}>
-              Site (opcional)
-              <input
-                className={field}
-                value={p.site}
-                onChange={(e) =>
-                  onItems(items.map((x, j) => (j === i ? { ...x, site: e.target.value } : x)))
-                }
-              />
-            </label>
-            <label className={labelCls}>
-              Endereço p/ mapa (opcional)
-              <input
-                className={field}
-                value={p.maps}
-                onChange={(e) =>
-                  onItems(items.map((x, j) => (j === i ? { ...x, maps: e.target.value } : x)))
-                }
-              />
-            </label>
-            <button
-              type="button"
-              className={`${removeCls} justify-self-start sm:col-span-2`}
-              onClick={() => onItems(items.filter((_, j) => j !== i))}
-            >
-              Remover
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          className="justify-self-start text-[13.5px] font-semibold text-terra underline underline-offset-2"
-          onClick={() => onItems([...items, { ...emptyPlace }])}
-        >
-          + Item
-        </button>
-      </div>
-    </>
   );
 }

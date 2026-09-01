@@ -3,36 +3,74 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/app/admin/actions";
-import type { L } from "@/data/types";
-
-const t = (s: string): L => ({ pt: s, en: s });
-
-export type BuildingAmenityInput = { title: string; text: string; wide: boolean };
-export type BuildingPlaceInput = {
-  title: string;
-  text: string;
-  meta: string;
-  site: string;
-  maps: string;
-};
+import {
+  amenitiesToContent,
+  checkinToContent,
+  checkoutToContent,
+  homeToContent,
+  placesToContent,
+  rulesToContent,
+  type AmenitiesValue,
+  type CheckinValue,
+  type CheckoutValue,
+  type HomeValue,
+  type PlacesValue,
+  type RulesValue,
+} from "@/data/sectionContent";
 
 export type BuildingEditPayload = {
-  amenitiesSub: string;
-  amenities: BuildingAmenityInput[];
-  tourismSub: string;
-  tourism: BuildingPlaceInput[];
-  diningSub: string;
-  dining: BuildingPlaceInput[];
+  rules: RulesValue;
+  home: HomeValue;
+  checkin: CheckinValue;
+  checkout: CheckoutValue;
+  amenities: AmenitiesValue;
+  tourism: PlacesValue;
+  dining: PlacesValue;
 };
 
-/** Imagem genérica pra item de Lazer até o upload de foto existir de verdade. */
-const PLACEHOLDER_IMG = "/media/predio.webp";
+function buildData(payload: BuildingEditPayload) {
+  return {
+    rules: rulesToContent(payload.rules) as object,
+    home: homeToContent(payload.home) as object,
+    checkinTemplate: checkinToContent(payload.checkin) as object,
+    checkoutTemplate: checkoutToContent(payload.checkout) as object,
+    amenities: amenitiesToContent(payload.amenities) as object,
+    tourism: placesToContent(payload.tourism) as object,
+    dining: placesToContent(payload.dining) as object,
+  };
+}
 
 /**
- * Grava o conteúdo compartilhado de um prédio (Lazer, Guia de cidade, Onde
- * Comer) — ao vivo: todo apartamento ligado a este prédio reflete a mudança
- * na próxima vez que o guia carregar. Check-in/check-out (template por
- * unidade) não são editados aqui, ver `buildApartmentContent.ts`.
+ * Cria um prédio do zero (ou a partir de seções copiadas de outro, já
+ * aplicadas no formulário antes de salvar). Nome precisa ser único — ao
+ * contrário do `resolveBuilding` implícito (que reaproveita em silêncio
+ * quando o nome já existe), aqui é uma criação explícita: colisão é erro.
+ */
+export async function createBuilding(
+  name: string,
+  payload: BuildingEditPayload,
+): Promise<{ id: string }> {
+  await requireAdmin();
+
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error("Informe o nome do prédio");
+
+  const taken = await prisma.building.findUnique({ where: { name: trimmed }, select: { id: true } });
+  if (taken) throw new Error(`Já existe um prédio chamado "${trimmed}"`);
+
+  const building = await prisma.building.create({
+    data: { name: trimmed, ...buildData(payload) },
+  });
+  revalidatePath("/admin");
+  return { id: building.id };
+}
+
+/**
+ * Grava o conteúdo compartilhado de um prédio — ao vivo: todo apartamento
+ * ligado a este prédio reflete a mudança na próxima vez que o guia carregar
+ * (exceto seções que o apartamento tenha personalizado, `Apartment.overrides`).
+ * Check-in/check-out são template (marcadores da unidade), copiados pro
+ * apartamento na criação/edição — editar aqui não muda quem já foi criado.
  */
 export async function updateBuilding(buildingId: string, payload: BuildingEditPayload) {
   await requireAdmin();
@@ -43,40 +81,9 @@ export async function updateBuilding(buildingId: string, payload: BuildingEditPa
   });
   if (!building) throw new Error("Prédio não encontrado");
 
-  const amenities = {
-    sub: t(payload.amenitiesSub),
-    items: payload.amenities
-      .filter((a) => a.title.trim())
-      .map((a) => ({
-        img: PLACEHOLDER_IMG,
-        title: t(a.title.trim()),
-        text: t(a.text.trim()),
-        wide: a.wide,
-      })),
-  };
-  const toPlace = (p: BuildingPlaceInput) => ({
-    title: p.title.trim(),
-    text: t(p.text.trim()),
-    meta: p.meta.trim(),
-    ...(p.site.trim() ? { site: p.site.trim() } : {}),
-    ...(p.maps.trim() ? { maps: p.maps.trim() } : {}),
-  });
-  const tourism = {
-    sub: t(payload.tourismSub),
-    items: payload.tourism.filter((p) => p.title.trim()).map(toPlace),
-  };
-  const dining = {
-    sub: t(payload.diningSub),
-    items: payload.dining.filter((p) => p.title.trim()).map(toPlace),
-  };
-
   await prisma.building.update({
     where: { id: buildingId },
-    data: {
-      amenities: amenities as object,
-      tourism: tourism as object,
-      dining: dining as object,
-    },
+    data: buildData(payload),
   });
   revalidatePath("/admin");
   revalidatePath(`/admin/buildings/${buildingId}/edit`);

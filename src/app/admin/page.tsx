@@ -77,8 +77,8 @@ export default async function AdminHome() {
 
       <h2 className="mt-8 font-display text-[21px] font-normal">Prédios</h2>
       <p className="mt-1 text-[15px] text-soft">
-        Lazer, guia da cidade e onde comer — compartilhado entre os apartamentos do mesmo prédio.
-        Um prédio novo é criado automaticamente ao preencher o Edifício na criação de um apartamento.
+        Regras, A Casa, Lazer, guia da cidade e onde comer — compartilhado entre os apartamentos
+        do mesmo prédio.
       </p>
       <div className="mt-3 grid gap-1.5">
         {buildings.map((b) => (
@@ -101,6 +101,12 @@ export default async function AdminHome() {
         {buildings.length === 0 && (
           <p className="text-[14px] text-soft">Nenhum prédio ainda.</p>
         )}
+        <Link
+          href="/admin/buildings/new"
+          className="mt-1 text-[13.5px] font-semibold text-terra underline underline-offset-2"
+        >
+          + Novo prédio
+        </Link>
       </div>
 
       <h2 className="mt-8 font-display text-[21px] font-normal">Cadastrados</h2>

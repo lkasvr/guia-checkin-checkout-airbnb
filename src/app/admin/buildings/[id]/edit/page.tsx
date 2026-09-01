@@ -1,10 +1,30 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { BuildingEditor } from "@/app/admin/buildings/building-editor";
+import { BuildingEditor, type BuildingOption } from "@/app/admin/buildings/building-editor";
 import type { BuildingEditPayload } from "@/app/admin/buildings/actions";
-import type { Apartment } from "@/data/types";
+import { toBuildingTemplate } from "@/data/buildApartmentContent";
+import {
+  amenitiesFromContent,
+  checkinFromContent,
+  checkoutFromContent,
+  homeFromContent,
+  placesFromContent,
+  rulesFromContent,
+} from "@/data/sectionContent";
 
 export const dynamic = "force-dynamic";
+
+const BUILDING_SELECT = {
+  id: true,
+  name: true,
+  rules: true,
+  home: true,
+  amenities: true,
+  tourism: true,
+  dining: true,
+  checkinTemplate: true,
+  checkoutTemplate: true,
+} as const;
 
 export default async function EditBuildingPage({
   params,
@@ -12,36 +32,40 @@ export default async function EditBuildingPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const building = await prisma.building.findUnique({
-    where: { id },
-    select: { id: true, name: true, amenities: true, tourism: true, dining: true },
-  });
+  const [building, others] = await Promise.all([
+    prisma.building.findUnique({ where: { id }, select: BUILDING_SELECT }),
+    prisma.building.findMany({
+      where: { NOT: { id } },
+      select: BUILDING_SELECT,
+      orderBy: { name: "asc" },
+    }),
+  ]);
   if (!building) notFound();
 
-  const amenities = building.amenities as unknown as Apartment["amenities"];
-  const tourism = building.tourism as unknown as Apartment["tourism"];
-  const dining = building.dining as unknown as Apartment["dining"];
-
+  const t = toBuildingTemplate(building);
   const initial: BuildingEditPayload = {
-    amenitiesSub: amenities.sub.pt,
-    amenities: amenities.items.map((a) => ({ title: a.title.pt, text: a.text.pt, wide: !!a.wide })),
-    tourismSub: tourism.sub.pt,
-    tourism: tourism.items.map((p) => ({
-      title: p.title,
-      text: p.text.pt,
-      meta: p.meta,
-      site: p.site ?? "",
-      maps: p.maps ?? "",
-    })),
-    diningSub: dining.sub.pt,
-    dining: dining.items.map((p) => ({
-      title: p.title,
-      text: p.text.pt,
-      meta: p.meta,
-      site: p.site ?? "",
-      maps: p.maps ?? "",
-    })),
+    rules: rulesFromContent(t.rules),
+    home: homeFromContent(t.home),
+    checkin: checkinFromContent(t.checkinTemplate),
+    checkout: checkoutFromContent(t.checkoutTemplate),
+    amenities: amenitiesFromContent(t.amenities),
+    tourism: placesFromContent(t.tourism),
+    dining: placesFromContent(t.dining),
   };
 
-  return <BuildingEditor buildingId={building.id} buildingName={building.name} initial={initial} />;
+  const otherBuildings: BuildingOption[] = others.map((b) => ({
+    id: b.id,
+    name: b.name,
+    ...toBuildingTemplate(b),
+  }));
+
+  return (
+    <BuildingEditor
+      mode="edit"
+      buildingId={building.id}
+      buildingName={building.name}
+      initial={initial}
+      buildings={otherBuildings}
+    />
+  );
 }

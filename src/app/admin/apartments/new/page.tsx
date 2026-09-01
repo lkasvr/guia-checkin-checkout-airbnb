@@ -19,7 +19,17 @@ export default async function NewApartmentPage({
       select: { id: true, name: true, email: true },
     }),
     prisma.building.findMany({
-      select: { id: true, name: true, amenities: true, tourism: true, dining: true, checkinTemplate: true, checkoutTemplate: true },
+      select: {
+        id: true,
+        name: true,
+        rules: true,
+        home: true,
+        amenities: true,
+        tourism: true,
+        dining: true,
+        checkinTemplate: true,
+        checkoutTemplate: true,
+      },
       orderBy: { name: "asc" },
     }),
   ]);

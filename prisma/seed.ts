@@ -11,6 +11,62 @@ const CHAT =
   '<a class="chatlink" href="https://www.airbnb.com/guest/messages" target="_blank" rel="noopener">chat</a>';
 
 /**
+ * Regras genéricas do prédio "Residencial DF Plaza" — as mesmas do 1305C,
+ * exceto "Proibido fumar", que continua sendo escolha por apartamento (campo
+ * "Fumo" do formulário). Somadas às regras específicas de cada apartamento
+ * na hora de montar o guia (`overlayBuildingLiveContent`), nunca substituindo.
+ */
+const dfPlazaRules = {
+  sub: { pt: "Combinações simples para a boa convivência no prédio.", en: "Simple ground rules for getting along in the building." },
+  items: [
+    {
+      icon: "🧺",
+      hot: true,
+      title: { pt: "Uso da varanda", en: "Balcony use" },
+      text: {
+        pt: "É terminantemente proibido estender roupas, toalhas ou objetos na sacada. O descumprimento gera multa de um salário mínimo aplicada pelo condomínio.",
+        en: "Hanging clothes, towels or any objects on the balcony is strictly prohibited. Violations carry a fine of one minimum wage, charged by the building association.",
+      },
+    },
+    {
+      icon: "🤫",
+      title: { pt: "Lei do silêncio · 22h às 08h", en: "Quiet hours · 10pm to 8am" },
+      text: { pt: "Respeite o sossego dos vizinhos.", en: "Please respect the neighbors' rest." },
+    },
+    {
+      icon: "🗑️",
+      title: { pt: "Lixo ensacado", en: "Bag your trash" },
+      text: {
+        pt: "Deposite na lixeira comum do corredor, perto dos elevadores.",
+        en: "Drop it in the shared bin in the hallway, near the elevators.",
+      },
+    },
+    {
+      icon: "👕",
+      title: { pt: "Passe roupa só na tábua", en: "Iron only on the board" },
+      text: { pt: "Nunca sobre a cama ou os móveis.", en: "Never on the bed or furniture." },
+    },
+    {
+      icon: "👥",
+      title: { pt: "Somente hóspedes registrados", en: "Registered guests only" },
+      text: {
+        pt: "Sobre convidados, consulte a anfitriã antes.",
+        en: "For visitors, please check with the host first.",
+      },
+    },
+    {
+      icon: "💳",
+      hot: true,
+      title: { pt: "Cartão de garagem · R$ 300", en: "Garage card · R$ 300" },
+      text: {
+        pt: "Taxa em caso de perda ou não devolução.",
+        en: "Fee in case of loss or non-return.",
+      },
+    },
+  ],
+};
+
+/**
  * Check-in/check-out do 1305C, com as partes específicas da unidade trocadas
  * por marcadores — vira o template do prédio "Residencial DF Plaza"
  * (`Building.checkinTemplate`/`checkoutTemplate`). Ao criar/editar um
@@ -187,6 +243,8 @@ async function main() {
   const dfPlaza = await prisma.building.upsert({
     where: { name: "Residencial DF Plaza" },
     update: {
+      rules: dfPlazaRules as object,
+      home: ap1305c.home as object,
       amenities: ap1305c.amenities as object,
       tourism: ap1305c.tourism as object,
       dining: ap1305c.dining as object,
@@ -195,6 +253,8 @@ async function main() {
     },
     create: {
       name: "Residencial DF Plaza",
+      rules: dfPlazaRules as object,
+      home: ap1305c.home as object,
       amenities: ap1305c.amenities as object,
       tourism: ap1305c.tourism as object,
       dining: ap1305c.dining as object,

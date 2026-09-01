@@ -16,6 +16,22 @@ import {
   type ApartmentWizardPayload,
 } from "@/app/admin/actions";
 import type { Apartment } from "@/data/types";
+import {
+  amenitiesFromContent,
+  checkinFromContent,
+  checkoutFromContent,
+  homeFromContent,
+  placesFromContent,
+  rulesFromContent,
+} from "@/data/sectionContent";
+import {
+  AmenityListEditor,
+  CheckinCardsEditor,
+  CheckoutStepsEditor,
+  HomeEditor,
+  PlaceListEditor,
+  RulesListEditor,
+} from "@/app/admin/section-editors";
 
 const field =
   "rounded-xl border border-line bg-bg px-3 py-2 text-[15px] text-ink outline-none focus:border-coffee";
@@ -44,9 +60,65 @@ const EMPTY: FormState = {
   coHostName: "",
   coHostWhatsapp: "",
   internalNotes: "",
+  overrides: {},
   slug: "",
   label: "",
 };
+
+type OverridableSection = "rules" | "home" | "amenities" | "tourism" | "dining";
+
+const sectionLabel: Record<OverridableSection, string> = {
+  rules: "Regras",
+  home: "A Casa",
+  amenities: "Lazer",
+  tourism: "Guia de Brasília",
+  dining: "Onde Comer",
+};
+
+function SectionOverrideBlock({
+  section,
+  active,
+  summary,
+  onEnable,
+  onDisable,
+  children,
+}: {
+  section: OverridableSection;
+  active: boolean;
+  summary: string;
+  onEnable: () => void;
+  onDisable: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <h2 className={sectionTitle}>{sectionLabel[section]}</h2>
+      {!active ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-line p-3">
+          <span className="text-[14px] text-soft">{summary}</span>
+          <button
+            type="button"
+            onClick={onEnable}
+            className="whitespace-nowrap text-[13.5px] font-semibold text-terra underline underline-offset-2"
+          >
+            Personalizar para este apartamento
+          </button>
+        </div>
+      ) : (
+        <div className="mt-3">
+          {children}
+          <button
+            type="button"
+            onClick={onDisable}
+            className="mt-3 text-[13px] font-semibold text-soft underline underline-offset-2"
+          >
+            ‹ Voltar a herdar do prédio
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
 
 type BuildingOption = { id: string; name: string } & BuildingTemplate;
 
@@ -92,8 +164,62 @@ export function ApartmentWizard({
 
   const preview = useMemo<Apartment>(() => {
     const content = buildApartmentContent(form, hostName, existingContent, matchedBuilding);
-    return matchedBuilding ? overlayBuildingLiveContent(content, matchedBuilding) : content;
+    return matchedBuilding
+      ? overlayBuildingLiveContent(content, matchedBuilding, form.overrides)
+      : content;
   }, [form, hostName, existingContent, matchedBuilding]);
+
+  function enableOverride(section: OverridableSection) {
+    setForm((f) => {
+      const overrides = { ...f.overrides, [section]: true };
+      switch (section) {
+        case "rules":
+          return { ...f, overrides, overrideRules: rulesFromContent(preview.rules) };
+        case "home":
+          return { ...f, overrides, overrideHome: homeFromContent(preview.home) };
+        case "amenities":
+          return { ...f, overrides, overrideAmenities: amenitiesFromContent(preview.amenities) };
+        case "tourism":
+          return { ...f, overrides, overrideTourism: placesFromContent(preview.tourism) };
+        case "dining":
+          return { ...f, overrides, overrideDining: placesFromContent(preview.dining) };
+      }
+    });
+  }
+  function disableOverride(section: OverridableSection) {
+    setForm((f) => {
+      const overrides = { ...f.overrides, [section]: false };
+      switch (section) {
+        case "rules":
+          return { ...f, overrides, overrideRules: undefined };
+        case "home":
+          return { ...f, overrides, overrideHome: undefined };
+        case "amenities":
+          return { ...f, overrides, overrideAmenities: undefined };
+        case "tourism":
+          return { ...f, overrides, overrideTourism: undefined };
+        case "dining":
+          return { ...f, overrides, overrideDining: undefined };
+      }
+    });
+  }
+
+  function toggleCheckinEdit() {
+    setForm((f) =>
+      f.checkinOverride
+        ? { ...f, checkinOverride: undefined }
+        : { ...f, checkinOverride: checkinFromContent(preview.checkin) },
+    );
+  }
+  function toggleCheckoutEdit() {
+    setForm((f) =>
+      f.checkoutOverride
+        ? { ...f, checkoutOverride: undefined }
+        : preview.checkout
+          ? { ...f, checkoutOverride: checkoutFromContent(preview.checkout) }
+          : f,
+    );
+  }
 
   function confirm() {
     setError(null);
@@ -296,6 +422,50 @@ export function ApartmentWizard({
           </label>
         )}
       </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-line p-3">
+        <span className="text-[14px] text-soft">
+          {form.checkinOverride
+            ? "Editando o passo a passo de check-in manualmente."
+            : `Passo a passo de check-in: ${preview.checkin.cards.length} cartão(ões), gerado a partir do prédio.`}
+        </span>
+        <button
+          type="button"
+          onClick={toggleCheckinEdit}
+          className="whitespace-nowrap text-[13.5px] font-semibold text-terra underline underline-offset-2"
+        >
+          {form.checkinOverride ? "Descartar edição" : "Ajustar check-in manualmente"}
+        </button>
+      </div>
+      {form.checkinOverride && (
+        <div className="mt-3">
+          <CheckinCardsEditor
+            value={form.checkinOverride}
+            onChange={(v) => set("checkinOverride", v)}
+          />
+        </div>
+      )}
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-line p-3">
+        <span className="text-[14px] text-soft">
+          {form.checkoutOverride
+            ? "Editando o passo a passo de check-out manualmente."
+            : `Passo a passo de check-out: ${preview.checkout?.steps.length ?? 0} passo(s), gerado a partir do prédio.`}
+        </span>
+        <button
+          type="button"
+          onClick={toggleCheckoutEdit}
+          className="whitespace-nowrap text-[13.5px] font-semibold text-terra underline underline-offset-2"
+        >
+          {form.checkoutOverride ? "Descartar edição" : "Ajustar check-out manualmente"}
+        </button>
+      </div>
+      {form.checkoutOverride && (
+        <div className="mt-3">
+          <CheckoutStepsEditor
+            value={form.checkoutOverride}
+            onChange={(v) => set("checkoutOverride", v)}
+          />
+        </div>
+      )}
 
       <h2 className={sectionTitle}>Wi-Fi</h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -356,6 +526,77 @@ export function ApartmentWizard({
           </label>
         </div>
       </div>
+      <SectionOverrideBlock
+        section="rules"
+        active={!!form.overrides.rules}
+        summary={`Lista completa de regras: ${preview.rules.items.length} itens (prédio + as acima).`}
+        onEnable={() => enableOverride("rules")}
+        onDisable={() => disableOverride("rules")}
+      >
+        {form.overrideRules && (
+          <RulesListEditor
+            value={form.overrideRules}
+            onChange={(v) => set("overrideRules", v)}
+          />
+        )}
+      </SectionOverrideBlock>
+
+      <SectionOverrideBlock
+        section="home"
+        active={!!form.overrides.home}
+        summary={`Herdado do prédio: ${preview.home.slides.length} destaque(s), ${preview.home.accordions.length} equipamento(s) com manual.`}
+        onEnable={() => enableOverride("home")}
+        onDisable={() => disableOverride("home")}
+      >
+        {form.overrideHome && (
+          <HomeEditor value={form.overrideHome} onChange={(v) => set("overrideHome", v)} />
+        )}
+      </SectionOverrideBlock>
+
+      <SectionOverrideBlock
+        section="amenities"
+        active={!!form.overrides.amenities}
+        summary={`Herdado do prédio: ${preview.amenities.items.length} itens de lazer.`}
+        onEnable={() => enableOverride("amenities")}
+        onDisable={() => disableOverride("amenities")}
+      >
+        {form.overrideAmenities && (
+          <AmenityListEditor
+            value={form.overrideAmenities}
+            onChange={(v) => set("overrideAmenities", v)}
+          />
+        )}
+      </SectionOverrideBlock>
+
+      <SectionOverrideBlock
+        section="tourism"
+        active={!!form.overrides.tourism}
+        summary={`Herdado do prédio: ${preview.tourism.items.length} pontos turísticos.`}
+        onEnable={() => enableOverride("tourism")}
+        onDisable={() => disableOverride("tourism")}
+      >
+        {form.overrideTourism && (
+          <PlaceListEditor
+            value={form.overrideTourism}
+            onChange={(v) => set("overrideTourism", v)}
+          />
+        )}
+      </SectionOverrideBlock>
+
+      <SectionOverrideBlock
+        section="dining"
+        active={!!form.overrides.dining}
+        summary={`Herdado do prédio: ${preview.dining.items.length} restaurantes.`}
+        onEnable={() => enableOverride("dining")}
+        onDisable={() => disableOverride("dining")}
+      >
+        {form.overrideDining && (
+          <PlaceListEditor
+            value={form.overrideDining}
+            onChange={(v) => set("overrideDining", v)}
+          />
+        )}
+      </SectionOverrideBlock>
 
       <h2 className={sectionTitle}>Contatos</h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
