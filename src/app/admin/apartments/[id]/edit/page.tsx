@@ -47,12 +47,20 @@ export default async function EditApartmentPage({
         dining: true,
         checkinTemplate: true,
         checkoutTemplate: true,
+        defaultHeroImg: true,
+        defaultFooterImg: true,
       },
       orderBy: { name: "asc" },
     }),
   ]);
   if (!apt) notFound();
-  const content = apt.content as unknown as Apartment;
+  // `footer.img` não existia antes desta versão — apartamento criado antes
+  // dela não tem a chave gravada; sem isso o editor/prévia quebraria.
+  const rawContent = apt.content as unknown as Apartment;
+  const content: Apartment = {
+    ...rawContent,
+    footer: { ...rawContent.footer, img: rawContent.footer.img ?? "/media/mesa.webp" },
+  };
   const hostName = apt.host.name ?? apt.host.email;
   const overrides = (apt.overrides as ApartmentOverrides | null) ?? {};
 
@@ -65,6 +73,8 @@ export default async function EditApartmentPage({
   const initial = {
     building: content.building,
     unit: content.unit,
+    heroImg: content.hero.img,
+    footerImg: content.footer.img,
     tower: facts.tower,
     floor: facts.floor,
     parking: facts.parking,
@@ -118,7 +128,13 @@ export default async function EditApartmentPage({
         apartmentId={apt.id}
         initial={initial}
         existingContent={content}
-        buildings={buildings.map((b) => ({ id: b.id, name: b.name, ...toBuildingTemplate(b) }))}
+        buildings={buildings.map((b) => ({
+          id: b.id,
+          name: b.name,
+          defaultHeroImg: b.defaultHeroImg,
+          defaultFooterImg: b.defaultFooterImg,
+          ...toBuildingTemplate(b),
+        }))}
       />
     </>
   );

@@ -12,6 +12,7 @@ import {
   CheckinCardsEditor,
   CheckoutStepsEditor,
   HomeEditor,
+  ImageField,
   PlaceListEditor,
   RulesListEditor,
 } from "@/app/admin/section-editors";
@@ -30,9 +31,16 @@ const field =
 const labelCls = "flex flex-col gap-1 text-[13px] font-semibold text-soft";
 const sectionTitle = "mt-6 font-display text-[19px] font-normal";
 
-export type BuildingOption = { id: string; name: string } & BuildingTemplate;
+export type BuildingOption = {
+  id: string;
+  name: string;
+  defaultHeroImg: string | null;
+  defaultFooterImg: string | null;
+} & BuildingTemplate;
 
-type Section = keyof BuildingEditPayload;
+// As fotos padrão (capa/despedida) têm o próprio botão de copiar, não o
+// genérico abaixo — não fazem parte das 7 seções com editor de lista.
+type Section = Exclude<keyof BuildingEditPayload, "defaultHeroImg" | "defaultFooterImg">;
 
 function CopyFromSelector({
   buildings,
@@ -112,6 +120,16 @@ export function BuildingEditor({
     });
   }
 
+  function copyPhotos(sourceId: string) {
+    const src = buildings.find((b) => b.id === sourceId);
+    if (!src) return;
+    setForm((f) => ({
+      ...f,
+      defaultHeroImg: src.defaultHeroImg ?? f.defaultHeroImg,
+      defaultFooterImg: src.defaultFooterImg ?? f.defaultFooterImg,
+    }));
+  }
+
   function save() {
     setError(null);
     startTransition(async () => {
@@ -152,6 +170,36 @@ export function BuildingEditor({
           template — só valem pra apartamentos criados/editados depois desta mudança.
         </p>
       )}
+
+      <h2 className={sectionTitle}>Fotos padrão do modelo</h2>
+      <p className="mt-1 text-[13px] text-soft">
+        Sugestão de capa e despedida ao criar um apartamento novo neste prédio — cada
+        apartamento guarda a própria foto depois, trocável a qualquer momento; mudar aqui não
+        afeta apartamento já criado.
+      </p>
+      <div className="mt-3">
+        <CopyFromSelector buildings={buildings} onApply={copyPhotos} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <span className="text-[12.5px] font-semibold text-soft">Capa</span>
+            <div className="mt-1">
+              <ImageField
+                value={form.defaultHeroImg}
+                onChange={(defaultHeroImg) => setForm((f) => ({ ...f, defaultHeroImg }))}
+              />
+            </div>
+          </div>
+          <div>
+            <span className="text-[12.5px] font-semibold text-soft">Despedida</span>
+            <div className="mt-1">
+              <ImageField
+                value={form.defaultFooterImg}
+                onChange={(defaultFooterImg) => setForm((f) => ({ ...f, defaultFooterImg }))}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
 
       <h2 className={sectionTitle}>Regras da Casa</h2>
       <p className="mt-1 text-[13px] text-soft">

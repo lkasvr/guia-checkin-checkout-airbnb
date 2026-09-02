@@ -109,6 +109,12 @@ model Building {
   // Apartment.content.checkin/checkout na criação/edição — não é ao vivo.
   checkinTemplate  Json
   checkoutTemplate Json
+  // Capa/despedida padrão do modelo — só usadas pelo "Copiar de" ao criar
+  // um apartamento; cada apartamento guarda a própria depois, sem ficar
+  // ao vivo ligado ao prédio (não faz sentido todo apartamento ter a
+  // mesma foto de capa).
+  defaultHeroImg   String?
+  defaultFooterImg String?
   apartments       Apartment[]
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt

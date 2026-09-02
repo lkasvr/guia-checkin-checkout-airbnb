@@ -87,5 +87,5 @@ export type Apartment = {
   tourism: { sub: L; items: Place[] };
   dining: { sub: L; items: Place[] };
 
-  footer: { msg: L; whoPrefix: L; whoName: string; phones: string };
+  footer: { img: string; msg: L; whoPrefix: L; whoName: string; phones: string };
 };

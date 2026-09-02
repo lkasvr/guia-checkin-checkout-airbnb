@@ -47,6 +47,7 @@ export function starterContent(
     tourism: { sub: t(""), items: [] },
     dining: { sub: t(""), items: [] },
     footer: {
+      img: "/media/mesa.webp",
       msg: t("Boa estadia!", "Enjoy your stay!"),
       whoPrefix: t("Com carinho, ", "Warmly, "),
       whoName: name,

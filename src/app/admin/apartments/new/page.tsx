@@ -29,6 +29,8 @@ export default async function NewApartmentPage({
         dining: true,
         checkinTemplate: true,
         checkoutTemplate: true,
+        defaultHeroImg: true,
+        defaultFooterImg: true,
       },
       orderBy: { name: "asc" },
     }),
@@ -40,7 +42,13 @@ export default async function NewApartmentPage({
       mode="create"
       hostId={host.id}
       hostName={host.name ?? host.email}
-      buildings={buildings.map((b) => ({ id: b.id, name: b.name, ...toBuildingTemplate(b) }))}
+      buildings={buildings.map((b) => ({
+        id: b.id,
+        name: b.name,
+        defaultHeroImg: b.defaultHeroImg,
+        defaultFooterImg: b.defaultFooterImg,
+        ...toBuildingTemplate(b),
+      }))}
     />
   );
 }

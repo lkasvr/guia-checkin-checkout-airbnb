@@ -1,5 +1,8 @@
 "use client";
 
+import { useRef, useState } from "react";
+import Image from "next/image";
+import { uploadImage } from "@/lib/upload";
 import {
   emptyAccordion,
   emptyAlert,
@@ -34,6 +37,59 @@ function updateAt<T>(arr: T[], i: number, patch: Partial<T>): T[] {
 }
 function removeAt<T>(arr: T[], i: number): T[] {
   return arr.filter((_, j) => j !== i);
+}
+
+/** Miniatura + botão de upload — usado em todo campo de foto dos editores abaixo. */
+export function ImageField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    setError(null);
+    setPending(true);
+    try {
+      onChange(await uploadImage(file));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Falha no upload.");
+    } finally {
+      setPending(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-line bg-bg">
+        {value ? (
+          <Image src={value} alt="" fill sizes="56px" className="object-cover" />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center text-[18px]">🖼️</span>
+        )}
+      </div>
+      <div className="min-w-0">
+        <label className="inline-block cursor-pointer rounded-full border border-line bg-card px-3 py-1.5 text-[13px] font-semibold text-soft">
+          {pending ? "Enviando…" : value ? "Trocar foto" : "Enviar foto"}
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={pending}
+            onChange={(e) => handleFile(e.target.files?.[0])}
+          />
+        </label>
+        {error && <p className="mt-1 text-[12px] text-terra">{error}</p>}
+      </div>
+    </div>
+  );
 }
 
 /** Marcadores trocados pelos dados da unidade — mostrado perto de check-in/check-out. */
@@ -203,6 +259,12 @@ export function AmenityListEditor({
       <div className="mt-3 grid gap-2">
         {value.items.map((a, i) => (
           <div key={i} className={rowCls}>
+            <div className="sm:col-span-2">
+              <ImageField
+                value={a.img}
+                onChange={(img) => onChange({ ...value, items: updateAt(value.items, i, { img }) })}
+              />
+            </div>
             <label className={labelCls}>
               Título
               <input
@@ -276,6 +338,12 @@ export function PlaceListEditor({
       <div className="mt-3 grid gap-2">
         {value.items.map((p, i) => (
           <div key={i} className={rowCls}>
+            <div className="sm:col-span-2">
+              <ImageField
+                value={p.img}
+                onChange={(img) => onChange({ ...value, items: updateAt(value.items, i, { img }) })}
+              />
+            </div>
             <label className={labelCls}>
               Nome
               <input
@@ -366,6 +434,12 @@ export function HomeEditor({
       <div className="mt-2 grid gap-2">
         {value.slides.map((s, i) => (
           <div key={i} className={rowCls}>
+            <div className="sm:col-span-2">
+              <ImageField
+                value={s.img}
+                onChange={(img) => onChange({ ...value, slides: updateAt(value.slides, i, { img }) })}
+              />
+            </div>
             <label className={labelCls}>
               Título
               <input
@@ -447,6 +521,24 @@ export function HomeEditor({
                 }
               />
             </div>
+            {a.diagram && (
+              <div className="sm:col-span-2">
+                <span className="text-[12.5px] font-semibold text-soft">Foto do diagrama</span>
+                <div className="mt-1">
+                  <ImageField
+                    value={a.diagram.img}
+                    onChange={(img) =>
+                      onChange({
+                        ...value,
+                        accordions: updateAt(value.accordions, i, {
+                          diagram: { ...a.diagram!, img },
+                        }),
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            )}
             <button
               type="button"
               className={`${removeCls} justify-self-start sm:col-span-2`}
@@ -532,15 +624,12 @@ function CheckinCardEditor({
           onChange={(e) => onChange({ ...card, tag: e.target.value })}
         />
       </label>
-      <label className={`${labelCls} sm:col-span-2`}>
-        Foto de banner (caminho, opcional)
-        <input
-          className={field}
-          value={card.banner}
-          placeholder="/media/predio.webp"
-          onChange={(e) => onChange({ ...card, banner: e.target.value })}
-        />
-      </label>
+      <div className="sm:col-span-2">
+        <span className="text-[12.5px] font-semibold text-soft">Foto de banner (opcional)</span>
+        <div className="mt-1">
+          <ImageField value={card.banner} onChange={(banner) => onChange({ ...card, banner })} />
+        </div>
+      </div>
       <StepListEditor steps={card.steps} onChange={(steps) => onChange({ ...card, steps })} />
       <AlertListEditor alerts={card.alerts} onChange={(alerts) => onChange({ ...card, alerts })} />
     </div>

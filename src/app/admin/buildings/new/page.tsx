@@ -13,6 +13,8 @@ const EMPTY: BuildingEditPayload = {
   amenities: { sub: "", items: [] },
   tourism: { sub: "", items: [] },
   dining: { sub: "", items: [] },
+  defaultHeroImg: "",
+  defaultFooterImg: "",
 };
 
 export default async function NewBuildingPage() {
@@ -27,6 +29,8 @@ export default async function NewBuildingPage() {
       dining: true,
       checkinTemplate: true,
       checkoutTemplate: true,
+      defaultHeroImg: true,
+      defaultFooterImg: true,
     },
     orderBy: { name: "asc" },
   });
@@ -34,6 +38,8 @@ export default async function NewBuildingPage() {
   const options: BuildingOption[] = buildings.map((b) => ({
     id: b.id,
     name: b.name,
+    defaultHeroImg: b.defaultHeroImg,
+    defaultFooterImg: b.defaultFooterImg,
     ...toBuildingTemplate(b),
   }));
 

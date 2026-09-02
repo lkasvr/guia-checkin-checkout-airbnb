@@ -67,7 +67,14 @@ export const getGuide = cache(
     if (!row) return null;
 
     const s = row.stays[0];
-    const rawContent = row.content as unknown as Apartment;
+    // `footer.img` não existia antes desta versão — content já gravado no
+    // banco não tem a chave; sem isso o guia quebraria ao tentar mostrar a
+    // foto de despedida.
+    const dbContent = row.content as unknown as Apartment;
+    const rawContent: Apartment = {
+      ...dbContent,
+      footer: { ...dbContent.footer, img: dbContent.footer.img ?? "/media/mesa.webp" },
+    };
     const overrides = (row.overrides as ApartmentOverrides | null) ?? {};
     const content = row.building
       ? overlayBuildingLiveContent(

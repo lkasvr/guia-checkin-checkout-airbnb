@@ -182,6 +182,9 @@ export function overlayBuildingLiveContent(
 export type ApartmentFormInput = {
   building: string;
   unit: string;
+  /** Capa e despedida são sempre próprias do apartamento (nunca herdadas do prédio). */
+  heroImg: string;
+  footerImg: string;
   tower: string;
   floor: string;
   parking: string;
@@ -328,7 +331,7 @@ export function buildApartmentContent(
     ...base,
     unit: input.unit,
     building: input.building,
-    hero: { ...base.hero, facts },
+    hero: { ...base.hero, facts, img: input.heroImg || base.hero.img },
     checkin: {
       ...(input.checkinOverride
         ? checkinToContent(input.checkinOverride)
@@ -355,7 +358,12 @@ export function buildApartmentContent(
         ? rulesToContent(input.overrideRules)
         : { ...base.rules, items: rules },
     contacts: { ...base.contacts, items: contacts },
-    footer: { ...base.footer, whoName: hostName, phones },
+    footer: {
+      ...base.footer,
+      whoName: hostName,
+      phones,
+      img: input.footerImg || base.footer.img,
+    },
     ...(input.overrides.home && input.overrideHome
       ? { home: homeToContent(input.overrideHome) }
       : {}),

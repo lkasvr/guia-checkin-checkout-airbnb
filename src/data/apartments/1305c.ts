@@ -511,6 +511,7 @@ export const ap1305c: Apartment = {
   },
 
   footer: {
+    img: "/media/mesa.webp",
     msg: {
       pt: "Boa estadia. Qualquer coisa, é só chamar a gente.",
       en: "Enjoy your stay. Anything you need, just message us.",

@@ -622,7 +622,7 @@ export function Footer({ ap }: { ap: Apartment }) {
         <div className="overflow-hidden rounded-3xl border border-line bg-card">
           <div className="relative h-[150px]">
             <Image
-              src="/media/mesa.webp"
+              src={ap.footer.img}
               alt=""
               fill
               sizes="(max-width:640px) 100vw, 640px"

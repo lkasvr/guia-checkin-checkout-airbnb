@@ -26,6 +26,9 @@ export type BuildingEditPayload = {
   amenities: AmenitiesValue;
   tourism: PlacesValue;
   dining: PlacesValue;
+  /** Sugestão de capa/despedida pro "Copiar de" ao criar apartamento — não é ao vivo. */
+  defaultHeroImg: string;
+  defaultFooterImg: string;
 };
 
 function buildData(payload: BuildingEditPayload) {
@@ -37,6 +40,8 @@ function buildData(payload: BuildingEditPayload) {
     amenities: amenitiesToContent(payload.amenities) as object,
     tourism: placesToContent(payload.tourism) as object,
     dining: placesToContent(payload.dining) as object,
+    defaultHeroImg: payload.defaultHeroImg || null,
+    defaultFooterImg: payload.defaultFooterImg || null,
   };
 }
 

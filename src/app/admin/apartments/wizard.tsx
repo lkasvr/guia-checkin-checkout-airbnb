@@ -30,6 +30,7 @@ import {
   CheckinCardsEditor,
   CheckoutStepsEditor,
   HomeEditor,
+  ImageField,
   PlaceListEditor,
   RulesListEditor,
 } from "@/app/admin/section-editors";
@@ -44,6 +45,8 @@ type FormState = ApartmentFormInput & { slug: string; label: string };
 const EMPTY: FormState = {
   building: "",
   unit: "",
+  heroImg: "",
+  footerImg: "",
   tower: "",
   floor: "",
   parking: "",
@@ -185,7 +188,12 @@ function SectionOverrideBlock({
   );
 }
 
-type BuildingOption = { id: string; name: string } & BuildingTemplate;
+type BuildingOption = {
+  id: string;
+  name: string;
+  defaultHeroImg: string | null;
+  defaultFooterImg: string | null;
+} & BuildingTemplate;
 
 export function ApartmentWizard({
   hostId,
@@ -218,6 +226,15 @@ export function ApartmentWizard({
         next.slug = [slugify(next.building), slugify(next.unit)].filter(Boolean).join("-");
       }
       if (key === "unit" && !f.label) next.label = value ? `Ap ${String(value).toUpperCase()}` : "";
+      // Prédio escolhido pela primeira vez: sugere a capa/despedida padrão
+      // dele, só quando a pessoa ainda não escolheu foto própria.
+      if (key === "building") {
+        const b = buildings.find(
+          (x) => x.name.trim().toLowerCase() === String(value).trim().toLowerCase(),
+        );
+        if (b?.defaultHeroImg && !f.heroImg) next.heroImg = b.defaultHeroImg;
+        if (b?.defaultFooterImg && !f.footerImg) next.footerImg = b.defaultFooterImg;
+      }
       return next;
     });
   }
@@ -435,6 +452,20 @@ export function ApartmentWizard({
             <span className="whitespace-nowrap text-[13px] text-soft">.anfyi.com.br</span>
           </div>
         </label>
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div>
+          <span className={labelCls}>Foto de capa</span>
+          <div className="mt-1">
+            <ImageField value={form.heroImg} onChange={(v) => set("heroImg", v)} />
+          </div>
+        </div>
+        <div>
+          <span className={labelCls}>Foto de despedida</span>
+          <div className="mt-1">
+            <ImageField value={form.footerImg} onChange={(v) => set("footerImg", v)} />
+          </div>
+        </div>
       </div>
 
       <h2 className={sectionTitle}>Check-in e fechadura</h2>
