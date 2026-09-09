@@ -20,7 +20,7 @@ export type CheckinCard = {
   banner?: string; // caminho da imagem de banner
   steps: Step[];
   alerts?: Alert[];
-  video?: { src: string; poster: string; label: L };
+  video?: { src: string; poster?: string; label: L };
 };
 
 export type Rule = { icon: string; title: L; text: L; hot?: boolean };
@@ -73,7 +73,12 @@ export type Apartment = {
 
   wifi: { network: string; password: string; speed: L };
 
-  checkin: { sub: L; cards: CheckinCard[] };
+  checkin: {
+    sub: L;
+    cards: CheckinCard[];
+    /** Senha fixa do apartamento, exibida sempre; ausente = senha por hóspede (via Stay). */
+    doorCode?: { mode: "fixed"; code: string } | { mode: "per_stay" };
+  };
   checkout?: { sub: L; steps: Step[] };
   rules: { sub: L; items: Rule[] };
   contacts: { sub: L; items: Contact[] };
@@ -82,5 +87,5 @@ export type Apartment = {
   tourism: { sub: L; items: Place[] };
   dining: { sub: L; items: Place[] };
 
-  footer: { msg: L; whoPrefix: L; whoName: string; phones: string };
+  footer: { img: string; msg: L; whoPrefix: L; whoName: string; phones: string };
 };

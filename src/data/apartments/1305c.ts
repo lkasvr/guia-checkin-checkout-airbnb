@@ -175,6 +175,10 @@ export const ap1305c: Apartment = {
     ],
   },
 
+  // As regras gerais do prédio (varanda, silêncio, lixo, garagem...) saíram
+  // daqui — vêm agora do `Building` ("Residencial DF Plaza", ver
+  // prisma/seed.ts), somadas na hora de montar o guia
+  // (`overlayBuildingLiveContent`). Só fica a regra específica desta unidade.
   rules: {
     sub: {
       pt: "Combinações simples para a boa convivência no prédio.",
@@ -188,53 +192,6 @@ export const ap1305c: Apartment = {
         text: {
           pt: "Em todo o apartamento, inclusive na varanda.",
           en: "Anywhere in the apartment, including the balcony.",
-        },
-      },
-      {
-        icon: "🧺",
-        hot: true,
-        title: { pt: "Uso da varanda", en: "Balcony use" },
-        text: {
-          pt: "É terminantemente proibido estender roupas, toalhas ou objetos na sacada. O descumprimento gera multa de um salário mínimo aplicada pelo condomínio.",
-          en: "Hanging clothes, towels or any objects on the balcony is strictly prohibited. Violations carry a fine of one minimum wage, charged by the building association.",
-        },
-      },
-      {
-        icon: "🤫",
-        title: { pt: "Lei do silêncio · 22h às 08h", en: "Quiet hours · 10pm to 8am" },
-        text: {
-          pt: "Respeite o sossego dos vizinhos.",
-          en: "Please respect the neighbors' rest.",
-        },
-      },
-      {
-        icon: "🗑️",
-        title: { pt: "Lixo ensacado", en: "Bag your trash" },
-        text: {
-          pt: "Deposite na lixeira comum do corredor, perto dos elevadores.",
-          en: "Drop it in the shared bin in the hallway, near the elevators.",
-        },
-      },
-      {
-        icon: "👕",
-        title: { pt: "Passe roupa só na tábua", en: "Iron only on the board" },
-        text: { pt: "Nunca sobre a cama ou os móveis.", en: "Never on the bed or furniture." },
-      },
-      {
-        icon: "👥",
-        title: { pt: "Somente hóspedes registrados", en: "Registered guests only" },
-        text: {
-          pt: "Sobre convidados, consulte a anfitriã antes.",
-          en: "For visitors, please check with the host first.",
-        },
-      },
-      {
-        icon: "💳",
-        hot: true,
-        title: { pt: "Cartão de garagem · R$ 300", en: "Garage card · R$ 300" },
-        text: {
-          pt: "Taxa em caso de perda ou não devolução.",
-          en: "Fee in case of loss or non-return.",
         },
       },
     ],
@@ -554,6 +511,7 @@ export const ap1305c: Apartment = {
   },
 
   footer: {
+    img: "/media/mesa.webp",
     msg: {
       pt: "Boa estadia. Qualquer coisa, é só chamar a gente.",
       en: "Enjoy your stay. Anything you need, just message us.",

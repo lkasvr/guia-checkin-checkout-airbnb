@@ -24,10 +24,18 @@ export function starterContent(
       sub: t(building),
       facts: [],
     },
+    // Um botão por seção que o guia sempre renderiza (Contatos sempre tem ao
+    // menos SAMU/Bombeiros; A Casa/Lazer/Brasília/Onde Comer vêm do prédio
+    // quando ligado) — sem entrada aqui, a seção existe mas fica sem atalho.
     nav: [
       { href: "#checkin", label: t("Check-in") },
       { href: "#wifi", label: t("Wi-Fi") },
       { href: "#regras", label: t("Regras", "Rules") },
+      { href: "#contatos", label: t("Contatos", "Contacts") },
+      { href: "#casa", label: t("A Casa", "The Home") },
+      { href: "#lazer", label: t("Lazer", "Amenities") },
+      { href: "#turismo", label: t("Brasília") },
+      { href: "#comer", label: t("Onde Comer", "Dining") },
     ],
     wifi: { network: "", password: "", speed: t("") },
     checkin: { sub: t("Instruções de chegada."), cards: [] },
@@ -39,6 +47,7 @@ export function starterContent(
     tourism: { sub: t(""), items: [] },
     dining: { sub: t(""), items: [] },
     footer: {
+      img: "/media/mesa.webp",
       msg: t("Boa estadia!", "Enjoy your stay!"),
       whoPrefix: t("Com carinho, ", "Warmly, "),
       whoName: name,

@@ -17,6 +17,10 @@ model User {
   image         String?
   passwordHash  String? // login email+senha (bcrypt)
   role          UserRole    @default(HOST)
+  // false = login bloqueado e apartamentos fora do ar, sem apagar nada — uso
+  // típico: inadimplência. Diferente de excluir (`prisma.user.delete`), que
+  // some com os dados de vez.
+  active        Boolean     @default(true)
   apartments    Apartment[]
   accounts      Account[]
   sessions      Session[]
@@ -72,7 +76,15 @@ model Apartment {
   active    Boolean       @default(true)
   label     String // rótulo interno ("Ap 1305C · DF Plaza")
   content   Json // guia bilíngue em JSONB — shape = ApartmentContent (src/data/types.ts)
+  internalNotes String? // observações e itens em manutenção — uso interno, nunca aparece no guia público
+  // { rules?: true, home?: true, amenities?: true, tourism?: true, dining?: true }
+  // true = esta seção usa o `content` próprio do apartamento em vez de herdar
+  // ao vivo do prédio. Sem a chave (ou nulo) = herda, igual comportamento de
+  // antes desse campo existir.
+  overrides Json?
+  buildingId String?
   host      User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  building  Building?     @relation(fields: [buildingId], references: [id])
   stays     Stay[]
   catalog   CatalogItem[]
   orders    Order[]
@@ -81,6 +93,35 @@ model Apartment {
 
   @@index([hostId])
   @@index([active])
+  @@index([buildingId])
+}
+
+// ─────────── Prédio: conteúdo compartilhado entre apartamentos ───────────
+
+model Building {
+  id               String      @id @default(cuid())
+  name             String      @unique
+  // Ao vivo: editar aqui reflete em todos os apartamentos ligados na hora.
+  // `rules` são as regras genéricas do prédio (silêncio, lixo, garagem...) —
+  // somadas às regras específicas de cada apartamento, não substituem elas.
+  rules            Json? // { sub: L, items: Rule[] } — nulo em prédios criados antes deste campo existir
+  home             Json? // { sub: L, slides: Slide[], accordions: Accordion[] } — idem, nulo em prédios antigos
+  amenities        Json // { sub: L, items: Amenity[] } — mesma forma de Apartment.content.amenities
+  tourism          Json // { sub: L, items: Place[] }
+  dining           Json // { sub: L, items: Place[] }
+  // Template: copiado (com marcadores {{TORRE}} etc. substituídos) para
+  // Apartment.content.checkin/checkout na criação/edição — não é ao vivo.
+  checkinTemplate  Json
+  checkoutTemplate Json
+  // Capa/despedida padrão do modelo — só usadas pelo "Copiar de" ao criar
+  // um apartamento; cada apartamento guarda a própria depois, sem ficar
+  // ao vivo ligado ao prédio (não faz sentido todo apartamento ter a
+  // mesma foto de capa).
+  defaultHeroImg   String?
+  defaultFooterImg String?
+  apartments       Apartment[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 // ─────────── Estadia: dados dinâmicos + janela de disponibilidade ───────────
