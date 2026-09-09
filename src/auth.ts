@@ -39,6 +39,9 @@ const nextAuth = NextAuth({
         const user = await prisma.user.findUnique({ where: { email } });
         const ok = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
         if (!ok || !user?.passwordHash) return null;
+        // Conta inativada (ex.: inadimplência) — mesmo retorno de credenciais
+        // inválidas, para não revelar que o e-mail existe mas está bloqueado.
+        if (!user.active) return null;
         return { id: user.id, email: user.email, name: user.name, role: user.role };
       },
     }),

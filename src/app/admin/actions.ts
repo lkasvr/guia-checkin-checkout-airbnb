@@ -253,6 +253,43 @@ export async function updateApartmentDetailed(
   revalidatePath(`/admin/apartments/${apartmentId}/edit`);
 }
 
+/**
+ * Inativa/reativa um anfitrião — bloqueia o login dele (`src/auth.ts`) e some
+ * com o guia de todos os apartamentos dele (`getGuide` em `src/lib/apartments.ts`),
+ * sem apagar nada. Uso típico: inadimplência, sem gastar espaço/consulta com
+ * uma conta que não deve continuar no ar.
+ */
+export async function setHostActive(hostId: string, active: boolean) {
+  await requireAdmin();
+  await prisma.user.update({ where: { id: hostId }, data: { active } });
+  revalidatePath("/admin");
+}
+
+/** Inativa/reativa um apartamento específico (o superadmin pode mexer em qualquer um). */
+export async function setApartmentActiveAsAdmin(apartmentId: string, active: boolean) {
+  await requireAdmin();
+  await prisma.apartment.update({ where: { id: apartmentId }, data: { active } });
+  revalidatePath("/admin");
+}
+
+/**
+ * Apaga o anfitrião e, em cascata (`onDelete: Cascade` no schema), todos os
+ * apartamentos/estadias/pedidos dele. Sem volta — a tela chama isto só depois
+ * de um temporizador de 10s que a pessoa pode cancelar.
+ */
+export async function deleteHost(hostId: string) {
+  await requireAdmin();
+  await prisma.user.delete({ where: { id: hostId } });
+  revalidatePath("/admin");
+}
+
+/** Apaga um apartamento (e o que depende dele em cascata). Sem volta. */
+export async function deleteApartment(apartmentId: string) {
+  await requireAdmin();
+  await prisma.apartment.delete({ where: { id: apartmentId } });
+  revalidatePath("/admin");
+}
+
 /** Resultado exibido no formulário; `null` é o estado inicial, antes do envio. */
 export type ResetPasswordState = { ok: true } | { erro: string } | null;
 

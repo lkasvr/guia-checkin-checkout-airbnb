@@ -37,7 +37,9 @@ const BLANK_L = { pt: "", en: "" };
 export const getGuide = cache(
   async (slug: string, now: Date = new Date()): Promise<GuideData | null> => {
     const row = await prisma.apartment.findFirst({
-      where: { slug, active: true },
+      // `host.active: true` some com o guia junto quando o anfitrião é
+      // inativado — sem precisar mexer no `active` de cada apartamento dele.
+      where: { slug, active: true, host: { active: true } },
       select: {
         id: true,
         slug: true,

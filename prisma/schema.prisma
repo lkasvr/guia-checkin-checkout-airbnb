@@ -17,6 +17,10 @@ model User {
   image         String?
   passwordHash  String? // login email+senha (bcrypt)
   role          UserRole    @default(HOST)
+  // false = login bloqueado e apartamentos fora do ar, sem apagar nada — uso
+  // típico: inadimplência. Diferente de excluir (`prisma.user.delete`), que
+  // some com os dados de vez.
+  active        Boolean     @default(true)
   apartments    Apartment[]
   accounts      Account[]
   sessions      Session[]
