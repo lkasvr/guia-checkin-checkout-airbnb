@@ -27,9 +27,16 @@ export async function POST(request: Request): Promise<NextResponse> {
       request,
       token,
       onBeforeGenerateToken: async () => ({
-        allowedContentTypes: ["image/jpeg", "image/png", "image/webp"],
+        allowedContentTypes: [
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+          "video/mp4",
+          "video/webm",
+          "video/quicktime",
+        ],
         addRandomSuffix: true,
-        maximumSizeInBytes: 8 * 1024 * 1024,
+        maximumSizeInBytes: 50 * 1024 * 1024,
       }),
     });
     return NextResponse.json(jsonResponse);

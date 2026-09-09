@@ -35,6 +35,8 @@ export type CheckinCardInput = {
   banner: string;
   steps: StepInput[];
   alerts: AlertInput[];
+  /** Legenda do botão sempre em texto simples — vira PT/EN iguais ao salvar (mesma regra dos outros campos desta seção). */
+  video?: { src: string; label: string };
 };
 
 export type RulesValue = { sub: string; items: RuleInput[] };
@@ -208,6 +210,9 @@ export function checkinToContent(v: CheckinValue): { sub: L; cards: Apartment["c
                 .map((a) => ({ icon: a.icon.trim() || "📍", body: t(a.body.trim()) })),
             }
           : {}),
+        ...(c.video?.src.trim()
+          ? { video: { src: c.video.src.trim(), label: t(c.video.label.trim() || "▶ Vídeo") } }
+          : {}),
       })),
   };
 }
@@ -220,6 +225,7 @@ export function checkinFromContent(c: Apartment["checkin"]): CheckinValue {
       banner: card.banner ?? "",
       steps: stepsFromContent(card.steps),
       alerts: (card.alerts ?? []).map((a) => ({ icon: a.icon, body: a.body.pt })),
+      video: card.video ? { src: card.video.src, label: card.video.label.pt } : undefined,
     })),
   };
 }

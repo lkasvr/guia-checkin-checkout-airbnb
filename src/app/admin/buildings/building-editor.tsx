@@ -12,7 +12,7 @@ import {
   CheckinCardsEditor,
   CheckoutStepsEditor,
   HomeEditor,
-  ImageField,
+  MediaField,
   PlaceListEditor,
   RulesListEditor,
 } from "@/app/admin/section-editors";
@@ -183,7 +183,7 @@ export function BuildingEditor({
           <div>
             <span className="text-[12.5px] font-semibold text-soft">Capa</span>
             <div className="mt-1">
-              <ImageField
+              <MediaField
                 value={form.defaultHeroImg}
                 onChange={(defaultHeroImg) => setForm((f) => ({ ...f, defaultHeroImg }))}
               />
@@ -192,7 +192,7 @@ export function BuildingEditor({
           <div>
             <span className="text-[12.5px] font-semibold text-soft">Despedida</span>
             <div className="mt-1">
-              <ImageField
+              <MediaField
                 value={form.defaultFooterImg}
                 onChange={(defaultFooterImg) => setForm((f) => ({ ...f, defaultFooterImg }))}
               />

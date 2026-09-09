@@ -20,7 +20,7 @@ export type CheckinCard = {
   banner?: string; // caminho da imagem de banner
   steps: Step[];
   alerts?: Alert[];
-  video?: { src: string; poster: string; label: L };
+  video?: { src: string; poster?: string; label: L };
 };
 
 export type Rule = { icon: string; title: L; text: L; hot?: boolean };

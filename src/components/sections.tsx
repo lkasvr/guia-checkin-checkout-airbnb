@@ -6,6 +6,7 @@ import { useCallback, useRef, useState } from "react";
 import type { Apartment } from "@/data/types";
 import { useLang } from "@/lib/i18n";
 import { CARD, LangToggle, Reveal, Rich, SectionHead, Steps } from "@/components/ui";
+import { Media } from "@/components/media";
 
 /* ----------------------------- HERO ----------------------------- */
 
@@ -27,13 +28,13 @@ export function Hero({ ap }: { ap: Apartment }) {
   return (
     <header className="relative -mx-[18px] px-6 pb-2.5 text-left">
       <div className="relative -mx-6 h-[44svh] max-h-[430px] min-h-[280px]">
-        <Image
+        <Media
           src={ap.hero.img}
-          alt=""
           fill
           priority
           sizes="100vw"
           className="object-cover object-[center_24%]"
+          autoPlayLoop
         />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(59_45_36/0.22)_0%,rgb(250_245_238/0)_34%,rgb(250_245_238/0.35)_62%,rgb(250_245_238/0.85)_84%,var(--color-bg)_100%)]" />
       </div>
@@ -132,9 +133,8 @@ export function CheckIn({ ap }: { ap: Apartment }) {
           <div className={`${CARD} ${card.banner ? "px-[22px] pb-6 pt-0" : "p-[24px_22px]"}`}>
             {card.banner && (
               <div className="relative -mx-[22px] mb-[18px] h-[130px]">
-                <Image
+                <Media
                   src={card.banner}
-                  alt=""
                   fill
                   sizes="(max-width:640px) 100vw, 640px"
                   className="object-cover"
@@ -169,14 +169,13 @@ export function CheckIn({ ap }: { ap: Apartment }) {
                   {t(card.video.label)}
                 </p>
                 <video
+                  src={card.video.src}
                   controls
                   playsInline
                   preload="none"
                   poster={card.video.poster}
                   className="block w-full rounded-2xl border border-line bg-black"
-                >
-                  <source src={card.video.src} type="video/mp4" />
-                </video>
+                />
               </div>
             )}
           </div>
@@ -409,9 +408,8 @@ export function Home({ ap }: { ap: Apartment }) {
               className="w-[78%] shrink-0 snap-center overflow-hidden rounded-[20px] border border-line bg-card"
             >
               <div className="relative h-[170px]">
-                <Image
+                <Media
                   src={s.img}
-                  alt=""
                   fill
                   sizes="(max-width:640px) 78vw, 500px"
                   className="object-cover"
@@ -486,9 +484,8 @@ export function Amenities({ ap }: { ap: Apartment }) {
           <Reveal key={i} className={a.wide ? "col-span-2" : ""}>
             <div className="overflow-hidden rounded-[18px] border border-line bg-card">
               <div className={`relative ${a.wide ? "h-[150px]" : "h-24"}`}>
-                <Image
+                <Media
                   src={a.img}
-                  alt=""
                   fill
                   sizes={a.wide ? "(max-width:640px) 100vw, 640px" : "(max-width:640px) 50vw, 320px"}
                   className="object-cover"
@@ -538,9 +535,8 @@ function PlaceCards({
           <div className="mb-3.5 overflow-hidden rounded-[20px] border border-line bg-card">
             {p.img && (
               <div className="relative h-[190px]">
-                <Image
+                <Media
                   src={p.img}
-                  alt=""
                   fill
                   sizes="(max-width:640px) 100vw, 640px"
                   className="object-cover"
@@ -621,9 +617,8 @@ export function Footer({ ap }: { ap: Apartment }) {
       <footer className="mt-16 text-center">
         <div className="overflow-hidden rounded-3xl border border-line bg-card">
           <div className="relative h-[150px]">
-            <Image
+            <Media
               src={ap.footer.img}
-              alt=""
               fill
               sizes="(max-width:640px) 100vw, 640px"
               className="object-cover"

@@ -290,6 +290,72 @@ export async function deleteApartment(apartmentId: string) {
   revalidatePath("/admin");
 }
 
+export type ReusableVideo = {
+  key: string;
+  /** Rótulo exibido no seletor (de onde esse vídeo veio). */
+  source: string;
+  src: string;
+  buttonLabel: { pt: string; en: string };
+};
+
+/**
+ * Vídeos de check-in já enviados que dá pra reaproveitar sem subir de novo —
+ * o do template do prédio (se o apartamento pertencer a um) e o de cada outro
+ * apartamento do mesmo anfitrião que já tenha um. Escolher uma opção só copia
+ * a URL: nenhum arquivo novo entra no Blob.
+ */
+export async function listHostCheckinVideos(
+  hostId: string,
+  buildingId?: string | null,
+  excludeApartmentId?: string,
+): Promise<ReusableVideo[]> {
+  await requireAdmin();
+
+  const videos: ReusableVideo[] = [];
+
+  if (buildingId) {
+    const building = await prisma.building.findUnique({
+      where: { id: buildingId },
+      select: { name: true, checkinTemplate: true },
+    });
+    const template = building?.checkinTemplate as unknown as Apartment["checkin"] | undefined;
+    const card = template?.cards.find((c) => c.video);
+    if (card?.video) {
+      videos.push({
+        key: "building",
+        source: `Modelo do prédio${building?.name ? ` (${building.name})` : ""}`,
+        src: card.video.src,
+        buttonLabel: card.video.label,
+      });
+    }
+  }
+
+  const apartments = await prisma.apartment.findMany({
+    where: {
+      hostId,
+      ...(excludeApartmentId ? { NOT: { id: excludeApartmentId } } : {}),
+    },
+    select: { id: true, label: true, content: true },
+  });
+  for (const apt of apartments) {
+    const content = apt.content as unknown as Apartment;
+    const card = content.checkin?.cards?.find((c) => c.video);
+    if (card?.video) {
+      videos.push({
+        key: `apt:${apt.id}`,
+        source: `Mesmo vídeo do "${apt.label}"`,
+        src: card.video.src,
+        buttonLabel: card.video.label,
+      });
+    }
+  }
+
+  // Não repete a mesma URL de arquivo mais de uma vez na lista (comum quando
+  // vários apartamentos ainda herdam o mesmo vídeo do template do prédio).
+  const seen = new Set<string>();
+  return videos.filter((v) => (seen.has(v.src) ? false : (seen.add(v.src), true)));
+}
+
 /** Resultado exibido no formulário; `null` é o estado inicial, antes do envio. */
 export type ResetPasswordState = { ok: true } | { erro: string } | null;
 

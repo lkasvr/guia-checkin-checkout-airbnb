@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Guide from "@/components/Guide";
 import {
@@ -13,8 +13,10 @@ import { slugify } from "@/lib/slug";
 import { formatPhoneBR } from "@/lib/phone";
 import {
   createApartmentDetailed,
+  listHostCheckinVideos,
   updateApartmentDetailed,
   type ApartmentWizardPayload,
+  type ReusableVideo,
 } from "@/app/admin/actions";
 import type { Apartment } from "@/data/types";
 import {
@@ -30,7 +32,7 @@ import {
   CheckinCardsEditor,
   CheckoutStepsEditor,
   HomeEditor,
-  ImageField,
+  MediaField,
   PlaceListEditor,
   RulesListEditor,
 } from "@/app/admin/section-editors";
@@ -243,6 +245,23 @@ export function ApartmentWizard({
     () => buildings.find((b) => b.name.trim().toLowerCase() === form.building.trim().toLowerCase()),
     [buildings, form.building],
   );
+
+  // Vídeos de check-in já enviados por este anfitrião (do modelo do prédio ou
+  // de outro apartamento dele) — pra reaproveitar sem subir arquivo de novo.
+  const [reuseVideos, setReuseVideos] = useState<ReusableVideo[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    listHostCheckinVideos(hostId, matchedBuilding?.id, apartmentId)
+      .then((v) => {
+        if (!cancelled) setReuseVideos(v);
+      })
+      .catch(() => {
+        if (!cancelled) setReuseVideos([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hostId, matchedBuilding?.id, apartmentId]);
 
   const preview = useMemo<Apartment>(() => {
     const content = buildApartmentContent(form, hostName, existingContent, matchedBuilding);
@@ -457,13 +476,13 @@ export function ApartmentWizard({
         <div>
           <span className={labelCls}>Foto de capa</span>
           <div className="mt-1">
-            <ImageField value={form.heroImg} onChange={(v) => set("heroImg", v)} />
+            <MediaField value={form.heroImg} onChange={(v) => set("heroImg", v)} />
           </div>
         </div>
         <div>
           <span className={labelCls}>Foto de despedida</span>
           <div className="mt-1">
-            <ImageField value={form.footerImg} onChange={(v) => set("footerImg", v)} />
+            <MediaField value={form.footerImg} onChange={(v) => set("footerImg", v)} />
           </div>
         </div>
       </div>
@@ -530,6 +549,7 @@ export function ApartmentWizard({
           <CheckinCardsEditor
             value={form.checkinOverride}
             onChange={(v) => set("checkinOverride", v)}
+            reuseOptions={reuseVideos}
           />
         </div>
       )}
