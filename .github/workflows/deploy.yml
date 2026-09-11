@@ -1,0 +1,65 @@
+name: Deploy
+
+# Merge (ou push) na main publica em produção — é este o caminho para quem não
+# tem a CLI da Vercel configurada na máquina. O workflow_dispatch serve para
+# republicar sob demanda e para mandar um preview de qualquer branch.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Ambiente
+        type: choice
+        options: [production, preview]
+        default: production
+
+# Dois deploys simultâneos no mesmo ref disputariam o alias de produção.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      # Só para o passo 3 do deploy.sh poder rodar `npx prisma migrate status`.
+      # O postinstall roda `prisma generate`, e prisma.config.ts lança "Nenhuma
+      # URL de conexão encontrada" já ao carregar quando não há DIRECT_URL /
+      # DATABASE_URL_UNPOOLED / DATABASE_URL no ambiente — e no runner não
+      # existe .env.local. O generate não abre conexão: o valor abaixo só
+      # satisfaz essa checagem, e o deploy.sh descobre a URL real depois.
+      - name: Instalar dependências
+        run: npm ci
+        env:
+          DIRECT_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+
+      # Versão fixa: as armadilhas descritas em .claude/rules/ambientes-e-bancos.md
+      # e a forma do `vercel inspect --json` foram medidas nesta.
+      - name: Instalar a CLI da Vercel
+        run: npm install --global vercel@51.8.0
+
+      # Sem --prebuilt de propósito: o build tem de acontecer na Vercel, porque
+      # AUTH_SECRET, DATABASE_URL, DATABASE_URL_UNPOOLED e SUPERADMIN_PASSWORD_HASH
+      # são type=sensitive e o `vercel pull` as devolve vazias. Só o build remoto
+      # enxerga os valores reais.
+      - name: Deploy
+        run: |
+          if [[ "${{ github.event_name }}" == "push" || "${{ inputs.target }}" == "production" ]]; then
+            ./scripts/deploy.sh --prod --yes
+          else
+            ./scripts/deploy.sh --yes
+          fi
