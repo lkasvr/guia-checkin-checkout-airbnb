@@ -244,9 +244,20 @@ fi
 # ───────────────────────────────────────────────────────────── 5/8  Deploy
 step "5/8  Deploy ($TARGET)"
 
-DEPLOY_URL="$(vercel "${DEPLOY_ARGS[@]}" | grep -oE 'https://[^[:space:]]+' | tail -1)" \
-  || die "o comando 'vercel ${DEPLOY_ARGS[*]}' falhou."
-[[ -n "$DEPLOY_URL" ]] || die "o deploy não devolveu uma URL."
+DEPLOY_OUT="$(vercel "${DEPLOY_ARGS[@]}")" || die "o comando 'vercel ${DEPLOY_ARGS[*]}' falhou."
+
+# O stdout não traz só a URL do deployment: numa execução de 11/09/2026 ele
+# trouxe também 'https://api.vercel.com/v13/deployments/dpl_…"', com aspa no
+# fim. Por isso a busca é pela forma de uma URL de deployment (*.vercel.app),
+# e não pela última URL da saída.
+DEPLOY_URL="$(grep -oE 'https://[A-Za-z0-9.-]+\.vercel\.app' <<<"$DEPLOY_OUT" | head -1 || true)"
+if [[ -z "$DEPLOY_URL" ]]; then
+  DEPLOY_URL="$(grep -oE 'https://[^"[:space:]]+' <<<"$DEPLOY_OUT" | grep -v 'api\.vercel\.com' | head -1 || true)"
+fi
+if [[ -z "$DEPLOY_URL" ]]; then
+  printf '%s\n' "$DEPLOY_OUT" | sed 's/^/      /'
+  die "o deploy não devolveu uma URL de deployment reconhecível (saída acima)."
+fi
 ok "$DEPLOY_URL"
 
 # ──────────────────────────────────────── 6/8  Verificação do deployment
@@ -275,13 +286,19 @@ ok "READY · $LAMBDAS funções · $DEPLOY_ID"
 step "7/8  Domínios"
 
 if [[ "$TARGET" == "production" ]]; then
-  LIVE_ID="$(vercel inspect "https://$APEX" --json 2>/dev/null | jq -r '.id // "?"')"
-  if [[ "$LIVE_ID" == "$DEPLOY_ID" ]]; then
-    ok "$APEX → $DEPLOY_ID"
-    jq -r '.aliases[]? | "    · " + .' <<<"$META"
-  else
+  # A CLI aliasa durante o próprio deploy, mas a troca pode levar alguns
+  # segundos para aparecer na consulta. Cinco tentativas, 5s entre elas.
+  LIVE_ID=""
+  for attempt in 1 2 3 4 5; do
+    LIVE_ID="$(vercel inspect "https://$APEX" --json 2>/dev/null | jq -r '.id // "?"')"
+    [[ "$LIVE_ID" == "$DEPLOY_ID" ]] && break
+    (( attempt < 5 )) && { note "$APEX ainda em $LIVE_ID; nova consulta em 5s ($attempt/5)"; sleep 5; }
+  done
+  if [[ "$LIVE_ID" != "$DEPLOY_ID" ]]; then
     die "$APEX ainda serve $LIVE_ID, não $DEPLOY_ID. Promova com: vercel promote $DEPLOY_URL"
   fi
+  ok "$APEX → $DEPLOY_ID"
+  vercel inspect "$DEPLOY_URL" --json 2>/dev/null | jq -r '.aliases[]? | "      · " + .'
 else
   ok "preview não mexe em domínio de produção"
 fi
