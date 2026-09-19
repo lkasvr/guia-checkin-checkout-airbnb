@@ -2,6 +2,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { createHost } from "@/app/admin/actions";
 import { HostCard } from "@/app/admin/host-card";
+import { parseHeroFacts } from "@/data/buildApartmentContent";
+import { exportLabel } from "@/lib/shareMessage";
+import type { Apartment } from "@/data/types";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +26,7 @@ export default async function AdminHome() {
       email: true,
       active: true,
       apartments: {
-        select: { id: true, slug: true, label: true, active: true },
+        select: { id: true, slug: true, label: true, active: true, content: true },
         orderBy: { createdAt: "asc" },
       },
     },
@@ -113,7 +116,17 @@ export default async function AdminHome() {
       <h2 className="mt-8 font-display text-[21px] font-normal">Cadastrados</h2>
       <div className="mt-3 grid gap-3">
         {hosts.map((h) => (
-          <HostCard key={h.id} host={h} />
+          <HostCard
+            key={h.id}
+            host={{
+              ...h,
+              // Só o texto do número/torre vai pro navegador, não o conteúdo inteiro do guia.
+              apartments: h.apartments.map(({ content, ...a }) => {
+                const c = content as unknown as Apartment;
+                return { ...a, exportLabel: exportLabel(c.unit, parseHeroFacts(c.hero.facts).tower) };
+              }),
+            }}
+          />
         ))}
         {hosts.length === 0 && (
           <p className="rounded-2xl border border-dashed border-line p-6 text-center text-[15px] text-soft">
