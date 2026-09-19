@@ -31,6 +31,8 @@ const ES: Record<string, string> = {
   "Proibido fumar": "Prohibido fumar",
   "Em todo o apartamento.": "En todo el apartamento.",
   "Fumo permitido": "Se permite fumar",
+  "Fumo permitido somente na varanda": "Se permite fumar solo en la terraza",
+  "Dentro do apartamento é proibido fumar.": "Dentro del apartamento está prohibido fumar.",
   "Não são permitidos animais": "No se permiten mascotas",
   "Animais são bem-vindos": "Las mascotas son bienvenidas",
   "Anfitrião · WhatsApp": "Anfitrión · WhatsApp",

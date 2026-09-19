@@ -647,9 +647,10 @@ export function ApartmentWizard({
             <select
               className={field}
               value={form.smoking}
-              onChange={(e) => set("smoking", e.target.value as "yes" | "no")}
+              onChange={(e) => set("smoking", e.target.value as "yes" | "no" | "balcony")}
             >
               <option value="no">Proibido</option>
+              <option value="balcony">Permitido somente na varanda</option>
               <option value="yes">Permitido</option>
             </select>
           </label>

@@ -209,7 +209,7 @@ export type ApartmentFormInput = {
   wifiNetwork: string;
   wifiPassword: string;
   rulesText: string;
-  smoking: "yes" | "no";
+  smoking: "yes" | "no" | "balcony";
   pets: "yes" | "no";
   hostWhatsapp: string;
   coHostName: string;
@@ -309,16 +309,26 @@ export function buildApartmentContent(
     .filter(Boolean)
     .map((line) => ({ icon: "📌", title: t(line), text: t("") }));
 
-  rules.push(
-    input.smoking === "no"
-      ? {
-          icon: "🚭",
-          hot: true,
-          title: t("Proibido fumar", "No smoking"),
-          text: t("Em todo o apartamento.", "Anywhere in the apartment."),
-        }
-      : { icon: "🚬", title: t("Fumo permitido", "Smoking allowed"), text: t("") },
-  );
+  if (input.smoking === "no") {
+    rules.push({
+      icon: "🚭",
+      hot: true,
+      title: t("Proibido fumar", "No smoking"),
+      text: t("Em todo o apartamento.", "Anywhere in the apartment."),
+    });
+  } else if (input.smoking === "balcony") {
+    rules.push({
+      icon: "🚬",
+      hot: true,
+      title: t("Fumo permitido somente na varanda", "Smoking allowed on the balcony only"),
+      text: t(
+        "Dentro do apartamento é proibido fumar.",
+        "Smoking is not allowed inside the apartment.",
+      ),
+    });
+  } else {
+    rules.push({ icon: "🚬", title: t("Fumo permitido", "Smoking allowed"), text: t("") });
+  }
   rules.push(
     input.pets === "no"
       ? {
