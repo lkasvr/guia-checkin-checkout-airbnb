@@ -73,9 +73,12 @@ export function MediaField({
   onChange,
   reuseOptions,
   onReuse,
+  videoOnly,
 }: {
   value: string;
   onChange: (url: string) => void;
+  /** Campo só de vídeo (ex.: tour de A Casa): não oferece foto. */
+  videoOnly?: boolean;
   /** Vídeos já enviados (do modelo do prédio ou de outro apartamento) que dá pra reaproveitar sem duplicar espaço. */
   reuseOptions?: ReusableVideo[];
   /** Reaproveitar copia mais do que a URL (ex.: a legenda do botão) — sem isso cai no `onChange(url)` padrão. */
@@ -115,11 +118,19 @@ export function MediaField({
       </div>
       <div className="min-w-0">
         <label className="inline-block cursor-pointer rounded-full border border-line bg-card px-3 py-1.5 text-[13px] font-semibold text-soft">
-          {pending ? "Enviando…" : value ? "Trocar foto/vídeo" : "Enviar foto ou vídeo"}
+          {pending
+            ? "Enviando…"
+            : videoOnly
+              ? value
+                ? "Trocar vídeo"
+                : "Enviar vídeo"
+              : value
+                ? "Trocar foto/vídeo"
+                : "Enviar foto ou vídeo"}
           <input
             ref={inputRef}
             type="file"
-            accept="image/*,video/*"
+            accept={videoOnly ? "video/*" : "image/*,video/*"}
             className="hidden"
             disabled={pending}
             onChange={(e) => handleFile(e.target.files?.[0])}
@@ -476,6 +487,30 @@ export function HomeEditor({
         Texto de apoio
         <input className={field} value={value.sub} onChange={(e) => onChange({ ...value, sub: e.target.value })} />
       </label>
+
+      <p className="mt-4 text-[13px] font-semibold text-soft">
+        Vídeo de apresentação (opcional)
+      </p>
+      <p className="mt-0.5 text-[12.5px] text-soft">
+        Aparece sempre como a primeira coisa de A Casa, antes dos destaques — ideal pra um tour
+        mostrando o apartamento inteiro.
+      </p>
+      <div className="mt-2">
+        <MediaField
+          videoOnly
+          value={value.video ?? ""}
+          onChange={(video) => onChange({ ...value, video })}
+        />
+        {value.video && (
+          <button
+            type="button"
+            className={`${removeCls} mt-1.5`}
+            onClick={() => onChange({ ...value, video: "" })}
+          >
+            Remover vídeo
+          </button>
+        )}
+      </div>
 
       <p className="mt-4 text-[13px] font-semibold text-soft">Destaques (fotos)</p>
       <div className="mt-2 grid gap-2">

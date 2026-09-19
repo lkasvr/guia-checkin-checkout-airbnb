@@ -38,9 +38,12 @@ export type BuildingOption = {
   defaultFooterImg: string | null;
 } & BuildingTemplate;
 
-// As fotos padrão (capa/despedida) têm o próprio botão de copiar, não o
-// genérico abaixo — não fazem parte das 7 seções com editor de lista.
-type Section = Exclude<keyof BuildingEditPayload, "defaultHeroImg" | "defaultFooterImg">;
+// As fotos padrão (capa/despedida) têm o próprio botão de copiar, e o endereço
+// é específico de cada prédio — não fazem parte das 7 seções com editor de lista.
+type Section = Exclude<
+  keyof BuildingEditPayload,
+  "defaultHeroImg" | "defaultFooterImg" | "location"
+>;
 
 function CopyFromSelector({
   buildings,
@@ -170,6 +173,38 @@ export function BuildingEditor({
           template — só valem pra apartamentos criados/editados depois desta mudança.
         </p>
       )}
+
+      <h2 className={sectionTitle}>Endereço e Google Maps</h2>
+      <p className="mt-1 text-[13px] text-soft">
+        Aparece como um cartão com mapa logo antes do check-in, em todos os apartamentos deste
+        prédio (o apartamento pode ter um endereço próprio, que vale no lugar deste). Preencha
+        o endereço para mostrar a prévia do mapa; o link é para onde o hóspede cai ao clicar.
+      </p>
+      <div className="mt-3 grid gap-3">
+        <label className={labelCls}>
+          Endereço completo
+          <input
+            className={field}
+            value={form.location.address}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, location: { ...f.location, address: e.target.value } }))
+            }
+            placeholder="ex.: Rua Copaíba, 01 - Águas Claras, Brasília, DF"
+          />
+        </label>
+        <label className={labelCls}>
+          Link do Google Maps
+          <input
+            className={field}
+            value={form.location.mapsUrl}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, location: { ...f.location, mapsUrl: e.target.value } }))
+            }
+            placeholder="ex.: https://maps.app.goo.gl/..."
+            inputMode="url"
+          />
+        </label>
+      </div>
 
       <h2 className={sectionTitle}>Fotos padrão do modelo</h2>
       <p className="mt-1 text-[13px] text-soft">

@@ -1,5 +1,6 @@
-import type { Apartment, Alert, CheckinCard, L, Rule, Step } from "@/data/types";
+import type { Apartment, Alert, CheckinCard, L, MapLocation, Rule, Step } from "@/data/types";
 import { starterContent } from "@/data/starter";
+import { isPrerequisiteCard, withPrerequisiteCard } from "@/data/prerequisiteCard";
 import {
   amenitiesToContent,
   checkinToContent,
@@ -26,6 +27,7 @@ export type BuildingTemplate = {
   dining: Apartment["dining"];
   checkinTemplate: Apartment["checkin"];
   checkoutTemplate: NonNullable<Apartment["checkout"]>;
+  location: MapLocation | null;
 };
 
 /**
@@ -141,8 +143,10 @@ export function toBuildingTemplate(row: {
   dining: unknown;
   checkinTemplate: unknown;
   checkoutTemplate: unknown;
+  location?: unknown;
 }): BuildingTemplate {
   return {
+    location: (row.location as MapLocation | null | undefined) ?? null,
     rules: (row.rules as Apartment["rules"] | null) ?? BLANK_RULES,
     home: (row.home as Apartment["home"] | null) ?? BLANK_HOME,
     amenities: row.amenities as Apartment["amenities"],
@@ -164,10 +168,16 @@ export function toBuildingTemplate(row: {
  */
 export function overlayBuildingLiveContent(
   content: Apartment,
-  building: Pick<BuildingTemplate, "rules" | "home" | "amenities" | "tourism" | "dining">,
+  building: Pick<BuildingTemplate, "rules" | "home" | "amenities" | "tourism" | "dining"> & {
+    location?: MapLocation | null;
+  },
   overrides: ApartmentOverrides = {},
 ): Apartment {
-  return {
+  // Endereço/link próprio do apartamento vale no lugar do do prédio; sem
+  // nenhum dos dois o guia fica como sempre foi (sem cartão de mapa).
+  const own = content.location;
+  const location = own && (own.address?.trim() || own.mapsUrl?.trim()) ? own : building.location;
+  const overlaid: Apartment = {
     ...content,
     rules: overrides.rules
       ? content.rules
@@ -177,6 +187,9 @@ export function overlayBuildingLiveContent(
     tourism: overrides.tourism ? content.tourism : building.tourism,
     dining: overrides.dining ? content.dining : building.dining,
   };
+  if (location) overlaid.location = location;
+  else delete overlaid.location;
+  return overlaid;
 }
 
 export type ApartmentFormInput = {
@@ -202,6 +215,11 @@ export type ApartmentFormInput = {
   coHostName: string;
   coHostWhatsapp: string;
   internalNotes: string;
+  /** Endereço/link do Maps só deste apartamento; em branco herda do prédio. */
+  locationAddress: string;
+  locationMapsUrl: string;
+  /** Tour em vídeo só deste apartamento (topo de A Casa); em branco usa o do prédio, se houver. */
+  homeVideo: string;
   /** Quais seções este apartamento personalizou (em vez de herdar do prédio). */
   overrides: ApartmentOverrides;
   overrideRules?: RulesValue;
@@ -258,12 +276,20 @@ export function buildApartmentContent(
   base: Apartment = starterContent("Apartamento", input.unit, input.building),
   building?: BuildingTemplate | null,
 ): Apartment {
-  // Só aplica o template do prédio se ele tiver check-in escrito (prédio novo
-  // nasce em branco, aí o comportamento é igual a não ter prédio nenhum).
+  // Só aplica o template do prédio se ele tiver check-in escrito além do cartão
+  // padrão "Antes de chegar" (prédio novo nasce só com ele, aí o comportamento
+  // é igual a não ter prédio nenhum).
   const templated =
-    building && building.checkinTemplate.cards.length > 0
+    building && building.checkinTemplate.cards.some((c) => !isPrerequisiteCard(c))
       ? applyBuildingTemplate(building, input)
       : null;
+
+  const withPrerequisite = (checkin: Apartment["checkin"]): Apartment["checkin"] => ({
+    ...checkin,
+    cards: withPrerequisiteCard(checkin.cards),
+  });
+  const locationAddress = input.locationAddress.trim();
+  const locationMapsUrl = input.locationMapsUrl.trim();
 
   const facts: Apartment["hero"]["facts"] = [];
   if (input.tower) facts.push({ k: t(input.tower), v: t(input.floor || "—") });
@@ -327,17 +353,17 @@ export function buildApartmentContent(
 
   const phones = [input.hostWhatsapp, input.coHostWhatsapp].filter(Boolean).join(" · ");
 
-  return {
+  const content: Apartment = {
     ...base,
     unit: input.unit,
     building: input.building,
     hero: { ...base.hero, facts, img: input.heroImg || base.hero.img },
     checkin: {
+      // Edição manual do check-in é respeitada como está; template e conteúdo
+      // já existente ganham o cartão "Antes de chegar" no topo quando faltar.
       ...(input.checkinOverride
         ? checkinToContent(input.checkinOverride)
-        : templated
-          ? templated.checkin
-          : base.checkin),
+        : withPrerequisite(templated ? templated.checkin : base.checkin)),
       doorCode:
         input.doorCodeMode === "fixed" && input.doorCode
           ? { mode: "fixed", code: input.doorCode }
@@ -377,4 +403,12 @@ export function buildApartmentContent(
       ? { dining: placesToContent(input.overrideDining) }
       : {}),
   };
+  if (locationAddress || locationMapsUrl) {
+    content.location = { address: locationAddress, mapsUrl: locationMapsUrl };
+  } else {
+    delete content.location;
+  }
+  if (input.homeVideo.trim()) content.homeVideo = input.homeVideo.trim();
+  else delete content.homeVideo;
+  return content;
 }

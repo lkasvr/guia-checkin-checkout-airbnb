@@ -7,6 +7,7 @@ import type { Apartment } from "@/data/types";
 import { useLang } from "@/lib/i18n";
 import { CARD, LangToggle, Reveal, Rich, SectionHead, Steps } from "@/components/ui";
 import { Media } from "@/components/media";
+import { mapsEmbedUrl, mapsSearchUrl, normalizeMapsUrl, whatsappDigits } from "@/lib/maps";
 
 /* ----------------------------- HERO ----------------------------- */
 
@@ -96,6 +97,67 @@ export function Hero({ ap }: { ap: Apartment }) {
         </motion.div>
       </motion.div>
     </header>
+  );
+}
+
+/* --------------------------- LOCALIZAÇÃO ------------------------ */
+
+/**
+ * Cartão "Como chegar" logo antes do check-in: prévia do mapa + endereço +
+ * botão pro Google Maps. Sem endereço nem link cadastrados não renderiza nada,
+ * então guias que ainda não têm esses dados ficam exatamente como eram.
+ */
+export function Location({ ap }: { ap: Apartment }) {
+  const { t } = useLang();
+  const address = ap.location?.address?.trim() ?? "";
+  const link =
+    normalizeMapsUrl(ap.location?.mapsUrl) ?? (address ? mapsSearchUrl(address) : null);
+  if (!link) return null;
+
+  const openLabel = t({ pt: "Abrir no Google Maps", en: "Open in Google Maps" });
+  return (
+    <Reveal>
+      <div className="mt-[34px] overflow-hidden rounded-[22px] border border-line bg-card shadow-[0_1px_0_rgb(59_45_36/0.04)]">
+        {address && (
+          <div className="relative h-[178px] bg-blush">
+            <span className="absolute inset-0 flex items-center justify-center text-[34px]" aria-hidden>
+              📍
+            </span>
+            <iframe
+              src={mapsEmbedUrl(address)}
+              title={t({ pt: "Mapa do endereço", en: "Address map" })}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              tabIndex={-1}
+              className="pointer-events-none absolute inset-0 h-full w-full border-0"
+            />
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={openLabel}
+              className="absolute inset-0"
+            />
+          </div>
+        )}
+        <div className="p-[16px_18px_18px]">
+          <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-coffee">
+            📍 {t({ pt: "Como chegar", en: "Getting here" })}
+          </p>
+          {address && (
+            <p className="mt-1.5 font-display text-[21px] font-normal leading-[1.25]">{address}</p>
+          )}
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3.5 inline-flex items-center gap-2 rounded-full bg-ink px-[20px] py-3 text-[14.5px] font-bold text-bg no-underline transition-transform active:scale-95"
+          >
+            {openLabel} ↗
+          </a>
+        </div>
+      </div>
+    </Reveal>
   );
 }
 
@@ -356,12 +418,9 @@ export function Contacts({ ap }: { ap: Apartment }) {
         <SectionHead n="4">{t({ pt: "Contatos", en: "Contacts" })}</SectionHead>
         <p className="mb-[22px] mt-2.5 text-[16px] text-soft">{t(ap.contacts.sub)}</p>
       </Reveal>
-      {ap.contacts.items.map((c, i) => (
-        <Reveal key={i}>
-          <a
-            href={`tel:${c.tel}`}
-            className="mb-2.5 flex items-center gap-3.5 rounded-[18px] border border-line bg-card p-4 no-underline transition-transform active:scale-[0.99]"
-          >
+      {ap.contacts.items.map((c, i) => {
+        const identity = (
+          <>
             <span
               className={`flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full text-[21px] ${
                 c.sos ? "bg-terra-soft" : "bg-blush"
@@ -373,18 +432,59 @@ export function Contacts({ ap }: { ap: Apartment }) {
               {c.name && <b className="block text-[16.5px]">{c.name}</b>}
               <Rich as="span" html={t(c.role)} className="block text-[14.5px] text-soft" />
             </div>
-            <span
-              className={`whitespace-nowrap font-bold ${
-                c.sos
-                  ? "font-display text-[22px] text-terra"
-                  : "text-[17px] text-coffee"
-              }`}
-            >
-              {c.phone}
-            </span>
-          </a>
-        </Reveal>
-      ))}
+          </>
+        );
+
+        // Emergência continua sendo um toque só pra ligar.
+        if (c.sos) {
+          return (
+            <Reveal key={i}>
+              <a
+                href={`tel:${c.tel}`}
+                className="mb-2.5 flex items-center gap-3.5 rounded-[18px] border border-line bg-card p-4 no-underline transition-transform active:scale-[0.99]"
+              >
+                {identity}
+                <span className="whitespace-nowrap font-display text-[22px] font-bold text-terra">
+                  {c.phone}
+                </span>
+              </a>
+            </Reveal>
+          );
+        }
+
+        // Os contatos com WhatsApp no papel (host/coanfitrião) ganham o botão de mensagem.
+        const hasWhatsapp = /whats/i.test(`${c.role.pt} ${c.role.en}`);
+        const btn =
+          "inline-flex items-center gap-1.5 rounded-full px-[18px] py-2.5 text-[14px] font-bold no-underline transition-transform active:scale-95";
+        return (
+          <Reveal key={i}>
+            <div className="mb-2.5 rounded-[18px] border border-line bg-card p-4">
+              <div className="flex items-center gap-3.5">{identity}</div>
+              <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
+                <a
+                  href={`tel:${c.tel}`}
+                  className="mr-auto whitespace-nowrap text-[17px] font-bold text-coffee no-underline"
+                >
+                  {c.phone}
+                </a>
+                {hasWhatsapp && (
+                  <a
+                    href={`https://wa.me/${whatsappDigits(c.tel)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${btn} bg-[#128C7E] text-white`}
+                  >
+                    💬 WhatsApp
+                  </a>
+                )}
+                <a href={`tel:${c.tel}`} className={`${btn} border border-line bg-bg text-ink`}>
+                  📞 {t({ pt: "Ligar", en: "Call" })}
+                </a>
+              </div>
+            </div>
+          </Reveal>
+        );
+      })}
     </section>
   );
 }
@@ -393,6 +493,8 @@ export function Contacts({ ap }: { ap: Apartment }) {
 
 export function Home({ ap }: { ap: Apartment }) {
   const { t } = useLang();
+  // Tour em vídeo: o do apartamento vale no lugar do do prédio. Sempre o 1º elemento da seção.
+  const tour = ap.homeVideo?.trim() || ap.home.video?.trim();
   return (
     <section id="casa" className="pt-[54px]">
       <Reveal>
@@ -400,6 +502,24 @@ export function Home({ ap }: { ap: Apartment }) {
         <p className="mb-[22px] mt-2.5 text-[16px] text-soft">{t(ap.home.sub)}</p>
       </Reveal>
 
+      {tour && (
+        <Reveal>
+          <div className="mb-4">
+            <p className="mb-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-coffee">
+              🎬 {t({ pt: "Tour pelo apartamento", en: "Apartment tour" })}
+            </p>
+            <video
+              src={`${tour}#t=0.1`}
+              controls
+              playsInline
+              preload="metadata"
+              className="block max-h-[72svh] w-full rounded-[20px] border border-line bg-black"
+            />
+          </div>
+        </Reveal>
+      )}
+
+      {(ap.home.slides.length > 0 || !tour) && (
       <Reveal>
         <div className="no-scrollbar -mx-[18px] flex snap-x snap-mandatory gap-3 overflow-x-auto px-[18px] pb-2 pt-1">
           {ap.home.slides.map((s, i) => (
@@ -425,6 +545,7 @@ export function Home({ ap }: { ap: Apartment }) {
           ))}
         </div>
       </Reveal>
+      )}
 
       {ap.home.accordions.map((acc, i) => (
         <Reveal key={i}>

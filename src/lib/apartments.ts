@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { isSameDayBR } from "@/lib/tz";
-import type { Apartment } from "@/data/types";
+import type { Apartment, MapLocation } from "@/data/types";
 import {
   overlayBuildingLiveContent,
   type ApartmentOverrides,
@@ -47,7 +47,14 @@ export const getGuide = cache(
         content: true,
         overrides: true,
         building: {
-          select: { rules: true, home: true, amenities: true, tourism: true, dining: true },
+          select: {
+            rules: true,
+            home: true,
+            amenities: true,
+            tourism: true,
+            dining: true,
+            location: true,
+          },
         },
         stays: {
           where: {
@@ -94,6 +101,7 @@ export const getGuide = cache(
             amenities: row.building.amenities as unknown as Apartment["amenities"],
             tourism: row.building.tourism as unknown as Apartment["tourism"],
             dining: row.building.dining as unknown as Apartment["dining"],
+            location: row.building.location as unknown as MapLocation | null,
           },
           overrides,
         )

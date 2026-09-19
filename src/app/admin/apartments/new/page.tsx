@@ -31,6 +31,7 @@ export default async function NewApartmentPage({
         checkoutTemplate: true,
         defaultHeroImg: true,
         defaultFooterImg: true,
+        location: true,
       },
       orderBy: { name: "asc" },
     }),

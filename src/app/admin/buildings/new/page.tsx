@@ -2,19 +2,23 @@ import { prisma } from "@/lib/db";
 import { BuildingEditor, type BuildingOption } from "@/app/admin/buildings/building-editor";
 import type { BuildingEditPayload } from "@/app/admin/buildings/actions";
 import { toBuildingTemplate } from "@/data/buildApartmentContent";
+import { PREREQUISITE_CARD } from "@/data/prerequisiteCard";
+import { checkinFromContent } from "@/data/sectionContent";
 
 export const dynamic = "force-dynamic";
 
 const EMPTY: BuildingEditPayload = {
   rules: { sub: "", items: [] },
   home: { sub: "", slides: [], accordions: [] },
-  checkin: { sub: "", cards: [] },
+  // Todo modelo novo já nasce com o cartão de documento/veículo no topo.
+  checkin: checkinFromContent({ sub: { pt: "", en: "" }, cards: [PREREQUISITE_CARD] }),
   checkout: { sub: "", steps: [] },
   amenities: { sub: "", items: [] },
   tourism: { sub: "", items: [] },
   dining: { sub: "", items: [] },
   defaultHeroImg: "",
   defaultFooterImg: "",
+  location: { address: "", mapsUrl: "" },
 };
 
 export default async function NewBuildingPage() {
@@ -31,6 +35,7 @@ export default async function NewBuildingPage() {
       checkoutTemplate: true,
       defaultHeroImg: true,
       defaultFooterImg: true,
+      location: true,
     },
     orderBy: { name: "asc" },
   });

@@ -119,6 +119,10 @@ model Building {
   // mesma foto de capa).
   defaultHeroImg   String?
   defaultFooterImg String?
+  // Ao vivo, como amenities/tourism/dining: { address, mapsUrl } — cartão do
+  // Google Maps logo antes do check-in. O apartamento pode ter o próprio
+  // (`Apartment.content.location`), que vale no lugar deste.
+  location         Json?
   apartments       Apartment[]
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
