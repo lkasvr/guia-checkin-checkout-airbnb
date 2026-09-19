@@ -3,6 +3,10 @@ name: Deploy
 # Merge (ou push) na main publica em produção — é este o caminho para quem não
 # tem a CLI da Vercel configurada na máquina. O workflow_dispatch serve para
 # republicar sob demanda e para mandar um preview de qualquer branch.
+#
+# Só sobe se o commit HEAD for autorado pelo dono do time Vercel (plano Hobby):
+# merge feito por outra pessoa nasce BLOCKED e o passo 6 do deploy.sh aborta com
+# o motivo. Ver .claude/rules/deploy.md, "Quem pode ser autor do commit".
 on:
   push:
     branches: [main]

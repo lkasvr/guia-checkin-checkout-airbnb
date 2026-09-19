@@ -14,9 +14,13 @@
 #   --dry-run           roda as guardas e a checagem de migration, e para antes
 #                       de construir ou publicar
 #
-# Por que as etapas 6 a 8 existem: em 09 e 10/09/2026 três deploys de produção
-# terminaram com readyState=BLOCKED, zero funções e sem assumir anfyi.com.br —
-# e o comando devolveu sucesso. Exit code zero não é prova de que subiu.
+# Por que as etapas 6 a 8 existem: exit code zero do 'vercel deploy' não é prova
+# de que subiu. Um deployment cujo commit HEAD não é do dono do time Vercel
+# (plano Hobby) nasce readyState=BLOCKED, sem build e sem assumir anfyi.com.br;
+# diante dele a CLI 51.8.0 ora devolveu sucesso (09 e 10/09/2026), ora ficou
+# presa em "Building..." até o timeout do workflow (17 e 19/09/2026). Por isso
+# o passo 5 usa --no-wait e a espera é feita no passo 6, pela API, que é onde
+# está o readyStateReason. Ver .claude/rules/deploy.md.
 
 set -euo pipefail
 
@@ -56,7 +60,7 @@ ASSUME_YES=0
 DRY_RUN=0
 [[ -n "${CI:-}" ]] && ASSUME_YES=1
 
-usage() { sed -n '3,19p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '3,15p' "$0" | sed 's/^# \{0,1\}//'; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -216,7 +220,7 @@ fi
 # ────────────────────────────────────────────────────────────── 4/8  Build
 step "4/8  Build"
 
-DEPLOY_ARGS=(deploy --yes)
+DEPLOY_ARGS=(deploy --yes --no-wait)
 [[ "$TARGET" == "production" ]] && DEPLOY_ARGS+=(--prod)
 
 if (( PREBUILT )); then
@@ -263,16 +267,40 @@ ok "$DEPLOY_URL"
 # ──────────────────────────────────────── 6/8  Verificação do deployment
 step "6/8  Verificação do deployment"
 
-vercel inspect "$DEPLOY_URL" --wait --timeout 10m >/dev/null 2>&1 || true
-
-META="$(vercel inspect "$DEPLOY_URL" --json 2>/dev/null)" || die "não consegui inspecionar $DEPLOY_URL."
-READY_STATE="$(jq -r '.readyState // "DESCONHECIDO"' <<<"$META")"
+# A espera é feita aqui, e não dentro do 'vercel deploy': num deployment que
+# nasce BLOCKED a CLI imprime "Building..." e não volta (17 e 19/09/2026, CI).
+# O estado vem de /v13/deployments, o único lugar com readyStateReason; o
+# 'vercel inspect --json' não o traz.
+DEPLOY_HOST="${DEPLOY_URL#https://}"
+WAIT_LIMIT=$((10 * 60))
+WAITED=0
+while :; do
+  META="$(vercel api "/v13/deployments/$DEPLOY_HOST" 2>/dev/null)" \
+    || die "não consegui consultar $DEPLOY_HOST em /v13/deployments."
+  READY_STATE="$(jq -r '.readyState // "DESCONHECIDO"' <<<"$META")"
+  case "$READY_STATE" in
+    READY|ERROR|CANCELED|BLOCKED) break ;;
+  esac
+  (( WAITED < WAIT_LIMIT )) || die "o deployment continua em $READY_STATE depois de ${WAIT_LIMIT}s."
+  note "$READY_STATE há ${WAITED}s; nova consulta em 10s"
+  sleep 10
+  WAITED=$((WAITED + 10))
+done
 DEPLOY_ID="$(jq -r '.id' <<<"$META")"
-LAMBDAS="$(jq '[.builds[]?.output[]? | select(.type == "lambda")] | length' <<<"$META")"
 
 if [[ "$READY_STATE" != "READY" ]]; then
+  REASON="$(jq -r '.readyStateReason // .errorMessage // empty' <<<"$META")"
+  [[ -n "$REASON" ]] && printf '      %s\n' "$REASON"
+  if [[ "$READY_STATE" == "BLOCKED" ]]; then
+    note "commit HEAD: $(jq -r '(.meta.githubCommitSha // "?")[0:7] + " de " + (.meta.githubCommitAuthorName // "?") + " <" + (.meta.githubCommitAuthorEmail // "?") + ">"' <<<"$META")"
+    note "no plano Hobby só commit do dono do time Vercel é construído (.claude/rules/deploy.md, \"Quem pode ser autor do commit\")."
+  fi
   die "readyState=$READY_STATE (esperado READY). O deployment $DEPLOY_ID não está no ar e não assumiu domínio nenhum."
 fi
+
+# Só o 'vercel inspect --json' traz os builds com a lista de funções.
+INSPECT="$(vercel inspect "$DEPLOY_URL" --json 2>/dev/null)" || die "não consegui inspecionar $DEPLOY_URL."
+LAMBDAS="$(jq '[.builds[]?.output[]? | select(.type == "lambda")] | length' <<<"$INSPECT")"
 
 if (( LAMBDAS == 0 )); then
   if [[ "$TARGET" == "production" ]]; then

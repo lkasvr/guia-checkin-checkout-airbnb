@@ -6,16 +6,24 @@ paths:
 
 # Deploy
 
-Dois caminhos, o mesmo script. O projeto Vercel `guia-1305c`
-(`prj_1egGjvrM5W7KIgf0LtYSvzARlCNE`, time `Numix`) **não tem integração Git** —
-nada acontece só por empurrar commit. Quem publica é a CLI.
+Três caminhos chegam ao projeto Vercel `guia-1305c`
+(`prj_1egGjvrM5W7KIgf0LtYSvzARlCNE`, time `Numix`, plano **Hobby**). O projeto
+**está linkado** ao repositório `lkasvr/guia-checkin-checkout-airbnb`
+(production branch `main`, desde 20/07/2026): todo push cria um deployment
+`source: git`, além do que o workflow ou a sua CLI criam.
 
-| | Merge na `main` | CLI na sua máquina |
-|---|---|---|
-| quem dispara | GitHub Actions (`.github/workflows/deploy.yml`) | você |
-| autenticação | secret `VERCEL_TOKEN` | sua sessão do `vercel login` |
-| alvo | produção | `npm run deploy` (preview) / `npm run deploy:prod` |
-| migration pendente | aborta o job | pergunta se aplica |
+| | Integração Git | Merge na `main` | CLI na sua máquina |
+|---|---|---|---|
+| quem dispara | todo push | GitHub Actions (`.github/workflows/deploy.yml`) | você |
+| autenticação | a própria integração | secret `VERCEL_TOKEN` | sua sessão do `vercel login` |
+| alvo | produção na `main`, preview no resto | produção | `npm run deploy` (preview) / `npm run deploy:prod` |
+| migration pendente | não olha | aborta o job | pergunta se aplica |
+| confere o resultado | não | sim (passos 6 a 8) | sim |
+
+Um merge na `main` cria **dois** deployments de produção, um por caminho. Em
+12/09/2026 o da integração nasceu às 22:04:04Z e o do workflow às 22:04:56Z; o
+do workflow ficou com `readySubstate=PROMOTED`. Desligar um dos dois é decisão
+em aberto.
 
 ```bash
 npm run deploy                       # preview
@@ -23,17 +31,48 @@ npm run deploy:prod                  # produção
 npm run deploy:prod -- --dry-run     # só as guardas, não publica
 ```
 
+## Quem pode ser autor do commit
+
+No plano Hobby a Vercel só constrói deployment cujo **commit HEAD é autorado
+pelo dono do time** (`lkasvr`). Não importa quem deploya nem por qual caminho:
+o `creator` foi `lkasvr` em todos os casos medidos, inclusive nos bloqueados.
+Commit com autor `annahjubs` nasce assim:
+
+    readyState=BLOCKED   buildSkipped=true   0 funções   alias não assumido
+    readyStateReason: "The deployment was blocked because the commit author
+    doesn't have permission to create deployments for this project."
+
+O motivo só aparece na API, não no `vercel inspect`:
+
+```bash
+vercel api /v13/deployments/<id-ou-host> | jq -r .readyStateReason
+```
+
+Medido em 19/09/2026 nos 30 deployments mais recentes: 18 BLOCKED desde
+31/08/2026, todos com autor `annahjubs`; todos os READY com autor `lkasvr`.
+Diante de um BLOCKED a CLI 51.8.0 ora devolve sucesso (09 e 10/09/2026), ora
+fica presa em `Building...` até o `timeout-minutes: 20` do workflow matar o job
+(17 e 19/09/2026, runs 35258599872 e 35460744531, conclusão `cancelled`).
+Regra da Vercel:
+<https://vercel.com/docs/deployments/troubleshoot-project-collaboration#team-configuration>.
+
+Consequência prática: **PR da Anna é mergeado pelo Lucas**, com "Create a merge
+commit". O merge commit fica autorado por quem clica, e o deploy passa (PR #5,
+12/09/2026). Se a Anna clicar em Merge, a `main` avança mas produção não (PRs #4,
+#6 e #7). Não dá para travar isso no GitHub: branch protection em repositório
+privado exige GitHub Pro. A saída definitiva é o plano Pro na Vercel, com a Anna
+no time (a conta dela, `02annajulia-1748`, já está ligada ao GitHub).
+
 ## Por que o script confere o resultado
 
-Em 09 e 10/09/2026 três deploys de produção terminaram com
-`readyState=BLOCKED`, zero funções λ e sem assumir `anfyi.com.br` — **e o
-comando devolveu sucesso**. O site seguiu servindo o deployment de 23/08. Exit
-code zero não é prova de que subiu; por isso os passos 6 a 8:
+Exit code zero do `vercel deploy` não é prova de que subiu. Por isso o passo 5
+deploya com `--no-wait` e a espera é feita nos passos 6 a 8, lendo a API:
 
-6. `vercel inspect --json` tem de dizer `readyState=READY`, e o deployment tem
-   de ter mais de zero funções λ. Zero função significa que o Next não foi
-   construído (o Framework Preset do projeto é `Other`; quem conserta é o
-   `"framework": "nextjs"` do `vercel.json`).
+6. polling em `vercel api /v13/deployments/<host>` até `READY`, `ERROR`,
+   `CANCELED` ou `BLOCKED` (10 min no máximo). Fora de `READY`, imprime o
+   `readyStateReason` e aborta. `READY` com zero funções λ também aborta: o Next
+   não foi construído (o Framework Preset do projeto é `Other`; quem conserta é
+   o `"framework": "nextjs"` do `vercel.json`).
 7. `vercel inspect https://anfyi.com.br --json` tem de devolver o **mesmo `id`**
    do deployment recém-criado. Se não devolver, o script manda promover:
    `vercel promote <url>`.
@@ -96,3 +135,6 @@ ignorado pelo git justamente para não os versionar.
 4. **Fixe a versão da CLI.** O workflow usa `vercel@51.8.0`. As armadilhas de
    `.claude/rules/ambientes-e-bancos.md` e a forma do `vercel inspect --json`
    foram medidas nessa versão.
+5. **Merge na `main` é o Lucas quem faz.** Enquanto o plano for Hobby, o commit
+   HEAD tem de ser dele, senão o deployment nasce BLOCKED (ver "Quem pode ser
+   autor do commit").
