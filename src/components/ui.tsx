@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "motion/react";
 import type { ElementType, ReactNode } from "react";
 import type { Step } from "@/data/types";
-import { useLang } from "@/lib/i18n";
+import { LANGS, useLang, type Lang } from "@/lib/i18n";
 
 /** Cartão base (borda + fundo + sombra sutil), compartilhado entre guia e arrival. */
 export const CARD =
@@ -92,32 +92,68 @@ export function SectionHead({ n, children }: { n: string; children: ReactNode })
 }
 
 /** Seletor de idioma PT/EN. */
+/** Bandeira em SVG: o emoji de bandeira não aparece no Windows, o SVG aparece em qualquer aparelho. */
+function Flag({ lang }: { lang: Lang }) {
+  const cls =
+    "h-[14px] w-[20px] shrink-0 rounded-[3px] shadow-[0_0_0_1px_rgb(59_45_36/0.18)]";
+  if (lang === "pt") {
+    return (
+      <svg viewBox="0 0 20 14" className={cls} aria-hidden>
+        <rect width="20" height="14" fill="#009c3b" />
+        <polygon points="10,1.6 18.4,7 10,12.4 1.6,7" fill="#ffdf00" />
+        <circle cx="10" cy="7" r="3.3" fill="#002776" />
+      </svg>
+    );
+  }
+  if (lang === "en") {
+    return (
+      <svg viewBox="0 0 20 14" className={cls} aria-hidden>
+        <rect width="20" height="14" fill="#fff" />
+        {[0, 2, 4, 6, 8, 10, 12].map((y) => (
+          <rect key={y} y={y} width="20" height="1.08" fill="#b22234" />
+        ))}
+        <rect width="9" height="7.6" fill="#3c3b6e" />
+        {[1.6, 4.1, 6.6].flatMap((x) =>
+          [1.4, 3.4, 5.4].map((y) => <circle key={`${x}-${y}`} cx={x} cy={y} r="0.45" fill="#fff" />),
+        )}
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 20 14" className={cls} aria-hidden>
+      <rect width="20" height="14" fill="#c60b1e" />
+      <rect y="3.5" width="20" height="7" fill="#ffc400" />
+    </svg>
+  );
+}
+
+const LANG_LABEL: Record<Lang, string> = { pt: "Português", en: "English", es: "Español" };
+
+/** Seletor de idioma PT/EN/ES, com a bandeira de cada um. */
 export function LangToggle() {
   const { lang, setLang } = useLang();
   const base =
-    "rounded-full px-3.5 py-[7px] text-[13.5px] font-bold tracking-[0.04em] transition-transform active:scale-95";
+    "flex items-center gap-1.5 rounded-full px-2.5 py-[6px] text-[13px] font-bold tracking-[0.04em] transition-transform active:scale-95";
   return (
     <div
       role="group"
-      aria-label="Idioma / Language"
+      aria-label="Idioma / Language / Idioma"
       className="flex gap-0.5 rounded-full border border-line bg-[rgb(255_253_249/0.9)] p-[3px] backdrop-blur-sm"
     >
-      <button
-        type="button"
-        aria-pressed={lang === "pt"}
-        onClick={() => setLang("pt")}
-        className={`${base} ${lang === "pt" ? "bg-ink text-bg" : "text-soft"}`}
-      >
-        PT
-      </button>
-      <button
-        type="button"
-        aria-pressed={lang === "en"}
-        onClick={() => setLang("en")}
-        className={`${base} ${lang === "en" ? "bg-ink text-bg" : "text-soft"}`}
-      >
-        EN
-      </button>
+      {LANGS.map((l) => (
+        <button
+          key={l}
+          type="button"
+          aria-pressed={lang === l}
+          aria-label={LANG_LABEL[l]}
+          title={LANG_LABEL[l]}
+          onClick={() => setLang(l)}
+          className={`${base} ${lang === l ? "bg-ink text-bg" : "text-soft"}`}
+        >
+          <Flag lang={l} />
+          {l.toUpperCase()}
+        </button>
+      ))}
     </div>
   );
 }

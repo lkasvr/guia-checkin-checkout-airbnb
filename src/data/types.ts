@@ -1,7 +1,12 @@
 /** Texto localizado PT/EN. Strings marcadas como "ricas" podem conter HTML
  *  simples e confiável (<strong>, <a class="chatlink">, <span class="hint">),
  *  renderizado via o componente <Rich/>. */
-export type L = { pt: string; en: string };
+export type L = {
+  pt: string;
+  en: string;
+  /** Opcional: sem ele o guia usa o dicionário de textos padrão (`src/data/es.ts`) e, por último, o inglês. */
+  es?: string;
+};
 
 export type Fact = { k: L; v: L };
 
@@ -42,6 +47,8 @@ export type Accordion = {
   icon: string;
   title: L;
   steps: Step[];
+  /** Foto ou vídeo do equipamento (URL do arquivo enviado) — aparece antes dos passos. */
+  media?: string;
   diagram?: { img: string; alt: string; legend: LegendItem[] };
 };
 

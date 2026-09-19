@@ -596,6 +596,33 @@ export function HomeEditor({
               />
             </label>
             <div className="sm:col-span-2">
+              <span className="text-[12.5px] font-semibold text-soft">
+                Foto ou vídeo do equipamento (opcional)
+              </span>
+              <p className="mt-0.5 text-[12px] text-soft">
+                Aparece dentro do equipamento, antes dos passos — ex.: um vídeo mostrando como usar.
+              </p>
+              <div className="mt-1">
+                <MediaField
+                  value={a.media ?? ""}
+                  onChange={(media) =>
+                    onChange({ ...value, accordions: updateAt(value.accordions, i, { media }) })
+                  }
+                />
+                {a.media && (
+                  <button
+                    type="button"
+                    className={`${removeCls} mt-1.5`}
+                    onClick={() =>
+                      onChange({ ...value, accordions: updateAt(value.accordions, i, { media: "" }) })
+                    }
+                  >
+                    Remover foto/vídeo
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="sm:col-span-2">
               <StepListEditor
                 steps={a.steps}
                 onChange={(steps) =>
@@ -618,6 +645,97 @@ export function HomeEditor({
                       })
                     }
                   />
+                </div>
+                <p className="mt-3 text-[12.5px] font-semibold text-soft">
+                  Itens numerados ao lado da foto
+                </p>
+                <p className="mt-0.5 text-[12px] text-soft">
+                  O número é o que aparece na foto; edite, remova ou acrescente itens à vontade.
+                </p>
+                <div className="mt-1.5 grid gap-1.5">
+                  {a.diagram.legend.map((it, li) => (
+                    <div key={li} className="flex items-center gap-2">
+                      <input
+                        className={`${field} w-14 shrink-0 text-center`}
+                        value={it.n}
+                        aria-label="Número do item"
+                        onChange={(e) =>
+                          onChange({
+                            ...value,
+                            accordions: updateAt(value.accordions, i, {
+                              diagram: {
+                                ...a.diagram!,
+                                legend: updateAt(a.diagram!.legend, li, { n: e.target.value }),
+                              },
+                            }),
+                          })
+                        }
+                      />
+                      <input
+                        className={`${field} min-w-0 flex-1`}
+                        value={it.label.pt}
+                        aria-label="Nome do item"
+                        placeholder="ex.: Tampa do reservatório"
+                        onChange={(e) =>
+                          onChange({
+                            ...value,
+                            accordions: updateAt(value.accordions, i, {
+                              diagram: {
+                                ...a.diagram!,
+                                // Texto novo vale nos três idiomas (a tradução antiga não serve mais).
+                                legend: updateAt(a.diagram!.legend, li, {
+                                  label: { pt: e.target.value, en: e.target.value },
+                                }),
+                              },
+                            }),
+                          })
+                        }
+                      />
+                      <button
+                        type="button"
+                        className={removeCls}
+                        onClick={() =>
+                          onChange({
+                            ...value,
+                            accordions: updateAt(value.accordions, i, {
+                              diagram: {
+                                ...a.diagram!,
+                                legend: removeAt(a.diagram!.legend, li),
+                              },
+                            }),
+                          })
+                        }
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className={addCls}
+                    onClick={() =>
+                      onChange({
+                        ...value,
+                        accordions: updateAt(value.accordions, i, {
+                          diagram: {
+                            ...a.diagram!,
+                            legend: [
+                              ...a.diagram!.legend,
+                              {
+                                // Próximo número livre (removendo o 2, o novo item não repete o 10).
+                                n: String(
+                                  Math.max(0, ...a.diagram!.legend.map((it) => parseInt(it.n, 10) || 0)) + 1,
+                                ),
+                                label: { pt: "", en: "" },
+                              },
+                            ],
+                          },
+                        }),
+                      })
+                    }
+                  >
+                    + Item numerado
+                  </button>
                 </div>
               </div>
             )}

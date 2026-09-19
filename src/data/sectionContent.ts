@@ -27,6 +27,8 @@ export type AccordionInput = {
   icon: string;
   title: string;
   steps: StepInput[];
+  /** Foto ou vídeo do equipamento. */
+  media?: string;
   diagram?: Accordion["diagram"];
 };
 export type CheckinCardInput = {
@@ -179,7 +181,16 @@ export function homeToContent(v: HomeValue): Apartment["home"] {
         icon: a.icon.trim() || "🔧",
         title: t(a.title.trim()),
         steps: stepsToContent(a.steps),
-        ...(a.diagram ? { diagram: a.diagram } : {}),
+        ...(a.media?.trim() ? { media: a.media.trim() } : {}),
+        // Item da legenda sem texto (recém-adicionado e não preenchido) não vai pro guia.
+        ...(a.diagram
+          ? {
+              diagram: {
+                ...a.diagram,
+                legend: a.diagram.legend.filter((it) => it.label.pt.trim()),
+              },
+            }
+          : {}),
       })),
   };
 }
@@ -192,6 +203,7 @@ export function homeFromContent(c: Apartment["home"]): HomeValue {
       icon: a.icon,
       title: a.title.pt,
       steps: stepsFromContent(a.steps),
+      media: a.media ?? "",
       diagram: a.diagram,
     })),
   };
