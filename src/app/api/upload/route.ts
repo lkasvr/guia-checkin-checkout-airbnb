@@ -36,7 +36,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           "video/quicktime",
         ],
         addRandomSuffix: true,
-        maximumSizeInBytes: 50 * 1024 * 1024,
+        maximumSizeInBytes: 100 * 1024 * 1024,
       }),
     });
     return NextResponse.json(jsonResponse);
