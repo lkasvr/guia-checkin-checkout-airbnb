@@ -60,6 +60,9 @@ export type Place = {
 
 export type NavItem = { href: string; label: L };
 
+/** Endereço completo + link do Google Maps do prédio — ambos opcionais, cada um sozinho já basta pra mostrar o cartão. */
+export type MapLocation = { address: string; mapsUrl: string };
+
 export type Apartment = {
   slug: string;
   lang: { default: "pt" | "en" };
@@ -68,6 +71,8 @@ export type Apartment = {
   unit: string;
   eyebrow: L;
   building: string;
+  /** Próprio do apartamento; em branco herda ao vivo do prédio (`Building.location`). */
+  location?: MapLocation;
   hero: { img: string; sub: L; facts: Fact[] };
   nav: NavItem[];
 
@@ -82,7 +87,10 @@ export type Apartment = {
   checkout?: { sub: L; steps: Step[] };
   rules: { sub: L; items: Rule[] };
   contacts: { sub: L; items: Contact[] };
-  home: { sub: L; slides: Slide[]; accordions: Accordion[] };
+  /** `video`: tour em vídeo, sempre o 1º elemento de A Casa (o de `homeVideo` vale no lugar deste). */
+  home: { sub: L; slides: Slide[]; accordions: Accordion[]; video?: string };
+  /** Tour em vídeo só deste apartamento — vale no lugar do vídeo do prédio, sem desligar o resto de A Casa do prédio. */
+  homeVideo?: string;
   amenities: { sub: L; items: Amenity[] };
   tourism: { sub: L; items: Place[] };
   dining: { sub: L; items: Place[] };

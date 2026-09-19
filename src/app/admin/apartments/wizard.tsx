@@ -66,6 +66,9 @@ const EMPTY: FormState = {
   coHostName: "",
   coHostWhatsapp: "",
   internalNotes: "",
+  locationAddress: "",
+  locationMapsUrl: "",
+  homeVideo: "",
   overrides: {},
   slug: "",
   label: "",
@@ -487,6 +490,34 @@ export function ApartmentWizard({
         </div>
       </div>
 
+      <h2 className={sectionTitle}>Endereço e Google Maps</h2>
+      <p className="mt-1 text-[13px] text-soft">
+        {matchedBuilding?.location?.address || matchedBuilding?.location?.mapsUrl
+          ? "Em branco, este apartamento usa o endereço do prédio (mostrado abaixo). Preencha só se este apartamento tiver um endereço diferente."
+          : "Aparece como um cartão com mapa logo antes do check-in. Você também pode cadastrar isso uma vez só no prédio, e todos os apartamentos dele herdam."}
+      </p>
+      <div className="mt-3 grid gap-3">
+        <label className={labelCls}>
+          Endereço completo
+          <input
+            className={field}
+            value={form.locationAddress}
+            onChange={(e) => set("locationAddress", e.target.value)}
+            placeholder={matchedBuilding?.location?.address || "ex.: Rua Copaíba, 01 - Águas Claras, Brasília, DF"}
+          />
+        </label>
+        <label className={labelCls}>
+          Link do Google Maps
+          <input
+            className={field}
+            value={form.locationMapsUrl}
+            onChange={(e) => set("locationMapsUrl", e.target.value)}
+            placeholder={matchedBuilding?.location?.mapsUrl || "ex.: https://maps.app.goo.gl/..."}
+            inputMode="url"
+          />
+        </label>
+      </div>
+
       <h2 className={sectionTitle}>Check-in e fechadura</h2>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className={labelCls}>
@@ -661,6 +692,35 @@ export function ApartmentWizard({
           <HomeEditor value={form.overrideHome} onChange={(v) => set("overrideHome", v)} />
         )}
       </SectionOverrideBlock>
+
+      <div className="mt-3 rounded-xl border border-line p-3">
+        <span className="text-[13.5px] font-semibold text-ink">
+          Vídeo deste apartamento (topo de A Casa)
+        </span>
+        <p className="mt-0.5 text-[12.5px] text-soft">
+          Tour mostrando o apartamento inteiro — é a primeira coisa que o hóspede vê em A Casa.
+          {preview.home.video && !form.homeVideo
+            ? " Em branco, usa o vídeo do prédio (já cadastrado)."
+            : " Em branco, usa o vídeo do prédio, se houver."}{" "}
+          Não desliga o resto de A Casa que vem do prédio.
+        </p>
+        <div className="mt-2">
+          <MediaField
+            videoOnly
+            value={form.homeVideo}
+            onChange={(v) => set("homeVideo", v)}
+          />
+          {form.homeVideo && (
+            <button
+              type="button"
+              onClick={() => set("homeVideo", "")}
+              className="mt-1.5 text-[13px] font-semibold text-terra"
+            >
+              Remover vídeo
+            </button>
+          )}
+        </div>
+      </div>
 
       <SectionOverrideBlock
         section="amenities"

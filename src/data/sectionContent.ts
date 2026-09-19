@@ -42,7 +42,13 @@ export type CheckinCardInput = {
 export type RulesValue = { sub: string; items: RuleInput[] };
 export type AmenitiesValue = { sub: string; items: AmenityInput[] };
 export type PlacesValue = { sub: string; items: PlaceInput[] };
-export type HomeValue = { sub: string; slides: SlideInput[]; accordions: AccordionInput[] };
+export type HomeValue = {
+  sub: string;
+  slides: SlideInput[];
+  accordions: AccordionInput[];
+  /** Tour em vídeo (URL do arquivo enviado) — vem antes dos destaques em A Casa. */
+  video?: string;
+};
 export type CheckinValue = { sub: string; cards: CheckinCardInput[] };
 export type CheckoutValue = { sub: string; steps: StepInput[] };
 
@@ -159,6 +165,7 @@ export function placesFromContent(c: {
 export function homeToContent(v: HomeValue): Apartment["home"] {
   return {
     sub: t(v.sub),
+    ...(v.video?.trim() ? { video: v.video.trim() } : {}),
     slides: v.slides
       .filter((s) => s.title.trim())
       .map((s) => ({
@@ -179,6 +186,7 @@ export function homeToContent(v: HomeValue): Apartment["home"] {
 export function homeFromContent(c: Apartment["home"]): HomeValue {
   return {
     sub: c.sub.pt,
+    video: c.video ?? "",
     slides: c.slides.map((s) => ({ img: s.img, title: s.title.pt, text: s.text.pt })),
     accordions: c.accordions.map((a) => ({
       icon: a.icon,

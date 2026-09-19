@@ -1,4 +1,5 @@
 import type { Apartment, L } from "@/data/types";
+import { PREREQUISITE_CARD } from "@/data/prerequisiteCard";
 
 const t = (pt: string, en?: string): L => ({ pt, en: en ?? pt });
 
@@ -38,7 +39,7 @@ export function starterContent(
       { href: "#comer", label: t("Onde Comer", "Dining") },
     ],
     wifi: { network: "", password: "", speed: t("") },
-    checkin: { sub: t("Instruções de chegada."), cards: [] },
+    checkin: { sub: t("Instruções de chegada."), cards: [PREREQUISITE_CARD] },
     checkout: { sub: t("Antes de sair."), steps: [] },
     rules: { sub: t("Regras da casa."), items: [] },
     contacts: { sub: t("Contatos."), items: [] },

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma/client";
 import { requireAdmin } from "@/app/admin/actions";
 import {
   amenitiesToContent,
@@ -29,10 +30,15 @@ export type BuildingEditPayload = {
   /** Sugestão de capa/despedida pro "Copiar de" ao criar apartamento — não é ao vivo. */
   defaultHeroImg: string;
   defaultFooterImg: string;
+  /** Endereço + link do Google Maps, ao vivo em todos os apartamentos do prédio. */
+  location: { address: string; mapsUrl: string };
 };
 
 function buildData(payload: BuildingEditPayload) {
+  const address = payload.location.address.trim();
+  const mapsUrl = payload.location.mapsUrl.trim();
   return {
+    location: address || mapsUrl ? ({ address, mapsUrl } as object) : Prisma.DbNull,
     rules: rulesToContent(payload.rules) as object,
     home: homeToContent(payload.home) as object,
     checkinTemplate: checkinToContent(payload.checkin) as object,

@@ -15,6 +15,7 @@ import {
   Footer,
   Hero,
   Home,
+  Location,
   Rules,
   Tourism,
   Wifi,
@@ -61,6 +62,7 @@ function GuideBody({ ap, stay }: { ap: Apartment; stay: StayInfo | null }) {
         <Nav ap={ap} checkoutFirst={checkoutFirst} />
 
         {checkoutFirst && saida}
+        <Location ap={ap} />
         <CheckIn ap={ap} />
         <Wifi ap={ap} />
         <Rules ap={ap} />

@@ -26,6 +26,7 @@ const BUILDING_SELECT = {
   checkoutTemplate: true,
   defaultHeroImg: true,
   defaultFooterImg: true,
+  location: true,
 } as const;
 
 export default async function EditBuildingPage({
@@ -55,6 +56,10 @@ export default async function EditBuildingPage({
     dining: placesFromContent(t.dining),
     defaultHeroImg: building.defaultHeroImg ?? "",
     defaultFooterImg: building.defaultFooterImg ?? "",
+    location: {
+      address: t.location?.address ?? "",
+      mapsUrl: t.location?.mapsUrl ?? "",
+    },
   };
 
   const otherBuildings: BuildingOption[] = others.map((b) => ({
