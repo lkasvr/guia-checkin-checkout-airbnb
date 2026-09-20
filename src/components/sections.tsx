@@ -52,13 +52,26 @@ function useCoverRatio(boxRef: React.RefObject<HTMLElement | null>, src: string)
   return ratio;
 }
 
+/** Ícone de cada quadradinho da capa, pela legenda (em português) que o formulário gera. */
+const FACT_ICON: Record<string, string> = {
+  Garagem: "🚗",
+  "Capacidade máxima": "👥",
+  "Check-in": "🔑",
+  "Check-out": "🧳",
+};
+
 export function Hero({ ap }: { ap: Apartment }) {
   const { t } = useLang();
   const coverRef = useRef<HTMLDivElement>(null);
   const ratio = useCoverRatio(coverRef, ap.hero.img);
-  // Texto comprido (ex.: "Vaga rotativa (sinalizada na cor verde)") ganha a linha toda, no fim,
-  // em vez de estourar a caixa de um terço da largura.
-  const facts = ap.hero.facts.map((f) => ({ f, long: t(f.k).length > 16 }));
+  // Grade de duas colunas: quadradinhos curtos lado a lado (o último, se sobrar sozinho, ocupa a
+  // linha toda); texto comprido (ex.: "Vaga rotativa (sinalizada na cor verde)") ganha a linha
+  // inteira, no fim.
+  const facts = ap.hero.facts.map((f, i) => ({
+    f,
+    long: t(f.k).length > 20,
+    icon: FACT_ICON[f.v.pt] ?? (i === 0 ? "🏢" : ""),
+  }));
   const orderedFacts = [...facts.filter((x) => !x.long), ...facts.filter((x) => x.long)];
   return (
     <header className="relative -mx-[18px] px-6 pb-2.5 text-left">
@@ -122,22 +135,27 @@ export function Hero({ ap }: { ap: Apartment }) {
             Wi-Fi ↓
           </a>
         </motion.div>
-        <motion.div variants={heroItem} className="mt-[18px] flex flex-wrap justify-center gap-2">
-          {orderedFacts.map(({ f, long }, i) => (
+        <motion.div variants={heroItem} className="mt-[20px] flex flex-wrap gap-2.5">
+          {orderedFacts.map(({ f, long, icon }, i) => (
             <div
               key={i}
-              className={`flex min-w-0 flex-col items-center justify-center rounded-2xl border border-line bg-card p-[12px_10px] text-center ${
-                long ? "basis-full" : "basis-[calc((100%-1rem)/3)]"
+              className={`flex min-h-[92px] min-w-0 flex-col items-center justify-center gap-1 rounded-[20px] border border-line bg-[linear-gradient(180deg,var(--color-card),rgb(255_253_249/0.7))] px-3 py-3.5 text-center shadow-[0_1px_0_rgb(59_45_36/0.04)] ${
+                long ? "basis-full" : "grow basis-[calc(50%-0.3125rem)]"
               }`}
             >
+              {icon && (
+                <span className="text-[19px] leading-none" aria-hidden>
+                  {icon}
+                </span>
+              )}
               <div
-                className={`max-w-full break-words font-display leading-[1.15] text-coffee [hyphens:auto] ${
-                  long ? "text-[18px]" : "text-[clamp(16px,5vw,20px)]"
+                className={`max-w-full font-display leading-[1.2] text-coffee [overflow-wrap:break-word] [text-wrap:balance] ${
+                  long ? "text-[18px]" : "text-[20px]"
                 }`}
               >
                 {t(f.k)}
               </div>
-              <div className="mt-1 text-[12px] font-bold uppercase tracking-[0.08em] text-soft">
+              <div className="text-[11.5px] font-bold uppercase tracking-[0.1em] text-soft [text-wrap:balance]">
                 {t(f.v)}
               </div>
             </div>
