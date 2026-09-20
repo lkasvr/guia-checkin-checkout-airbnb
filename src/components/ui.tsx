@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import type { ElementType, ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ElementType, type ReactNode } from "react";
 import type { Step } from "@/data/types";
 import { LANGS, useLang, type Lang } from "@/lib/i18n";
 
@@ -51,6 +51,73 @@ export function Reveal({
       {children}
     </motion.div>
   );
+}
+
+/**
+ * Copiar texto com aviso na tela ("Senha copiada ✓"). Devolve `copy(texto)` e o
+ * `toast` pra renderizar uma vez no componente. Funciona também onde a área de
+ * transferência moderna é bloqueada (WebViews, http).
+ */
+export function useCopy() {
+  const { t } = useLang();
+  const [message, setMessage] = useState<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
+
+  const show = useCallback((msg: string) => {
+    setMessage(msg);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setMessage(null), 2200);
+  }, []);
+
+  const copy = useCallback(
+    async (text: string, label?: { pt: string; en: string; es: string }) => {
+      const ok = label ? t(label) : t({ pt: "Copiado ✓", en: "Copied ✓", es: "Copiado ✓" });
+      const fail = t({
+        pt: "Toque e segure para copiar",
+        en: "Tap and hold to copy",
+        es: "Toca y mantén presionado para copiar",
+      });
+      try {
+        await navigator.clipboard.writeText(text);
+        show(ok);
+      } catch {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          show(ok);
+        } catch {
+          show(fail);
+        }
+      }
+      if (typeof navigator.vibrate === "function") navigator.vibrate(12);
+    },
+    [t, show],
+  );
+
+  const toast = (
+    <div
+      role="status"
+      className={`fixed bottom-6 left-1/2 z-[99] max-w-[90vw] -translate-x-1/2 rounded-full bg-ink px-[22px] py-3 text-center text-[15px] font-semibold text-bg transition-all duration-300 ${
+        message ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-20 opacity-0"
+      }`}
+    >
+      {message}
+    </div>
+  );
+  return { copy, toast };
 }
 
 /** Lista de passos com bolinha numerada — chegada, saída e acordeões da casa. */
@@ -133,7 +200,7 @@ const LANG_LABEL: Record<Lang, string> = { pt: "Português", en: "English", es: 
 export function LangToggle() {
   const { lang, setLang } = useLang();
   const base =
-    "flex items-center gap-1.5 rounded-full px-2.5 py-[6px] text-[13px] font-bold tracking-[0.04em] transition-transform active:scale-95";
+    "flex min-h-[38px] items-center gap-1.5 rounded-full px-3 text-[13px] font-bold tracking-[0.04em] transition-transform active:scale-95";
   return (
     <div
       role="group"

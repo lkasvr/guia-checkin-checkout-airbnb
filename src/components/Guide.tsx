@@ -128,7 +128,7 @@ function Nav({ ap, checkoutFirst }: { ap: Apartment; checkoutFirst: boolean }) {
               key={id}
               href={n.href}
               data-nav={id}
-              className={`shrink-0 rounded-full border px-4 py-[9px] text-[14.5px] font-semibold tracking-[0.02em] transition-colors active:scale-95 ${
+              className={`flex min-h-[42px] shrink-0 items-center rounded-full border px-4 text-[14.5px] font-semibold tracking-[0.02em] transition-colors active:scale-95 ${
                 on
                   ? "border-terra bg-terra text-white"
                   : "border-line bg-card text-soft"
@@ -173,7 +173,7 @@ function FloatingJump({ ap, checkoutFirst }: { ap: Apartment; checkoutFirst: boo
   const primary = checkoutFirst ? SAIDA : chegada;
   const secondary = checkoutFirst ? chegada : SAIDA;
   const base =
-    "rounded-full px-[18px] py-2.5 text-[14px] font-bold no-underline transition-transform active:scale-95";
+    "flex min-h-[44px] items-center rounded-full px-[18px] text-[14px] font-bold no-underline transition-transform active:scale-95";
 
   return (
     <div

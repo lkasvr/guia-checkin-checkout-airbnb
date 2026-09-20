@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import { motion, type Variants } from "motion/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Apartment } from "@/data/types";
 import { useLang } from "@/lib/i18n";
-import { CARD, LangToggle, Reveal, Rich, SectionHead, Steps } from "@/components/ui";
+import { CARD, LangToggle, Reveal, Rich, SectionHead, Steps, useCopy } from "@/components/ui";
 import { Media } from "@/components/media";
 import { isVideoUrl } from "@/lib/upload";
 import { mapsEmbedUrl, mapsSearchUrl, normalizeMapsUrl, whatsappDigits } from "@/lib/maps";
@@ -56,6 +56,10 @@ export function Hero({ ap }: { ap: Apartment }) {
   const { t } = useLang();
   const coverRef = useRef<HTMLDivElement>(null);
   const ratio = useCoverRatio(coverRef, ap.hero.img);
+  // Texto comprido (ex.: "Vaga rotativa (sinalizada na cor verde)") ganha a linha toda, no fim,
+  // em vez de estourar a caixa de um terço da largura.
+  const facts = ap.hero.facts.map((f) => ({ f, long: t(f.k).length > 16 }));
+  const orderedFacts = [...facts.filter((x) => !x.long), ...facts.filter((x) => x.long)];
   return (
     <header className="relative -mx-[18px] px-6 pb-2.5 text-left">
       <div
@@ -118,16 +122,22 @@ export function Hero({ ap }: { ap: Apartment }) {
             Wi-Fi ↓
           </a>
         </motion.div>
-        <motion.div variants={heroItem} className="mt-[18px] grid grid-cols-3 gap-2">
-          {ap.hero.facts.map((f, i) => (
+        <motion.div variants={heroItem} className="mt-[18px] flex flex-wrap justify-center gap-2">
+          {orderedFacts.map(({ f, long }, i) => (
             <div
               key={i}
-              className="flex flex-col items-center justify-center rounded-2xl border border-line bg-card p-[12px_10px] text-center"
+              className={`flex min-w-0 flex-col items-center justify-center rounded-2xl border border-line bg-card p-[12px_10px] text-center ${
+                long ? "basis-full" : "basis-[calc((100%-1rem)/3)]"
+              }`}
             >
-              <div className="font-display text-[20px] leading-[1.15] text-coffee">
+              <div
+                className={`max-w-full break-words font-display leading-[1.15] text-coffee [hyphens:auto] ${
+                  long ? "text-[18px]" : "text-[clamp(16px,5vw,20px)]"
+                }`}
+              >
                 {t(f.k)}
               </div>
-              <div className="mt-1 text-[11.5px] font-bold uppercase tracking-[0.08em] text-soft">
+              <div className="mt-1 text-[12px] font-bold uppercase tracking-[0.08em] text-soft">
                 {t(f.v)}
               </div>
             </div>
@@ -189,7 +199,7 @@ export function Location({ ap }: { ap: Apartment }) {
             href={link}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3.5 inline-flex items-center gap-2 rounded-full bg-ink px-[20px] py-3 text-[14.5px] font-bold text-bg no-underline transition-transform active:scale-95"
+            className="mt-3.5 inline-flex min-h-[46px] items-center gap-2 rounded-full bg-ink px-[20px] py-3 text-[14.5px] font-bold text-bg no-underline transition-transform active:scale-95"
           >
             {openLabel} ↗
           </a>
@@ -203,6 +213,7 @@ export function Location({ ap }: { ap: Apartment }) {
 
 export function CheckIn({ ap }: { ap: Apartment }) {
   const { t } = useLang();
+  const { copy, toast } = useCopy();
   return (
     <section id="checkin" className="pt-[54px]">
       <Reveal>
@@ -212,19 +223,32 @@ export function CheckIn({ ap }: { ap: Apartment }) {
 
       {ap.checkin.doorCode?.mode === "fixed" && (
         <Reveal>
-          <div className="mb-[18px] flex items-center gap-3.5 rounded-[18px] border border-line bg-card p-4">
+          <button
+            type="button"
+            onClick={() =>
+              copy(ap.checkin.doorCode?.mode === "fixed" ? ap.checkin.doorCode.code : "", {
+                pt: "Senha copiada ✓",
+                en: "Code copied ✓",
+                es: "Código copiado ✓",
+              })
+            }
+            className="mb-[18px] flex w-full items-center gap-3.5 rounded-[18px] border border-line bg-card p-4 text-left transition-transform active:scale-[0.99]"
+          >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-blush text-[22px]">
               🔑
             </span>
-            <div>
+            <div className="min-w-0 flex-1">
               <b className="block text-[13px] font-bold uppercase tracking-[0.08em] text-soft">
                 {t({ pt: "Senha da fechadura", en: "Door lock code", es: "Código de la cerradura" })}
               </b>
-              <span className="block select-all font-mono text-[20px] font-bold text-ink">
+              <span className="block break-all font-mono text-[20px] font-bold text-ink">
                 {ap.checkin.doorCode.code}
               </span>
             </div>
-          </div>
+            <span className="shrink-0 text-[12px] font-bold uppercase tracking-[0.08em] text-terra">
+              {t({ pt: "Copiar", en: "Copy", es: "Copiar" })}
+            </span>
+          </button>
         </Reveal>
       )}
 
@@ -245,7 +269,7 @@ export function CheckIn({ ap }: { ap: Apartment }) {
             <h3 className="mb-3.5 font-display text-[24px] font-normal leading-[1.15]">
               {t(card.title)}
               {card.tag && (
-                <span className="ml-2 inline-block rounded-full bg-terra-soft px-2.5 py-1 align-middle text-[11px] font-bold uppercase tracking-[0.14em] text-terra">
+                <span className="ml-2 inline-block rounded-full bg-terra-soft px-2.5 py-1 align-middle text-[12px] font-bold uppercase tracking-[0.14em] text-terra">
                   {t(card.tag)}
                 </span>
               )}
@@ -281,6 +305,7 @@ export function CheckIn({ ap }: { ap: Apartment }) {
           </div>
         </Reveal>
       ))}
+      {toast}
     </section>
   );
 }
@@ -317,41 +342,9 @@ export function Checkout({ ap }: { ap: Apartment }) {
 
 export function Wifi({ ap }: { ap: Apartment }) {
   const { t } = useLang();
-  const [toast, setToast] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const show = useCallback((msg: string) => {
-    setToast(msg);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setToast(null), 2200);
-  }, []);
-
-  const copy = useCallback(async () => {
-    const ok = t({ pt: "Senha copiada ✓", en: "Password copied ✓", es: "Contraseña copiada ✓" });
-    const fail = t({
-      pt: "Toque e segure a senha para copiar",
-      en: "Tap and hold the password to copy",
-      es: "Toca y mantén presionada la contraseña para copiarla",
-    });
-    try {
-      await navigator.clipboard.writeText(ap.wifi.password);
-      show(ok);
-    } catch {
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = ap.wifi.password;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        show(ok);
-      } catch {
-        show(fail);
-      }
-    }
-  }, [ap.wifi.password, t, show]);
+  const { copy: copyText, toast } = useCopy();
+  const copy = () =>
+    copyText(ap.wifi.password, { pt: "Senha copiada ✓", en: "Password copied ✓", es: "Contraseña copiada ✓" });
 
   return (
     <section id="wifi" className="pt-[54px]">
@@ -379,37 +372,34 @@ export function Wifi({ ap }: { ap: Apartment }) {
             <path d="M16 26.5c4-3.8 10-3.8 14 0" opacity=".6" />
             <circle cx="23" cy="31" r="2.4" fill="#faf0e8" stroke="none" />
           </svg>
-          <div className="relative mt-5 text-[11.5px] uppercase tracking-[0.3em] opacity-75">
+          <div className="relative mt-5 text-[12px] uppercase tracking-[0.3em] opacity-80">
             {t({ pt: "Rede", en: "Network", es: "Red" })}
           </div>
           <div className="relative mt-1.5 font-display text-[clamp(27px,7.4vw,34px)] leading-[1.1]">
             {ap.wifi.network}
           </div>
-          <div className="relative mt-5 text-[11.5px] uppercase tracking-[0.3em] opacity-75">
+          <div className="relative mt-5 text-[12px] uppercase tracking-[0.3em] opacity-80">
             {t({ pt: "Senha", en: "Password", es: "Contraseña" })}
-          </div>
-          <div className="relative mt-1.5 select-all rounded-2xl border border-dashed border-[rgb(255_233_214/0.5)] bg-white/[0.12] p-[14px_10px] font-mono text-[clamp(29px,8.6vw,40px)] font-bold tracking-[0.02em]">
-            {ap.wifi.password}
           </div>
           <button
             type="button"
             onClick={copy}
-            className="relative mt-4 rounded-full bg-[#faf0e8] px-[30px] py-3.5 text-[16px] font-bold text-terra-deep transition-transform active:scale-95"
+            aria-label={t({ pt: "Copiar senha", en: "Copy password", es: "Copiar contraseña" })}
+            className="relative mt-1.5 block w-full break-all rounded-2xl border border-dashed border-[rgb(255_233_214/0.5)] bg-white/[0.12] p-[14px_10px] font-mono text-[clamp(29px,8.6vw,40px)] font-bold tracking-[0.02em] transition-transform active:scale-[0.98]"
+          >
+            {ap.wifi.password}
+          </button>
+          <button
+            type="button"
+            onClick={copy}
+            className="relative mt-4 min-h-[48px] rounded-full bg-[#faf0e8] px-[30px] py-3.5 text-[16px] font-bold text-terra-deep transition-transform active:scale-95"
           >
             {t({ pt: "Copiar senha", en: "Copy password", es: "Copiar contraseña" })}
           </button>
-          <div className="relative mt-3.5 text-[14px] opacity-85">{t(ap.wifi.speed)}</div>
         </div>
       </Reveal>
 
-      <div
-        role="status"
-        className={`fixed bottom-6 left-1/2 z-[99] -translate-x-1/2 rounded-full bg-ink px-[22px] py-3 text-[15px] font-semibold text-bg transition-all duration-300 ${
-          toast ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0"
-        }`}
-      >
-        {toast}
-      </div>
+      {toast}
     </section>
   );
 }
@@ -494,7 +484,7 @@ export function Contacts({ ap }: { ap: Apartment }) {
         // Os contatos com WhatsApp no papel (host/coanfitrião) ganham o botão de mensagem.
         const hasWhatsapp = /whats/i.test(`${c.role.pt} ${c.role.en}`);
         const btn =
-          "inline-flex items-center gap-1.5 rounded-full px-[18px] py-2.5 text-[14px] font-bold no-underline transition-transform active:scale-95";
+          "inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-[18px] py-2.5 text-[14px] font-bold no-underline transition-transform active:scale-95";
         return (
           <Reveal key={i}>
             <div className="mb-2.5 rounded-[18px] border border-line bg-card p-4">
@@ -502,7 +492,7 @@ export function Contacts({ ap }: { ap: Apartment }) {
               <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
                 <a
                   href={`tel:${c.tel}`}
-                  className="mr-auto whitespace-nowrap text-[17px] font-bold text-coffee no-underline"
+                  className="mr-auto inline-flex min-h-[44px] items-center whitespace-nowrap text-[17px] font-bold text-coffee no-underline"
                 >
                   {c.phone}
                 </a>
@@ -534,6 +524,14 @@ export function Home({ ap }: { ap: Apartment }) {
   const { t } = useLang();
   // Tour em vídeo: o do apartamento vale no lugar do do prédio. Sempre o 1º elemento da seção.
   const tour = ap.homeVideo?.trim() || ap.home.video?.trim();
+  const [slide, setSlide] = useState(0);
+  const onSlidesScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const box = e.currentTarget;
+    const first = box.firstElementChild as HTMLElement | null;
+    if (!first) return;
+    const idx = Math.round(box.scrollLeft / (first.offsetWidth + 12));
+    if (idx !== slide) setSlide(Math.min(Math.max(idx, 0), ap.home.slides.length - 1));
+  };
   return (
     <section id="casa" className="pt-[54px]">
       <Reveal>
@@ -560,7 +558,10 @@ export function Home({ ap }: { ap: Apartment }) {
 
       {(ap.home.slides.length > 0 || !tour) && (
       <Reveal>
-        <div className="no-scrollbar -mx-[18px] flex snap-x snap-mandatory gap-3 overflow-x-auto px-[18px] pb-2 pt-1">
+        <div
+          onScroll={onSlidesScroll}
+          className="no-scrollbar -mx-[18px] flex snap-x snap-mandatory gap-3 overflow-x-auto px-[18px] pb-2 pt-1"
+        >
           {ap.home.slides.map((s, i) => (
             <div
               key={i}
@@ -583,6 +584,18 @@ export function Home({ ap }: { ap: Apartment }) {
             </div>
           ))}
         </div>
+        {ap.home.slides.length > 1 && (
+          <div className="mb-3 mt-1 flex justify-center gap-1.5" aria-hidden>
+            {ap.home.slides.map((_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === slide ? "w-5 bg-terra" : "w-1.5 bg-line"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </Reveal>
       )}
 
@@ -672,7 +685,7 @@ export function Amenities({ ap }: { ap: Apartment }) {
               </div>
               <div className="p-[12px_13px_14px]">
                 <b className="block text-[15px] leading-[1.25]">{t(a.title)}</b>
-                <span className="mt-1 block text-[13px] leading-[1.4] text-soft">{t(a.text)}</span>
+                <span className="mt-1 block text-[13.5px] leading-[1.4] text-soft">{t(a.text)}</span>
               </div>
             </div>
           </Reveal>
@@ -725,7 +738,7 @@ function PlaceCards({
             <div className="p-[16px_18px_18px]">
               <h4 className="font-display text-[21px] font-normal leading-[1.2]">{p.title}</h4>
               <p className="mt-1.5 text-[14.5px] text-soft">{t(p.text)}</p>
-              <span className="mt-2.5 inline-block rounded-full bg-terra-soft px-2.5 py-1 text-[11.5px] font-bold uppercase tracking-[0.1em] text-terra">
+              <span className="mt-2.5 inline-block rounded-full bg-terra-soft px-2.5 py-1 text-[12px] font-bold uppercase tracking-[0.1em] text-terra">
                 {p.meta}
               </span>
 
@@ -736,7 +749,7 @@ function PlaceCards({
                       href={mapsRoute(p.maps)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-full bg-ink px-[18px] py-2.5 text-[13.5px] font-bold text-bg no-underline transition-transform active:scale-95"
+                      className="inline-flex min-h-[44px] items-center rounded-full bg-ink px-[18px] py-2.5 text-[13.5px] font-bold text-bg no-underline transition-transform active:scale-95"
                     >
                       {t({ pt: "Como chegar ↗", en: "Directions ↗", es: "Cómo llegar ↗" })}
                     </a>
@@ -746,7 +759,7 @@ function PlaceCards({
                       href={p.site}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-full border border-line bg-bg px-[18px] py-2.5 text-[13.5px] font-bold text-ink no-underline transition-transform active:scale-95"
+                      className="inline-flex min-h-[44px] items-center rounded-full border border-line bg-bg px-[18px] py-2.5 text-[13.5px] font-bold text-ink no-underline transition-transform active:scale-95"
                     >
                       {t({ pt: "Site ↗", en: "Website ↗", es: "Sitio web ↗" })}
                     </a>
