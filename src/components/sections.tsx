@@ -520,6 +520,82 @@ export function Contacts({ ap }: { ap: Apartment }) {
 
 /* ------------------------------ HOME ---------------------------- */
 
+/**
+ * Imagem que abre em tela cheia ao tocar (foto/diagrama de equipamento):
+ * na tela do celular a miniatura é pequena demais pra enxergar os detalhes.
+ */
+function Zoomable({
+  src,
+  alt,
+  children,
+}: {
+  src: string;
+  alt: string;
+  children: React.ReactNode;
+}) {
+  const { t } = useLang();
+  const [open, setOpen] = useState(false);
+  const label = t({ pt: "Ampliar", en: "Enlarge", es: "Ampliar" });
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={`${label}: ${alt}`}
+        className="relative block w-full text-left"
+      >
+        {children}
+        <span
+          aria-hidden
+          className="absolute bottom-2.5 right-2.5 rounded-full bg-ink/75 px-3 py-1.5 text-[12px] font-bold text-bg"
+        >
+          🔍 {label}
+        </span>
+      </button>
+      {open && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={alt}
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 p-3"
+        >
+          <Image
+            src={src}
+            alt={alt}
+            width={1200}
+            height={1000}
+            sizes="100vw"
+            loading="eager"
+            className="h-auto max-h-[88svh] w-full max-w-[900px] rounded-xl bg-white object-contain"
+          />
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label={t({ pt: "Fechar", en: "Close", es: "Cerrar" })}
+            className="absolute right-3 top-[max(12px,env(safe-area-inset-top))] flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-[20px] font-bold text-ink"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function Home({ ap }: { ap: Apartment }) {
   const { t } = useLang();
   // Tour em vídeo: o do apartamento vale no lugar do do prédio. Sempre o 1º elemento da seção.
@@ -620,31 +696,37 @@ export function Home({ ap }: { ap: Apartment }) {
                     className="mb-3.5 block max-h-[60svh] w-full rounded-xl border border-line bg-black"
                   />
                 ) : (
-                  <div className="relative mb-3.5 h-[200px] overflow-hidden rounded-xl border border-line">
-                    <Media
-                      src={acc.media}
-                      fill
-                      sizes="(max-width:640px) 100vw, 640px"
-                      className="object-cover"
-                    />
+                  <div className="mb-3.5 overflow-hidden rounded-xl border border-line">
+                    <Zoomable src={acc.media} alt={t(acc.title)}>
+                      <div className="relative h-[240px]">
+                        <Media
+                          src={acc.media}
+                          fill
+                          sizes="(max-width:640px) 100vw, 640px"
+                          className="object-cover"
+                        />
+                      </div>
+                    </Zoomable>
                   </div>
                 ))}
               <Steps steps={acc.steps} className="text-[15.5px]" />
 
               {acc.diagram && (
-                <figure className="mt-4 flex items-start gap-4 border-t border-dashed border-line pt-3.5">
-                  <Image
-                    src={acc.diagram.img}
-                    alt={acc.diagram.alt}
-                    width={300}
-                    height={266}
-                    sizes="108px"
-                    className="h-auto w-[108px] shrink-0 rounded-xl border border-line bg-white p-1.5"
-                  />
-                  <ol className="min-w-0 flex-1 list-none text-[13.5px] leading-[1.35]">
+                <figure className="mt-4 border-t border-dashed border-line pt-3.5">
+                  <Zoomable src={acc.diagram.img} alt={acc.diagram.alt}>
+                    <Image
+                      src={acc.diagram.img}
+                      alt={acc.diagram.alt}
+                      width={600}
+                      height={532}
+                      sizes="(max-width:640px) 92vw, 600px"
+                      className="mx-auto h-auto w-full max-w-[460px] rounded-xl border border-line bg-white p-1.5"
+                    />
+                  </Zoomable>
+                  <ol className="mt-3.5 grid list-none gap-x-4 gap-y-1.5 text-[15px] leading-[1.35] sm:grid-cols-2">
                     {acc.diagram.legend.map((it) => (
-                      <li key={it.n} className="flex gap-2 py-0.5">
-                        <b className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blush text-[12px] font-bold text-coffee">
+                      <li key={it.n} className="flex items-start gap-2.5">
+                        <b className="mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blush text-[13px] font-bold text-coffee">
                           {it.n}
                         </b>
                         <span>{t(it.label)}</span>
