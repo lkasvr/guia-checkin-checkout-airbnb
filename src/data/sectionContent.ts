@@ -98,11 +98,19 @@ export const emptySlide = (): SlideInput => ({
   title: "",
   text: "",
 });
+/** Foto do equipamento com itens numerados (ex.: partes da cafeteira), pronta pra preencher. */
+export const emptyDiagram = (): NonNullable<Accordion["diagram"]> => ({
+  img: "",
+  alt: "",
+  legend: [{ n: "1", label: { pt: "", en: "" } }],
+});
+/** Todo equipamento novo já vem com passo enumerado e foto com itens numerados (dá pra remover). */
 export const emptyAccordion = (): AccordionInput => ({
   id: newId(),
   icon: "🔧",
   title: "",
-  steps: [],
+  steps: [{ n: "1", body: "" }],
+  diagram: emptyDiagram(),
 });
 export const emptyCard = (): CheckinCardInput => ({
   id: newId(),
@@ -235,10 +243,12 @@ export function accordionToContent(a: AccordionInput): Accordion | null {
     steps: stepsToContent(a.steps),
     ...(a.media?.trim() ? { media: a.media.trim() } : {}),
     // Item da legenda sem texto (recém-adicionado e não preenchido) não vai pro guia.
-    ...(a.diagram
+    // Sem foto o diagrama não existe (é o caso de um equipamento novo em que a pessoa não usou).
+    ...(a.diagram?.img.trim()
       ? {
           diagram: {
             ...a.diagram,
+            alt: a.diagram.alt.trim() || a.title.trim(),
             legend: a.diagram.legend.filter((it) => it.label.pt.trim()),
           },
         }
