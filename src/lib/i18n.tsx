@@ -9,8 +9,13 @@ import {
   type ReactNode,
 } from "react";
 import type { L } from "@/data/types";
+import { translateEs } from "@/data/es";
 
-export type Lang = "pt" | "en";
+export type Lang = "pt" | "en" | "es";
+
+export const LANGS: Lang[] = ["pt", "en", "es"];
+
+const HTML_LANG: Record<Lang, string> = { pt: "pt-BR", en: "en", es: "es" };
 
 type Ctx = {
   lang: Lang;
@@ -35,7 +40,7 @@ export function LanguageProvider({
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === "pt" || saved === "en") setLangState(saved);
+      if (saved === "pt" || saved === "en" || saved === "es") setLangState(saved);
     } catch {
       /* localStorage indisponível */
     }
@@ -48,10 +53,15 @@ export function LanguageProvider({
     } catch {
       /* ignore */
     }
-    document.documentElement.lang = l === "pt" ? "pt-BR" : "en";
+    document.documentElement.lang = HTML_LANG[l];
   }, []);
 
-  const t = useCallback((v: L) => (lang === "pt" ? v.pt : v.en), [lang]);
+  // Espanhol: o próprio conteúdo (`es`), depois o dicionário dos textos padrão
+  // e, sem tradução, o inglês.
+  const t = useCallback(
+    (v: L) => (lang === "pt" ? v.pt : lang === "en" ? v.en : (v.es ?? translateEs(v.pt) ?? v.en)),
+    [lang],
+  );
 
   return (
     <LangContext.Provider value={{ lang, setLang, t }}>

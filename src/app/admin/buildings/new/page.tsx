@@ -18,7 +18,7 @@ const EMPTY: BuildingEditPayload = {
   dining: { sub: "", items: [] },
   defaultHeroImg: "",
   defaultFooterImg: "",
-  location: { address: "", mapsUrl: "" },
+  location: { address: "", mapsUrl: "", portariaPhone: "", intercom: [] },
 };
 
 export default async function NewBuildingPage() {

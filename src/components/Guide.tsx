@@ -27,7 +27,7 @@ import {
  * semeado antes dela existir. Dívida assumida — mover o rótulo para o conteúdo
  * exigiria migrar o JSONB de todos os tenants.
  */
-const SAIDA: NavItem = { href: "#saida", label: { pt: "Saída", en: "Check-out" } };
+const SAIDA: NavItem = { href: "#saida", label: { pt: "Saída", en: "Check-out", es: "Salida" } };
 const CHECKIN_HREF = "#checkin";
 
 export default function Guide({

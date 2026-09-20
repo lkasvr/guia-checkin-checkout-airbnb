@@ -7,8 +7,10 @@ import { prisma } from "@/lib/db";
 import { starterContent } from "@/data/starter";
 import {
   buildApartmentContent,
+  buildOverrides,
   toBuildingTemplate,
   type ApartmentFormInput,
+  type ApartmentOverrides,
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
 import { slugify } from "@/lib/slug";
@@ -190,7 +192,7 @@ export async function createApartmentDetailed(
         content: content as object,
         internalNotes: payload.internalNotes || null,
         buildingId: building?.id ?? null,
-        overrides: payload.overrides as object,
+        overrides: buildOverrides(payload, building) as object,
       },
     });
   } catch (e) {
@@ -243,7 +245,7 @@ export async function updateApartmentDetailed(
         content: content as object,
         internalNotes: payload.internalNotes || null,
         buildingId: building?.id ?? null,
-        overrides: payload.overrides as object,
+        overrides: buildOverrides(payload, building) as object,
       },
     });
   } catch (e) {
@@ -335,11 +337,18 @@ export async function listHostCheckinVideos(
       hostId,
       ...(excludeApartmentId ? { NOT: { id: excludeApartmentId } } : {}),
     },
-    select: { id: true, label: true, content: true },
+    select: { id: true, label: true, content: true, overrides: true },
   });
   for (const apt of apartments) {
     const content = apt.content as unknown as Apartment;
-    const card = content.checkin?.cards?.find((c) => c.video);
+    // Com prédio, o check-in do apartamento é o do modelo + ajustes: o vídeo próprio fica nos ajustes.
+    const patch = (apt.overrides as ApartmentOverrides | null)?.patches?.checkin;
+    const cards = [
+      ...(content.checkin?.cards ?? []),
+      ...Object.values(patch?.edited ?? {}),
+      ...(patch?.added ?? []),
+    ];
+    const card = cards.find((c) => c.video);
     if (card?.video) {
       videos.push({
         key: `apt:${apt.id}`,

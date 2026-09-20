@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import { motion, type Variants } from "motion/react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Apartment } from "@/data/types";
 import { useLang } from "@/lib/i18n";
 import { CARD, LangToggle, Reveal, Rich, SectionHead, Steps } from "@/components/ui";
 import { Media } from "@/components/media";
+import { isVideoUrl } from "@/lib/upload";
 import { mapsEmbedUrl, mapsSearchUrl, normalizeMapsUrl, whatsappDigits } from "@/lib/maps";
 
 /* ----------------------------- HERO ----------------------------- */
@@ -24,11 +25,48 @@ const heroItem: Variants = {
   },
 };
 
+/**
+ * Proporção (largura/altura) da foto ou vídeo da capa, lida depois de carregar.
+ * A capa usa isso pra acompanhar o formato de cada foto em vez de uma altura
+ * fixa — foto de celular (em pé) não perde metade do topo e do rodapé.
+ */
+function useCoverRatio(boxRef: React.RefObject<HTMLElement | null>, src: string) {
+  const [ratio, setRatio] = useState<number | null>(null);
+  useEffect(() => {
+    const el = boxRef.current?.querySelector<HTMLImageElement | HTMLVideoElement>("img, video");
+    if (!el) return;
+    const read = () => {
+      const w = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth;
+      const h = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight;
+      if (w && h) setRatio(w / h);
+    };
+    const event = el instanceof HTMLVideoElement ? "loadedmetadata" : "load";
+    el.addEventListener(event, read);
+    // Imagem que já carregou antes da hidratação não dispara "load" de novo.
+    const frame = requestAnimationFrame(read);
+    return () => {
+      el.removeEventListener(event, read);
+      cancelAnimationFrame(frame);
+    };
+  }, [boxRef, src]);
+  return ratio;
+}
+
 export function Hero({ ap }: { ap: Apartment }) {
   const { t } = useLang();
+  const coverRef = useRef<HTMLDivElement>(null);
+  const ratio = useCoverRatio(coverRef, ap.hero.img);
   return (
     <header className="relative -mx-[18px] px-6 pb-2.5 text-left">
-      <div className="relative -mx-6 h-[44svh] max-h-[430px] min-h-[280px]">
+      <div
+        ref={coverRef}
+        className="relative -mx-6"
+        // Altura = largura ÷ proporção da foto, entre 300px e ~450px (520px em tela larga).
+        // Sem `aspect-ratio`: junto de min-height ele alarga a caixa além da tela.
+        style={{
+          height: `clamp(300px, calc(min(100vw, 640px) / ${ratio ?? 0.85}), min(520px, 120vw))`,
+        }}
+      >
         <Media
           src={ap.hero.img}
           fill
@@ -37,7 +75,7 @@ export function Hero({ ap }: { ap: Apartment }) {
           className="object-cover object-[center_24%]"
           autoPlayLoop
         />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(59_45_36/0.22)_0%,rgb(250_245_238/0)_34%,rgb(250_245_238/0.35)_62%,rgb(250_245_238/0.85)_84%,var(--color-bg)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(59_45_36/0.22)_0%,rgb(250_245_238/0)_28%,rgb(250_245_238/0)_56%,rgb(250_245_238/0.32)_76%,rgb(250_245_238/0.8)_91%,var(--color-bg)_100%)]" />
       </div>
 
       <div className="absolute right-4 top-4 z-[5]">
@@ -71,7 +109,7 @@ export function Hero({ ap }: { ap: Apartment }) {
             href="#checkin"
             className="inline-flex items-center gap-2 rounded-full border-[1.5px] border-ink bg-ink px-[22px] py-3.5 text-[15.5px] font-bold text-bg transition-transform active:scale-95"
           >
-            {t({ pt: "Fazer check-in ↓", en: "Check in ↓" })}
+            {t({ pt: "Fazer check-in ↓", en: "Check in ↓", es: "Hacer check-in ↓" })}
           </a>
           <a
             href="#wifi"
@@ -84,7 +122,7 @@ export function Hero({ ap }: { ap: Apartment }) {
           {ap.hero.facts.map((f, i) => (
             <div
               key={i}
-              className="rounded-2xl border border-line bg-card p-[12px_10px] text-center"
+              className="flex flex-col items-center justify-center rounded-2xl border border-line bg-card p-[12px_10px] text-center"
             >
               <div className="font-display text-[20px] leading-[1.15] text-coffee">
                 {t(f.k)}
@@ -114,7 +152,7 @@ export function Location({ ap }: { ap: Apartment }) {
     normalizeMapsUrl(ap.location?.mapsUrl) ?? (address ? mapsSearchUrl(address) : null);
   if (!link) return null;
 
-  const openLabel = t({ pt: "Abrir no Google Maps", en: "Open in Google Maps" });
+  const openLabel = t({ pt: "Abrir no Google Maps", en: "Open in Google Maps", es: "Abrir en Google Maps" });
   return (
     <Reveal>
       <div className="mt-[34px] overflow-hidden rounded-[22px] border border-line bg-card shadow-[0_1px_0_rgb(59_45_36/0.04)]">
@@ -125,7 +163,7 @@ export function Location({ ap }: { ap: Apartment }) {
             </span>
             <iframe
               src={mapsEmbedUrl(address)}
-              title={t({ pt: "Mapa do endereço", en: "Address map" })}
+              title={t({ pt: "Mapa do endereço", en: "Address map", es: "Mapa de la dirección" })}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               tabIndex={-1}
@@ -142,7 +180,7 @@ export function Location({ ap }: { ap: Apartment }) {
         )}
         <div className="p-[16px_18px_18px]">
           <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-coffee">
-            📍 {t({ pt: "Como chegar", en: "Getting here" })}
+            📍 {t({ pt: "Como chegar", en: "Getting here", es: "Cómo llegar" })}
           </p>
           {address && (
             <p className="mt-1.5 font-display text-[21px] font-normal leading-[1.25]">{address}</p>
@@ -168,7 +206,7 @@ export function CheckIn({ ap }: { ap: Apartment }) {
   return (
     <section id="checkin" className="pt-[54px]">
       <Reveal>
-        <SectionHead n="1">{t({ pt: "Check-in", en: "Check-in" })}</SectionHead>
+        <SectionHead n="1">{t({ pt: "Check-in", en: "Check-in", es: "Check-in" })}</SectionHead>
         <p className="mb-[22px] mt-2.5 text-[16px] text-soft">{t(ap.checkin.sub)}</p>
       </Reveal>
 
@@ -180,7 +218,7 @@ export function CheckIn({ ap }: { ap: Apartment }) {
             </span>
             <div>
               <b className="block text-[13px] font-bold uppercase tracking-[0.08em] text-soft">
-                {t({ pt: "Senha da fechadura", en: "Door lock code" })}
+                {t({ pt: "Senha da fechadura", en: "Door lock code", es: "Código de la cerradura" })}
               </b>
               <span className="block select-all font-mono text-[20px] font-bold text-ink">
                 {ap.checkin.doorCode.code}
@@ -262,7 +300,7 @@ export function Checkout({ ap }: { ap: Apartment }) {
   return (
     <section id="saida" className="pt-[54px]">
       <Reveal>
-        <SectionHead n="✦">{t({ pt: "Saída", en: "Check-out" })}</SectionHead>
+        <SectionHead n="✦">{t({ pt: "Saída", en: "Check-out", es: "Salida" })}</SectionHead>
         <p className="mb-[22px] mt-2.5 text-[16px] text-soft">{t(checkout.sub)}</p>
       </Reveal>
 
@@ -278,7 +316,7 @@ export function Checkout({ ap }: { ap: Apartment }) {
 /* ------------------------------ WIFI ---------------------------- */
 
 export function Wifi({ ap }: { ap: Apartment }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const [toast, setToast] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -289,11 +327,12 @@ export function Wifi({ ap }: { ap: Apartment }) {
   }, []);
 
   const copy = useCallback(async () => {
-    const ok = lang === "en" ? "Password copied ✓" : "Senha copiada ✓";
-    const fail =
-      lang === "en"
-        ? "Tap and hold the password to copy"
-        : "Toque e segure a senha para copiar";
+    const ok = t({ pt: "Senha copiada ✓", en: "Password copied ✓", es: "Contraseña copiada ✓" });
+    const fail = t({
+      pt: "Toque e segure a senha para copiar",
+      en: "Tap and hold the password to copy",
+      es: "Toca y mantén presionada la contraseña para copiarla",
+    });
     try {
       await navigator.clipboard.writeText(ap.wifi.password);
       show(ok);
@@ -312,7 +351,7 @@ export function Wifi({ ap }: { ap: Apartment }) {
         show(fail);
       }
     }
-  }, [ap.wifi.password, lang, show]);
+  }, [ap.wifi.password, t, show]);
 
   return (
     <section id="wifi" className="pt-[54px]">
@@ -341,13 +380,13 @@ export function Wifi({ ap }: { ap: Apartment }) {
             <circle cx="23" cy="31" r="2.4" fill="#faf0e8" stroke="none" />
           </svg>
           <div className="relative mt-5 text-[11.5px] uppercase tracking-[0.3em] opacity-75">
-            {t({ pt: "Rede", en: "Network" })}
+            {t({ pt: "Rede", en: "Network", es: "Red" })}
           </div>
           <div className="relative mt-1.5 font-display text-[clamp(27px,7.4vw,34px)] leading-[1.1]">
             {ap.wifi.network}
           </div>
           <div className="relative mt-5 text-[11.5px] uppercase tracking-[0.3em] opacity-75">
-            {t({ pt: "Senha", en: "Password" })}
+            {t({ pt: "Senha", en: "Password", es: "Contraseña" })}
           </div>
           <div className="relative mt-1.5 select-all rounded-2xl border border-dashed border-[rgb(255_233_214/0.5)] bg-white/[0.12] p-[14px_10px] font-mono text-[clamp(29px,8.6vw,40px)] font-bold tracking-[0.02em]">
             {ap.wifi.password}
@@ -357,7 +396,7 @@ export function Wifi({ ap }: { ap: Apartment }) {
             onClick={copy}
             className="relative mt-4 rounded-full bg-[#faf0e8] px-[30px] py-3.5 text-[16px] font-bold text-terra-deep transition-transform active:scale-95"
           >
-            {t({ pt: "Copiar senha", en: "Copy password" })}
+            {t({ pt: "Copiar senha", en: "Copy password", es: "Copiar contraseña" })}
           </button>
           <div className="relative mt-3.5 text-[14px] opacity-85">{t(ap.wifi.speed)}</div>
         </div>
@@ -382,7 +421,7 @@ export function Rules({ ap }: { ap: Apartment }) {
   return (
     <section id="regras" className="pt-[54px]">
       <Reveal>
-        <SectionHead n="3">{t({ pt: "Regras da Casa", en: "House Rules" })}</SectionHead>
+        <SectionHead n="3">{t({ pt: "Regras da Casa", en: "House Rules", es: "Reglas de la Casa" })}</SectionHead>
         <p className="mb-[22px] mt-2.5 text-[16px] text-soft">{t(ap.rules.sub)}</p>
       </Reveal>
       <div className="grid grid-cols-1 gap-2.5">
@@ -415,7 +454,7 @@ export function Contacts({ ap }: { ap: Apartment }) {
   return (
     <section id="contatos" className="pt-[54px]">
       <Reveal>
-        <SectionHead n="4">{t({ pt: "Contatos", en: "Contacts" })}</SectionHead>
+        <SectionHead n="4">{t({ pt: "Contatos", en: "Contacts", es: "Contactos" })}</SectionHead>
         <p className="mb-[22px] mt-2.5 text-[16px] text-soft">{t(ap.contacts.sub)}</p>
       </Reveal>
       {ap.contacts.items.map((c, i) => {
@@ -478,7 +517,7 @@ export function Contacts({ ap }: { ap: Apartment }) {
                   </a>
                 )}
                 <a href={`tel:${c.tel}`} className={`${btn} border border-line bg-bg text-ink`}>
-                  📞 {t({ pt: "Ligar", en: "Call" })}
+                  📞 {t({ pt: "Ligar", en: "Call", es: "Llamar" })}
                 </a>
               </div>
             </div>
@@ -498,7 +537,7 @@ export function Home({ ap }: { ap: Apartment }) {
   return (
     <section id="casa" className="pt-[54px]">
       <Reveal>
-        <SectionHead n="5">{t({ pt: "A Casa", en: "The Home" })}</SectionHead>
+        <SectionHead n="5">{t({ pt: "A Casa", en: "The Home", es: "La Casa" })}</SectionHead>
         <p className="mb-[22px] mt-2.5 text-[16px] text-soft">{t(ap.home.sub)}</p>
       </Reveal>
 
@@ -506,7 +545,7 @@ export function Home({ ap }: { ap: Apartment }) {
         <Reveal>
           <div className="mb-4">
             <p className="mb-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-coffee">
-              🎬 {t({ pt: "Tour pelo apartamento", en: "Apartment tour" })}
+              🎬 {t({ pt: "Tour pelo apartamento", en: "Apartment tour", es: "Recorrido por el apartamento" })}
             </p>
             <video
               src={`${tour}#t=0.1`}
@@ -558,6 +597,25 @@ export function Home({ ap }: { ap: Apartment }) {
               </span>
             </summary>
             <div className="px-[18px] pb-4">
+              {acc.media &&
+                (isVideoUrl(acc.media) ? (
+                  <video
+                    src={`${acc.media}#t=0.1`}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="mb-3.5 block max-h-[60svh] w-full rounded-xl border border-line bg-black"
+                  />
+                ) : (
+                  <div className="relative mb-3.5 h-[200px] overflow-hidden rounded-xl border border-line">
+                    <Media
+                      src={acc.media}
+                      fill
+                      sizes="(max-width:640px) 100vw, 640px"
+                      className="object-cover"
+                    />
+                  </div>
+                ))}
               <Steps steps={acc.steps} className="text-[15.5px]" />
 
               {acc.diagram && (
@@ -597,7 +655,7 @@ export function Amenities({ ap }: { ap: Apartment }) {
   return (
     <section id="lazer" className="pt-[54px]">
       <Reveal>
-        <SectionHead n="6">{t({ pt: "Lazer", en: "Amenities" })}</SectionHead>
+        <SectionHead n="6">{t({ pt: "Lazer", en: "Amenities", es: "Ocio" })}</SectionHead>
         <Rich as="p" html={t(ap.amenities.sub)} className="mb-[22px] mt-2.5 text-[16px] text-soft" />
       </Reveal>
       <div className="grid grid-cols-2 gap-2.5">
@@ -680,7 +738,7 @@ function PlaceCards({
                       rel="noopener noreferrer"
                       className="rounded-full bg-ink px-[18px] py-2.5 text-[13.5px] font-bold text-bg no-underline transition-transform active:scale-95"
                     >
-                      {t({ pt: "Como chegar ↗", en: "Directions ↗" })}
+                      {t({ pt: "Como chegar ↗", en: "Directions ↗", es: "Cómo llegar ↗" })}
                     </a>
                   )}
                   {p.site && (
@@ -690,7 +748,7 @@ function PlaceCards({
                       rel="noopener noreferrer"
                       className="rounded-full border border-line bg-bg px-[18px] py-2.5 text-[13.5px] font-bold text-ink no-underline transition-transform active:scale-95"
                     >
-                      {t({ pt: "Site ↗", en: "Website ↗" })}
+                      {t({ pt: "Site ↗", en: "Website ↗", es: "Sitio web ↗" })}
                     </a>
                   )}
                 </div>
@@ -709,7 +767,7 @@ export function Tourism({ ap }: { ap: Apartment }) {
     <PlaceCards
       id="turismo"
       n="7"
-      title={t({ pt: "Guia de Brasília", en: "Brasília Guide" })}
+      title={t({ pt: "Guia de Brasília", en: "Brasília Guide", es: "Guía de Brasilia" })}
       sub={t(ap.tourism.sub)}
       items={ap.tourism.items}
     />
@@ -722,7 +780,7 @@ export function Dining({ ap }: { ap: Apartment }) {
     <PlaceCards
       id="comer"
       n="8"
-      title={t({ pt: "Onde Comer", en: "Where to Eat" })}
+      title={t({ pt: "Onde Comer", en: "Where to Eat", es: "Dónde comer" })}
       sub={t(ap.dining.sub)}
       items={ap.dining.items}
     />
