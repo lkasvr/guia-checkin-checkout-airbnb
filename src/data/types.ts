@@ -118,6 +118,8 @@ export type ItemPatch<T> = {
   removed?: string[];
   /** itens só deste apartamento (vêm depois dos do modelo) */
   added?: T[];
+  /** ordem final dos ids, quando este apartamento não segue a ordem natural (modelo, depois os próprios) */
+  order?: string[];
 };
 
 export type ItemPatches = {

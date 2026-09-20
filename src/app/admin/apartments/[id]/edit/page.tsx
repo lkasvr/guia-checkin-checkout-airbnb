@@ -197,7 +197,7 @@ export default async function EditApartmentPage({
         hostId={apt.hostId}
         hostName={hostName}
         apartmentId={apt.id}
-        initial={{ ...initial, ...editors }}
+        initial={{ ...initial, ...editors, previousPatches: patches }}
         existingContent={content}
         otherContacts={reusableContacts(siblings)}
         buildings={buildings.map((b) => ({
