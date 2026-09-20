@@ -5,12 +5,16 @@ import { useRouter } from "next/navigation";
 import Guide from "@/components/Guide";
 import {
   buildApartmentContent,
+  buildOverrides,
   overlayBuildingLiveContent,
+  varsFromInput,
   type ApartmentFormInput,
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
 import { slugify } from "@/lib/slug";
 import { formatPhoneBR } from "@/lib/phone";
+import { lookupIntercom, type ReusableContacts } from "@/data/contacts";
+import { editorValues } from "@/data/patches";
 import {
   createApartmentDetailed,
   listHostCheckinVideos,
@@ -65,6 +69,8 @@ const EMPTY: FormState = {
   hostWhatsapp: "",
   coHostName: "",
   coHostWhatsapp: "",
+  portariaPhone: "",
+  intercomCode: "",
   internalNotes: "",
   locationAddress: "",
   locationMapsUrl: "",
@@ -208,6 +214,7 @@ export function ApartmentWizard({
   initial,
   existingContent,
   buildings,
+  otherContacts = [],
 }: {
   hostId: string;
   hostName: string;
@@ -216,11 +223,13 @@ export function ApartmentWizard({
   initial?: FormState;
   existingContent?: Apartment;
   buildings: BuildingOption[];
+  otherContacts?: ReusableContacts[];
 }) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
   const [form, setForm] = useState<FormState>(initial ?? EMPTY);
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
+  const [intercomTouched, setIntercomTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -229,6 +238,14 @@ export function ApartmentWizard({
       const next = { ...f, [key]: value };
       if (!slugTouched && (key === "building" || key === "unit")) {
         next.slug = [slugify(next.building), slugify(next.unit)].filter(Boolean).join("-");
+      }
+      if (key === "rulesText" || key === "smoking" || key === "pets") next.regenerateRules = true;
+      // Torre digitada (ou prédio trocado): puxa o código do interfone dela.
+      if ((key === "tower" || key === "building") && !intercomTouched) {
+        const b = buildings.find(
+          (x) => x.name.trim().toLowerCase() === next.building.trim().toLowerCase(),
+        );
+        next.intercomCode = lookupIntercom(b?.location?.intercom, next.tower);
       }
       if (key === "unit" && !f.label) next.label = value ? `Ap ${String(value).toUpperCase()}` : "";
       // Prédio escolhido pela primeira vez: sugere a capa/despedida padrão
@@ -267,26 +284,41 @@ export function ApartmentWizard({
   }, [hostId, matchedBuilding?.id, apartmentId]);
 
   const preview = useMemo<Apartment>(() => {
-    const content = buildApartmentContent(form, hostName, existingContent, matchedBuilding);
-    return matchedBuilding
-      ? overlayBuildingLiveContent(content, matchedBuilding, form.overrides)
-      : content;
+    const building = matchedBuilding ?? null;
+    const content = buildApartmentContent(form, hostName, existingContent, building);
+    return overlayBuildingLiveContent(content, building, buildOverrides(form, building));
   }, [form, hostName, existingContent, matchedBuilding]);
+
+  const inheritedPortariaPhone = matchedBuilding?.location?.portariaPhone ?? "";
 
   function enableOverride(section: OverridableSection) {
     setForm((f) => {
       const overrides = { ...f.overrides, [section]: true };
+      // Com prédio: o editor abre com a lista do modelo; só o que a pessoa mudar vira ajuste.
+      const ev = matchedBuilding ? editorValues(matchedBuilding, undefined, varsFromInput(f)) : null;
       switch (section) {
         case "rules":
-          return { ...f, overrides, overrideRules: rulesFromContent(preview.rules) };
+          return { ...f, overrides, overrideRules: ev?.rules ?? rulesFromContent(preview.rules) };
         case "home":
-          return { ...f, overrides, overrideHome: homeFromContent(preview.home) };
+          return { ...f, overrides, overrideHome: ev?.home ?? homeFromContent(preview.home) };
         case "amenities":
-          return { ...f, overrides, overrideAmenities: amenitiesFromContent(preview.amenities) };
+          return {
+            ...f,
+            overrides,
+            overrideAmenities: ev?.amenities ?? amenitiesFromContent(preview.amenities),
+          };
         case "tourism":
-          return { ...f, overrides, overrideTourism: placesFromContent(preview.tourism) };
+          return {
+            ...f,
+            overrides,
+            overrideTourism: ev?.tourism ?? placesFromContent(preview.tourism),
+          };
         case "dining":
-          return { ...f, overrides, overrideDining: placesFromContent(preview.dining) };
+          return {
+            ...f,
+            overrides,
+            overrideDining: ev?.dining ?? placesFromContent(preview.dining),
+          };
       }
     });
   }
@@ -309,20 +341,25 @@ export function ApartmentWizard({
   }
 
   function toggleCheckinEdit() {
-    setForm((f) =>
-      f.checkinOverride
-        ? { ...f, checkinOverride: undefined }
-        : { ...f, checkinOverride: checkinFromContent(preview.checkin) },
-    );
+    setForm((f) => {
+      if (f.checkinOverride) return { ...f, checkinOverride: undefined };
+      const value = matchedBuilding
+        ? editorValues(matchedBuilding, undefined, varsFromInput(f)).checkin
+        : checkinFromContent(preview.checkin);
+      return { ...f, checkinOverride: value };
+    });
   }
   function toggleCheckoutEdit() {
-    setForm((f) =>
-      f.checkoutOverride
-        ? { ...f, checkoutOverride: undefined }
-        : preview.checkout
-          ? { ...f, checkoutOverride: checkoutFromContent(preview.checkout) }
-          : f,
-    );
+    setForm((f) => {
+      if (f.checkoutOverride) return { ...f, checkoutOverride: undefined };
+      if (matchedBuilding) {
+        return {
+          ...f,
+          checkoutOverride: editorValues(matchedBuilding, undefined, varsFromInput(f)).checkout,
+        };
+      }
+      return preview.checkout ? { ...f, checkoutOverride: checkoutFromContent(preview.checkout) } : f;
+    });
   }
 
   function confirm() {
@@ -578,6 +615,7 @@ export function ApartmentWizard({
       {form.checkinOverride && (
         <div className="mt-3">
           <CheckinCardsEditor
+            lockShared={!!matchedBuilding}
             value={form.checkinOverride}
             onChange={(v) => set("checkinOverride", v)}
             reuseOptions={reuseVideos}
@@ -601,6 +639,7 @@ export function ApartmentWizard({
       {form.checkoutOverride && (
         <div className="mt-3">
           <CheckoutStepsEditor
+            lockShared={!!matchedBuilding}
             value={form.checkoutOverride}
             onChange={(v) => set("checkoutOverride", v)}
           />
@@ -676,6 +715,7 @@ export function ApartmentWizard({
       >
         {form.overrideRules && (
           <RulesListEditor
+            lockShared={!!matchedBuilding}
             value={form.overrideRules}
             onChange={(v) => set("overrideRules", v)}
           />
@@ -690,7 +730,11 @@ export function ApartmentWizard({
         onDisable={() => disableOverride("home")}
       >
         {form.overrideHome && (
-          <HomeEditor value={form.overrideHome} onChange={(v) => set("overrideHome", v)} />
+          <HomeEditor
+            lockShared={!!matchedBuilding}
+            value={form.overrideHome}
+            onChange={(v) => set("overrideHome", v)}
+          />
         )}
       </SectionOverrideBlock>
 
@@ -732,6 +776,7 @@ export function ApartmentWizard({
       >
         {form.overrideAmenities && (
           <AmenityListEditor
+            lockShared={!!matchedBuilding}
             value={form.overrideAmenities}
             onChange={(v) => set("overrideAmenities", v)}
           />
@@ -747,6 +792,7 @@ export function ApartmentWizard({
       >
         {form.overrideTourism && (
           <PlaceListEditor
+            lockShared={!!matchedBuilding}
             value={form.overrideTourism}
             onChange={(v) => set("overrideTourism", v)}
           />
@@ -762,6 +808,7 @@ export function ApartmentWizard({
       >
         {form.overrideDining && (
           <PlaceListEditor
+            lockShared={!!matchedBuilding}
             value={form.overrideDining}
             onChange={(v) => set("overrideDining", v)}
           />
@@ -769,6 +816,32 @@ export function ApartmentWizard({
       </SectionOverrideBlock>
 
       <h2 className={sectionTitle}>Contatos</h2>
+      {otherContacts.length > 0 && (
+        <label className={`${labelCls} mt-3`}>
+          Aproveitar contatos de outro apartamento deste anfitrião
+          <select
+            className={field}
+            value=""
+            onChange={(e) => {
+              const c = otherContacts[Number(e.target.value)];
+              if (!c) return;
+              setForm((f) => ({
+                ...f,
+                hostWhatsapp: c.hostWhatsapp,
+                coHostName: c.coHostName,
+                coHostWhatsapp: c.coHostWhatsapp,
+              }));
+            }}
+          >
+            <option value="">Escolher apartamento…</option>
+            {otherContacts.map((c, i) => (
+              <option key={i} value={i}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className={labelCls}>
           WhatsApp do anfitrião
@@ -797,6 +870,35 @@ export function ApartmentWizard({
             onChange={(e) => set("coHostWhatsapp", formatPhoneBR(e.target.value))}
             placeholder="+55 61 98888-8888"
           />
+        </label>
+        <label className={labelCls}>
+          Telefone da portaria
+          <input
+            className={field}
+            value={form.portariaPhone}
+            onChange={(e) => set("portariaPhone", formatPhoneBR(e.target.value))}
+            placeholder={inheritedPortariaPhone || "+55 61 3333-3333"}
+          />
+          {inheritedPortariaPhone && !form.portariaPhone && (
+            <span className="text-[12.5px] font-normal text-soft">
+              Em branco usa o do prédio ({inheritedPortariaPhone}).
+            </span>
+          )}
+        </label>
+        <label className={labelCls}>
+          Código do interfone (ex.: *1)
+          <input
+            className={field}
+            value={form.intercomCode}
+            onChange={(e) => {
+              setIntercomTouched(true);
+              set("intercomCode", e.target.value);
+            }}
+            placeholder="*1"
+          />
+          <span className="text-[12.5px] font-normal text-soft">
+            Preenchido sozinho pela torre, se o prédio tiver o código dela cadastrado.
+          </span>
         </label>
       </div>
 

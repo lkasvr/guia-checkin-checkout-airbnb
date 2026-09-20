@@ -11,6 +11,8 @@ export type L = {
 export type Fact = { k: L; v: L };
 
 export type Step = {
+  /** só usado quando o passo é item de lista com ajustes por apartamento (check-out) */
+  id?: string;
   /** número/marcador exibido na bolinha ("1".."4" ou "✦") */
   n: string;
   /** corpo do passo (rico) */
@@ -20,6 +22,8 @@ export type Step = {
 export type Alert = { icon: string; body: L };
 
 export type CheckinCard = {
+  /** Identidade estável do item (antigo, sem id: derivada do título — ver `itemMerge.ts`). */
+  id?: string;
   title: L;
   tag?: L;
   banner?: string; // caminho da imagem de banner
@@ -28,7 +32,7 @@ export type CheckinCard = {
   video?: { src: string; poster?: string; label: L };
 };
 
-export type Rule = { icon: string; title: L; text: L; hot?: boolean };
+export type Rule = { id?: string; icon: string; title: L; text: L; hot?: boolean };
 
 export type Contact = {
   icon: string;
@@ -39,11 +43,12 @@ export type Contact = {
   sos?: boolean;
 };
 
-export type Slide = { img: string; title: L; text: L };
+export type Slide = { id?: string; img: string; title: L; text: L };
 
 export type LegendItem = { n: string; label: L };
 
 export type Accordion = {
+  id?: string;
   icon: string;
   title: L;
   steps: Step[];
@@ -52,9 +57,10 @@ export type Accordion = {
   diagram?: { img: string; alt: string; legend: LegendItem[] };
 };
 
-export type Amenity = { img: string; title: L; text: L; wide?: boolean };
+export type Amenity = { id?: string; img: string; title: L; text: L; wide?: boolean };
 
 export type Place = {
+  id?: string;
   img?: string;
   title: string;
   text: L;
@@ -70,6 +76,61 @@ export type NavItem = { href: string; label: L };
 /** Endereço completo + link do Google Maps do prédio — ambos opcionais, cada um sozinho já basta pra mostrar o cartão. */
 export type MapLocation = { address: string; mapsUrl: string };
 
+/** Código do interfone de uma torre (ex.: "Torre C" → "*1"). */
+export type IntercomCode = { tower: string; code: string };
+
+/**
+ * O que o prédio guarda além do mapa (a coluna `Building.location` é JSON livre):
+ * telefone da portaria e o código do interfone de cada torre.
+ */
+export type BuildingInfo = MapLocation & {
+  portariaPhone?: string;
+  intercom?: IntercomCode[];
+};
+
+/** Valores que preenchem os marcadores {{TORRE}}, {{ANDAR}}… do check-in/check-out do prédio. */
+export type ApartmentVars = {
+  TORRE: string;
+  ANDAR: string;
+  UNIDADE: string;
+  VAGA: string;
+  CHECKOUT_HORA: string;
+};
+
+/** Contatos digitados no formulário — guardados pra poder reaproveitar em outro apartamento do anfitrião. */
+export type ContactInfo = {
+  hostWhatsapp: string;
+  coHostName: string;
+  coHostWhatsapp: string;
+};
+
+/** Portaria só deste apartamento; vazio = usa o do prédio (telefone) / o da torre (código). */
+export type PortariaOverride = { phone?: string; code?: string };
+
+/**
+ * Ajustes de um apartamento sobre a lista do modelo (prédio): o que ele editou,
+ * removeu ou acrescentou. Item que não aparece aqui segue o modelo ao vivo.
+ */
+export type ItemPatch<T> = {
+  /** id do item do modelo → versão editada neste apartamento */
+  edited?: Record<string, T>;
+  /** ids de itens do modelo que este apartamento tirou */
+  removed?: string[];
+  /** itens só deste apartamento (vêm depois dos do modelo) */
+  added?: T[];
+};
+
+export type ItemPatches = {
+  rules?: ItemPatch<Rule>;
+  slides?: ItemPatch<Slide>;
+  accordions?: ItemPatch<Accordion>;
+  amenities?: ItemPatch<Amenity>;
+  tourism?: ItemPatch<Place>;
+  dining?: ItemPatch<Place>;
+  checkin?: ItemPatch<CheckinCard>;
+  checkout?: ItemPatch<Step>;
+};
+
 export type Apartment = {
   slug: string;
   lang: { default: "pt" | "en" };
@@ -80,6 +141,10 @@ export type Apartment = {
   building: string;
   /** Próprio do apartamento; em branco herda ao vivo do prédio (`Building.location`). */
   location?: MapLocation;
+  /** Marcadores do check-in/check-out (torre, andar…) deste apartamento. */
+  vars?: ApartmentVars;
+  contactInfo?: ContactInfo;
+  portaria?: PortariaOverride;
   hero: { img: string; sub: L; facts: Fact[] };
   nav: NavItem[];
 

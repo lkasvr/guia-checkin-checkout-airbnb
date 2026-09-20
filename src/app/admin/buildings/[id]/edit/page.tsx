@@ -59,6 +59,8 @@ export default async function EditBuildingPage({
     location: {
       address: t.location?.address ?? "",
       mapsUrl: t.location?.mapsUrl ?? "",
+      portariaPhone: t.location?.portariaPhone ?? "",
+      intercom: t.location?.intercom ?? [],
     },
   };
 

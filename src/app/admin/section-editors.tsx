@@ -208,15 +208,19 @@ function StepListEditor({
 }
 
 export function RulesListEditor({
+  lockShared,
   value,
   onChange,
 }: {
+  /** Apartamento seguindo o modelo do prédio: texto de apoio e vídeo de A Casa vêm do prédio. */
+  lockShared?: boolean;
   value: RulesValue;
   onChange: (v: RulesValue) => void;
 }) {
   return (
     <div>
-      <label className={labelCls}>
+      {!lockShared && (
+        <label className={labelCls}>
         Texto de apoio
         <input
           className={field}
@@ -225,6 +229,7 @@ export function RulesListEditor({
           onChange={(e) => onChange({ ...value, sub: e.target.value })}
         />
       </label>
+      )}
       <div className="mt-3 grid gap-2">
         {value.items.map((r, i) => (
           <div key={i} className={rowCls}>
@@ -297,15 +302,19 @@ export function RulesListEditor({
 }
 
 export function AmenityListEditor({
+  lockShared,
   value,
   onChange,
 }: {
+  /** Apartamento seguindo o modelo do prédio: texto de apoio e vídeo de A Casa vêm do prédio. */
+  lockShared?: boolean;
   value: AmenitiesValue;
   onChange: (v: AmenitiesValue) => void;
 }) {
   return (
     <div>
-      <label className={labelCls}>
+      {!lockShared && (
+        <label className={labelCls}>
         Texto de apoio
         <input
           className={field}
@@ -314,6 +323,7 @@ export function AmenityListEditor({
           onChange={(e) => onChange({ ...value, sub: e.target.value })}
         />
       </label>
+      )}
       <div className="mt-3 grid gap-2">
         {value.items.map((a, i) => (
           <div key={i} className={rowCls}>
@@ -381,18 +391,23 @@ export function AmenityListEditor({
 }
 
 export function PlaceListEditor({
+  lockShared,
   value,
   onChange,
 }: {
+  /** Apartamento seguindo o modelo do prédio: texto de apoio e vídeo de A Casa vêm do prédio. */
+  lockShared?: boolean;
   value: PlacesValue;
   onChange: (v: PlacesValue) => void;
 }) {
   return (
     <div>
-      <label className={labelCls}>
+      {!lockShared && (
+        <label className={labelCls}>
         Texto de apoio
         <input className={field} value={value.sub} onChange={(e) => onChange({ ...value, sub: e.target.value })} />
       </label>
+      )}
       <div className="mt-3 grid gap-2">
         {value.items.map((p, i) => (
           <div key={i} className={rowCls}>
@@ -475,19 +490,26 @@ export function PlaceListEditor({
 }
 
 export function HomeEditor({
+  lockShared,
   value,
   onChange,
 }: {
+  /** Apartamento seguindo o modelo do prédio: texto de apoio e vídeo de A Casa vêm do prédio. */
+  lockShared?: boolean;
   value: HomeValue;
   onChange: (v: HomeValue) => void;
 }) {
   return (
     <div>
-      <label className={labelCls}>
+      {!lockShared && (
+        <label className={labelCls}>
         Texto de apoio
         <input className={field} value={value.sub} onChange={(e) => onChange({ ...value, sub: e.target.value })} />
       </label>
+      )}
 
+      {!lockShared && (
+        <>
       <p className="mt-4 text-[13px] font-semibold text-soft">
         Vídeo de apresentação (opcional)
       </p>
@@ -511,6 +533,9 @@ export function HomeEditor({
           </button>
         )}
       </div>
+
+        </>
+      )}
 
       <p className="mt-4 text-[13px] font-semibold text-soft">Destaques (fotos)</p>
       <div className="mt-2 grid gap-2">
@@ -867,10 +892,13 @@ function CheckinCardEditor({
 }
 
 export function CheckinCardsEditor({
+  lockShared,
   value,
   onChange,
   reuseOptions,
 }: {
+  /** Apartamento seguindo o modelo do prédio: texto de apoio e vídeo de A Casa vêm do prédio. */
+  lockShared?: boolean;
   value: CheckinValue;
   onChange: (v: CheckinValue) => void;
   /** Vídeos já enviados por outros apartamentos do mesmo anfitrião/prédio — ver `listHostCheckinVideos`. */
@@ -878,10 +906,12 @@ export function CheckinCardsEditor({
 }) {
   return (
     <div>
-      <label className={labelCls}>
+      {!lockShared && (
+        <label className={labelCls}>
         Texto de apoio
         <input className={field} value={value.sub} onChange={(e) => onChange({ ...value, sub: e.target.value })} />
       </label>
+      )}
       <TokenHint />
       <div className="mt-3 grid gap-3">
         {value.cards.map((c, i) => (
@@ -913,18 +943,23 @@ export function CheckinCardsEditor({
 }
 
 export function CheckoutStepsEditor({
+  lockShared,
   value,
   onChange,
 }: {
+  /** Apartamento seguindo o modelo do prédio: texto de apoio e vídeo de A Casa vêm do prédio. */
+  lockShared?: boolean;
   value: CheckoutValue;
   onChange: (v: CheckoutValue) => void;
 }) {
   return (
     <div>
-      <label className={labelCls}>
+      {!lockShared && (
+        <label className={labelCls}>
         Texto de apoio
         <input className={field} value={value.sub} onChange={(e) => onChange({ ...value, sub: e.target.value })} />
       </label>
+      )}
       <TokenHint />
       <div className="mt-3">
         <StepListEditor steps={value.steps} onChange={(steps) => onChange({ ...value, steps })} />

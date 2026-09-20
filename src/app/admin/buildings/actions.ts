@@ -30,15 +30,32 @@ export type BuildingEditPayload = {
   /** Sugestão de capa/despedida pro "Copiar de" ao criar apartamento — não é ao vivo. */
   defaultHeroImg: string;
   defaultFooterImg: string;
-  /** Endereço + link do Google Maps, ao vivo em todos os apartamentos do prédio. */
-  location: { address: string; mapsUrl: string };
+  /** Endereço, link do Maps e portaria (telefone + código do interfone de cada torre), ao vivo em todos os apartamentos. */
+  location: {
+    address: string;
+    mapsUrl: string;
+    portariaPhone: string;
+    intercom: { tower: string; code: string }[];
+  };
 };
 
 function buildData(payload: BuildingEditPayload) {
   const address = payload.location.address.trim();
   const mapsUrl = payload.location.mapsUrl.trim();
+  const portariaPhone = payload.location.portariaPhone.trim();
+  const intercom = payload.location.intercom
+    .map((i) => ({ tower: i.tower.trim(), code: i.code.trim() }))
+    .filter((i) => i.tower && i.code);
+  const hasInfo = address || mapsUrl || portariaPhone || intercom.length > 0;
   return {
-    location: address || mapsUrl ? ({ address, mapsUrl } as object) : Prisma.DbNull,
+    location: hasInfo
+      ? ({
+          address,
+          mapsUrl,
+          ...(portariaPhone ? { portariaPhone } : {}),
+          ...(intercom.length ? { intercom } : {}),
+        } as object)
+      : Prisma.DbNull,
     rules: rulesToContent(payload.rules) as object,
     home: homeToContent(payload.home) as object,
     checkinTemplate: checkinToContent(payload.checkin) as object,
@@ -79,9 +96,9 @@ export async function createBuilding(
 /**
  * Grava o conteúdo compartilhado de um prédio — ao vivo: todo apartamento
  * ligado a este prédio reflete a mudança na próxima vez que o guia carregar
- * (exceto seções que o apartamento tenha personalizado, `Apartment.overrides`).
- * Check-in/check-out são template (marcadores da unidade), copiados pro
- * apartamento na criação/edição — editar aqui não muda quem já foi criado.
+ * (exceto o item que o apartamento tenha editado à mão, `Apartment.overrides.patches`).
+ * Check-in/check-out também: o template tem marcadores da unidade, preenchidos
+ * em cada guia na hora de exibir.
  */
 export async function updateBuilding(buildingId: string, payload: BuildingEditPayload) {
   await requireAdmin();

@@ -1,9 +1,10 @@
 import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { isSameDayBR } from "@/lib/tz";
-import type { Apartment, MapLocation } from "@/data/types";
+import type { Apartment } from "@/data/types";
 import {
   overlayBuildingLiveContent,
+  toBuildingTemplate,
   type ApartmentOverrides,
 } from "@/data/buildApartmentContent";
 
@@ -26,7 +27,6 @@ export type GuideData = {
   stay: StayInfo | null;
 };
 
-const BLANK_L = { pt: "", en: "" };
 
 /**
  * Carrega o apartamento ativo pelo slug + a estadia vigente (agora dentro da
@@ -53,6 +53,8 @@ export const getGuide = cache(
             amenities: true,
             tourism: true,
             dining: true,
+            checkinTemplate: true,
+            checkoutTemplate: true,
             location: true,
           },
         },
@@ -85,27 +87,13 @@ export const getGuide = cache(
       footer: { ...dbContent.footer, img: dbContent.footer.img ?? "/media/mesa.webp" },
     };
     const overrides = (row.overrides as ApartmentOverrides | null) ?? {};
-    const content = row.building
-      ? overlayBuildingLiveContent(
-          rawContent,
-          {
-            rules: (row.building.rules as unknown as Apartment["rules"] | null) ?? {
-              sub: BLANK_L,
-              items: [],
-            },
-            home: (row.building.home as unknown as Apartment["home"] | null) ?? {
-              sub: BLANK_L,
-              slides: [],
-              accordions: [],
-            },
-            amenities: row.building.amenities as unknown as Apartment["amenities"],
-            tourism: row.building.tourism as unknown as Apartment["tourism"],
-            dining: row.building.dining as unknown as Apartment["dining"],
-            location: row.building.location as unknown as MapLocation | null,
-          },
-          overrides,
-        )
-      : rawContent;
+    // Sempre passa pelo overlay: com prédio ele traz o conteúdo ao vivo (modelo +
+    // ajustes do apartamento); com ou sem prédio ele resolve mapa e portaria.
+    const content = overlayBuildingLiveContent(
+      rawContent,
+      row.building ? toBuildingTemplate(row.building) : null,
+      overrides,
+    );
     return {
       id: row.id,
       slug: row.slug,

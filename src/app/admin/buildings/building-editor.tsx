@@ -17,6 +17,7 @@ import {
   RulesListEditor,
 } from "@/app/admin/section-editors";
 import type { BuildingTemplate } from "@/data/buildApartmentContent";
+import { formatPhoneBR } from "@/lib/phone";
 import {
   amenitiesFromContent,
   checkinFromContent,
@@ -97,6 +98,16 @@ export function BuildingEditor({
   const router = useRouter();
   const [name, setName] = useState(buildingName ?? "");
   const [form, setForm] = useState<BuildingEditPayload>(initial);
+
+  function updateIntercom(i: number, patch: Partial<{ tower: string; code: string }>) {
+    setForm((f) => ({
+      ...f,
+      location: {
+        ...f.location,
+        intercom: f.location.intercom.map((r, j) => (j === i ? { ...r, ...patch } : r)),
+      },
+    }));
+  }
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -169,8 +180,7 @@ export function BuildingEditor({
         <p className="mt-1 text-[15px] text-soft">
           <b className="text-ink">{buildingName}</b>. Regras, A Casa, Lazer, guia da cidade e
           onde comer são compartilhados — mudar aqui atualiza todos os apartamentos deste
-          prédio (menos o que algum apartamento tiver personalizado). Check-in/check-out são
-          template — só valem pra apartamentos criados/editados depois desta mudança.
+          prédio (menos o item que um apartamento tiver editado à mão). Check-in/check-out também.
         </p>
       )}
 
@@ -204,6 +214,76 @@ export function BuildingEditor({
             inputMode="url"
           />
         </label>
+      </div>
+
+      <h2 className={sectionTitle}>Portaria</h2>
+      <p className="mt-1 text-[13px] text-soft">
+        Telefone da portaria e o código do interfone de cada torre (ex.: *1). Aparece nos
+        contatos de todos os apartamentos; ao digitar a torre no apartamento, o código dela é
+        preenchido sozinho (e pode ser trocado só naquele apartamento).
+      </p>
+      <div className="mt-3 grid gap-3">
+        <label className={labelCls}>
+          Telefone da portaria
+          <input
+            className={field}
+            value={form.location.portariaPhone}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                location: { ...f.location, portariaPhone: formatPhoneBR(e.target.value) },
+              }))
+            }
+            placeholder="+55 61 99290-9099"
+            inputMode="tel"
+          />
+        </label>
+        <div className="grid gap-2">
+          <span className={labelCls}>Código do interfone por torre</span>
+          {form.location.intercom.map((row, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                className={`${field} min-w-0 flex-1`}
+                value={row.tower}
+                onChange={(e) => updateIntercom(i, { tower: e.target.value })}
+                placeholder="Torre C"
+              />
+              <input
+                className={`${field} w-24`}
+                value={row.code}
+                onChange={(e) => updateIntercom(i, { code: e.target.value })}
+                placeholder="*1"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setForm((f) => ({
+                    ...f,
+                    location: {
+                      ...f.location,
+                      intercom: f.location.intercom.filter((_, j) => j !== i),
+                    },
+                  }))
+                }
+                className="text-[13px] font-semibold text-terra"
+              >
+                Remover
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() =>
+              setForm((f) => ({
+                ...f,
+                location: { ...f.location, intercom: [...f.location.intercom, { tower: "", code: "" }] },
+              }))
+            }
+            className="self-start rounded-full border border-line bg-card px-4 py-2 text-[13px] font-semibold text-soft"
+          >
+            + Torre
+          </button>
+        </div>
       </div>
 
       <h2 className={sectionTitle}>Fotos padrão do modelo</h2>

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { ApartmentWizard } from "@/app/admin/apartments/wizard";
 import { toBuildingTemplate } from "@/data/buildApartmentContent";
+import { reusableContacts } from "@/data/contacts";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,15 @@ export default async function NewApartmentPage({
   const { hostId } = await searchParams;
   if (!hostId) notFound();
 
-  const [host, buildings] = await Promise.all([
+  const [host, siblings, buildings] = await Promise.all([
     prisma.user.findFirst({
       where: { id: hostId, role: "HOST" },
       select: { id: true, name: true, email: true },
+    }),
+    prisma.apartment.findMany({
+      where: { hostId },
+      select: { label: true, content: true },
+      orderBy: { label: "asc" },
     }),
     prisma.building.findMany({
       select: {
@@ -41,6 +47,7 @@ export default async function NewApartmentPage({
   return (
     <ApartmentWizard
       mode="create"
+      otherContacts={reusableContacts(siblings)}
       hostId={host.id}
       hostName={host.name ?? host.email}
       buildings={buildings.map((b) => ({
