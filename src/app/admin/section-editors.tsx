@@ -6,6 +6,7 @@ import { isVideoUrl, uploadMedia } from "@/lib/upload";
 import type { ReusableVideo } from "@/app/admin/actions";
 import {
   emptyAccordion,
+  emptyDiagram,
   emptyAlert,
   emptyAmenity,
   emptyCard,
@@ -655,9 +656,28 @@ export function HomeEditor({
                 }
               />
             </div>
+            {!a.diagram && (
+              <button
+                type="button"
+                className={`${addCls} justify-self-start sm:col-span-2`}
+                onClick={() =>
+                  onChange({
+                    ...value,
+                    accordions: updateAt(value.accordions, i, { diagram: emptyDiagram() }),
+                  })
+                }
+              >
+                + Foto com itens numerados
+              </button>
+            )}
             {a.diagram && (
               <div className="sm:col-span-2">
-                <span className="text-[12.5px] font-semibold text-soft">Foto do diagrama</span>
+                <span className="text-[12.5px] font-semibold text-soft">
+                  Foto com itens numerados (opcional)
+                </span>
+                <p className="mt-0.5 text-[12px] text-soft">
+                  Ex.: foto da cafeteira com as partes numeradas. Sem foto, esta parte não aparece no guia.
+                </p>
                 <div className="mt-1">
                   <MediaField
                     value={a.diagram.img}
@@ -672,7 +692,7 @@ export function HomeEditor({
                   />
                 </div>
                 <p className="mt-3 text-[12.5px] font-semibold text-soft">
-                  Itens numerados ao lado da foto
+                  Itens numerados (aparecem abaixo da foto)
                 </p>
                 <p className="mt-0.5 text-[12px] text-soft">
                   O número é o que aparece na foto; edite, remova ou acrescente itens à vontade.
@@ -760,6 +780,18 @@ export function HomeEditor({
                     }
                   >
                     + Item numerado
+                  </button>
+                  <button
+                    type="button"
+                    className={`${removeCls} justify-self-start`}
+                    onClick={() =>
+                      onChange({
+                        ...value,
+                        accordions: updateAt(value.accordions, i, { diagram: undefined }),
+                      })
+                    }
+                  >
+                    Não usar foto com itens numerados
                   </button>
                 </div>
               </div>
