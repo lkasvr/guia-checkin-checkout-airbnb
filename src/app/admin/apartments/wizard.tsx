@@ -13,7 +13,7 @@ import {
 } from "@/data/buildApartmentContent";
 import { slugify } from "@/lib/slug";
 import { formatPhoneBR } from "@/lib/phone";
-import { lookupIntercom, type ReusableContacts } from "@/data/contacts";
+import { lookupIntercom, towerKey, type ReusableContacts } from "@/data/contacts";
 import { editorValues } from "@/data/patches";
 import {
   createApartmentDetailed,
@@ -47,6 +47,10 @@ const labelCls = "flex flex-col gap-1 text-[13px] font-semibold text-soft";
 const sectionTitle = "mt-6 font-display text-[19px] font-normal";
 
 type FormState = ApartmentFormInput & { slug: string; label: string };
+
+/** Link sugerido: prédio + número + torre (ex.: residencial-df-plaza-1111e), pra o mesmo número em torres diferentes não colidir. */
+const autoSlug = (building: string, unit: string, tower: string) =>
+  [slugify(building), slugify(unit) + slugify(towerKey(tower))].filter(Boolean).join("-");
 
 const EMPTY: FormState = {
   building: "",
@@ -236,8 +240,8 @@ export function ApartmentWizard({
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => {
       const next = { ...f, [key]: value };
-      if (!slugTouched && (key === "building" || key === "unit")) {
-        next.slug = [slugify(next.building), slugify(next.unit)].filter(Boolean).join("-");
+      if (!slugTouched && (key === "building" || key === "unit" || key === "tower")) {
+        next.slug = autoSlug(next.building, next.unit, next.tower);
       }
       if (key === "rulesText" || key === "smoking" || key === "pets") next.regenerateRules = true;
       // Torre digitada (ou prédio trocado): puxa o código do interfone dela.
@@ -367,14 +371,19 @@ export function ApartmentWizard({
     const payload: ApartmentWizardPayload = form;
     startTransition(async () => {
       try {
-        if (mode === "create") {
-          await createApartmentDetailed(hostId, payload);
-        } else {
-          await updateApartmentDetailed(apartmentId!, payload);
+        const result =
+          mode === "create"
+            ? await createApartmentDetailed(hostId, payload)
+            : await updateApartmentDetailed(apartmentId!, payload);
+        if (!result.ok) {
+          setError(result.error);
+          return;
         }
         router.push("/admin");
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Não foi possível salvar.");
+      } catch {
+        setError(
+          "Não foi possível salvar. Confira na lista de apartamentos se ele já foi criado antes de tentar de novo; se não foi, faça login de novo no painel e tente outra vez.",
+        );
       }
     });
   }

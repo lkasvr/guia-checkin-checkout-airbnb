@@ -145,10 +145,22 @@ export async function createHost(formData: FormData) {
 
 export type ApartmentWizardPayload = ApartmentFormInput & { slug: string; label: string };
 
-/** Traduz o P2002 (índice único) do Prisma numa mensagem amigável de slug em uso. */
-function throwIfSlugTaken(e: unknown, slug: string): never {
+/**
+ * Resultado das ações do formulário de apartamento. Erro esperado (link em uso,
+ * anfitrião inexistente…) volta como `{ ok: false, error }`: em produção o Next
+ * esconde a mensagem de qualquer erro lançado, e a pessoa ficaria sem saber o motivo.
+ */
+export type ApartmentActionResult = { ok: true } | { ok: false; error: string };
+
+const slugInUse = (slug: string): ApartmentActionResult => ({
+  ok: false,
+  error: `O link "${slug}.anfyi.com.br" já está em uso por outro apartamento. Clique em "Voltar e editar" e ajuste o link (por exemplo, acrescentando a torre).`,
+});
+
+/** Traduz o P2002 (índice único) do Prisma em "link em uso"; qualquer outro erro segue como erro. */
+function slugTakenOrThrow(e: unknown, slug: string): ApartmentActionResult {
   if (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "P2002") {
-    throw new Error(`O slug "${slug}" já está em uso`);
+    return slugInUse(slug);
   }
   throw e as Error;
 }
@@ -163,21 +175,21 @@ function throwIfSlugTaken(e: unknown, slug: string): never {
 export async function createApartmentDetailed(
   hostId: string,
   payload: ApartmentWizardPayload,
-) {
+): Promise<ApartmentActionResult> {
   await requireAdmin();
 
   const host = await prisma.user.findUnique({
     where: { id: hostId },
     select: { name: true, email: true, role: true },
   });
-  if (!host || host.role !== "HOST") throw new Error("Anfitrião não encontrado");
+  if (!host || host.role !== "HOST") return { ok: false, error: "Anfitrião não encontrado." };
 
   const slug = slugify(payload.slug);
-  if (!slug) throw new Error("Informe o slug do apartamento");
+  if (!slug) return { ok: false, error: "Informe o link do apartamento." };
   const label = payload.label.trim() || `Ap ${payload.unit.toUpperCase()}`;
 
   const taken = await prisma.apartment.findUnique({ where: { slug }, select: { id: true } });
-  if (taken) throw new Error(`O slug "${slug}" já está em uso`);
+  if (taken) return slugInUse(slug);
 
   const building = await resolveBuilding(payload.building);
   const content = buildApartmentContent(payload, host.name ?? host.email, undefined, building);
@@ -196,9 +208,10 @@ export async function createApartmentDetailed(
       },
     });
   } catch (e) {
-    throwIfSlugTaken(e, slug);
+    return slugTakenOrThrow(e, slug);
   }
   revalidatePath("/admin");
+  return { ok: true };
 }
 
 /**
@@ -209,24 +222,24 @@ export async function createApartmentDetailed(
 export async function updateApartmentDetailed(
   apartmentId: string,
   payload: ApartmentWizardPayload,
-) {
+): Promise<ApartmentActionResult> {
   await requireAdmin();
 
   const apt = await prisma.apartment.findUnique({
     where: { id: apartmentId },
     select: { content: true, hostId: true, host: { select: { name: true, email: true } } },
   });
-  if (!apt) throw new Error("Apartamento não encontrado");
+  if (!apt) return { ok: false, error: "Apartamento não encontrado." };
 
   const slug = slugify(payload.slug);
-  if (!slug) throw new Error("Informe o slug do apartamento");
+  if (!slug) return { ok: false, error: "Informe o link do apartamento." };
   const label = payload.label.trim() || `Ap ${payload.unit.toUpperCase()}`;
 
   const taken = await prisma.apartment.findFirst({
     where: { slug, NOT: { id: apartmentId } },
     select: { id: true },
   });
-  if (taken) throw new Error(`O slug "${slug}" já está em uso`);
+  if (taken) return slugInUse(slug);
 
   const building = await resolveBuilding(payload.building);
   const content = buildApartmentContent(
@@ -249,10 +262,11 @@ export async function updateApartmentDetailed(
       },
     });
   } catch (e) {
-    throwIfSlugTaken(e, slug);
+    return slugTakenOrThrow(e, slug);
   }
   revalidatePath("/admin");
   revalidatePath(`/admin/apartments/${apartmentId}/edit`);
+  return { ok: true };
 }
 
 /**
