@@ -1,6 +1,7 @@
 import type {
   Apartment,
   ApartmentVars,
+  ItemPatches,
   L,
   PortariaOverride,
   Rule,
@@ -135,6 +136,8 @@ export type ApartmentFormInput = {
   /** Edição manual do check-in/check-out. */
   checkinOverride?: CheckinValue;
   checkoutOverride?: CheckoutValue;
+  /** Ajustes já gravados (edição): mantêm as traduções de item cujo português não mudou. */
+  previousPatches?: ItemPatches;
 };
 
 /** Valores que preenchem os marcadores {{TORRE}}, {{ANDAR}}… do check-in/check-out do prédio. */

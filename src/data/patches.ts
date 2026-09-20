@@ -17,8 +17,10 @@ import {
   accordionId,
   amenityId,
   cardId,
-  deepEqual,
+  sameContent,
+  withOrder,
   diffItems,
+  isEmptyPatch,
   mergeItems,
   newId,
   placeId,
@@ -28,23 +30,17 @@ import {
   uniqueIds,
 } from "@/data/itemMerge";
 import {
-  accordionFromContent,
   accordionToContent,
-  amenityFromContent,
   amenityToContent,
-  cardFromContent,
   cardToContent,
   checkinFromContent,
   checkoutFromContent,
   homeFromContent,
-  placeFromContent,
   placeToContent,
   placesFromContent,
   amenitiesFromContent,
   rulesFromContent,
-  ruleFromContent,
   ruleToContent,
-  slideFromContent,
   slideToContent,
   stepToContent,
   type AmenitiesValue,
@@ -53,7 +49,6 @@ import {
   type HomeValue,
   type PlacesValue,
   type RulesValue,
-  type StepInput,
 } from "@/data/sectionContent";
 
 /** O que o formulário do apartamento entrega pra virar ajustes sobre o modelo. */
@@ -66,9 +61,9 @@ export type PatchSource = {
   overrideDining?: PlacesValue;
   checkinOverride?: CheckinValue;
   checkoutOverride?: CheckoutValue;
+  /** Ajustes já gravados neste apartamento (pra não perder traduções ao salvar). */
+  previousPatches?: ItemPatches;
 };
-
-const stepFromContent = (s: Step, id?: string): StepInput => ({ id: id ?? stepId(s), n: s.n, body: s.body.pt });
 
 /* ------------------------------------------------------------------ */
 /* Guia: modelo + ajustes                                              */
@@ -91,7 +86,7 @@ export function overlayWithPatches(
     ...content,
     rules: {
       sub: building.rules.sub,
-      items: [...mergeItems(building.rules.items, patches.rules, ruleId), ...content.rules.items],
+      items: mergeItems(building.rules.items, patches.rules, ruleId, content.rules.items),
     },
     home: {
       ...building.home,
@@ -186,18 +181,26 @@ export function buildItemPatches(
       rulesFromContent(building.rules).items,
       src.overrideRules.items,
       ruleToContent,
+      src.previousPatches?.rules,
     );
   }
   if (o.home && src.overrideHome) {
     const m = homeFromContent(building.home);
-    patches.slides = diffItems(m.slides, src.overrideHome.slides, slideToContent);
-    patches.accordions = diffItems(m.accordions, src.overrideHome.accordions, accordionToContent);
+    const prev = src.previousPatches;
+    patches.slides = diffItems(m.slides, src.overrideHome.slides, slideToContent, prev?.slides);
+    patches.accordions = diffItems(
+      m.accordions,
+      src.overrideHome.accordions,
+      accordionToContent,
+      prev?.accordions,
+    );
   }
   if (o.amenities && src.overrideAmenities) {
     patches.amenities = diffItems(
       amenitiesFromContent(building.amenities).items,
       src.overrideAmenities.items,
       amenityToContent,
+      src.previousPatches?.amenities,
     );
   }
   if (o.tourism && src.overrideTourism) {
@@ -205,6 +208,7 @@ export function buildItemPatches(
       placesFromContent(building.tourism).items,
       src.overrideTourism.items,
       placeToContent,
+      src.previousPatches?.tourism,
     );
   }
   if (o.dining && src.overrideDining) {
@@ -212,6 +216,7 @@ export function buildItemPatches(
       placesFromContent(building.dining).items,
       src.overrideDining.items,
       placeToContent,
+      src.previousPatches?.dining,
     );
   }
   if (src.checkinOverride) {
@@ -219,6 +224,7 @@ export function buildItemPatches(
       checkinFromContent(filledCheckin(building, vars)).cards,
       src.checkinOverride.cards,
       cardToContent,
+      src.previousPatches?.checkin,
     );
   }
   if (src.checkoutOverride) {
@@ -226,6 +232,7 @@ export function buildItemPatches(
       checkoutFromContent(filledCheckout(building, vars)).steps,
       src.checkoutOverride.steps,
       stepToContent,
+      src.previousPatches?.checkout,
     );
   }
   return compact(patches);
@@ -237,35 +244,46 @@ export function buildItemPatches(
 
 /**
  * Liga cada item do apartamento ao do modelo (pelo id; em conteúdo antigo, o
- * título): igual ao modelo = segue o modelo; diferente = ajuste "editado";
- * sem par = só deste apartamento.
+ * título): igual ao modelo (texto e traduções) = segue o modelo; diferente =
+ * ajuste "editado"; sem par = só deste apartamento.
  *
  * Item do modelo que o apartamento não tem: se a lista era dele por inteiro
  * (`markRemoved`), foi ele quem tirou — vira "removido". Nas cópias de
  * check-in/check-out não dá pra saber (o modelo pode ter ganhado o item depois),
  * então o item continua aparecendo.
+ *
+ * Guarda também a ordem em que o apartamento mostrava os itens, quando ela
+ * difere da natural (modelo primeiro, depois os próprios).
  */
-function matchPatch<T extends { id?: string }, In extends { id?: string }>(
+function matchPatch<T extends { id?: string }>(
   model: T[],
   own: T[],
   getId: (item: T) => string,
-  fromContent: (item: T, id?: string) => In,
   markRemoved = false,
-): { edited?: Record<string, T>; removed?: string[]; unmatched: T[] } {
+): { edited?: Record<string, T>; removed?: string[]; unmatched: T[]; ownFinal: T[] } {
   const modelIds = uniqueIds(model, getId);
   const byId = new Map(model.map((m, i) => [modelIds[i], m]));
   const ownIds = uniqueIds(own, getId);
   const seen = new Set<string>();
   const edited: Record<string, T> = {};
   const unmatched: T[] = [];
+  const ownFinal: T[] = [];
   own.forEach((item, i) => {
     const id = ownIds[i];
     const m = byId.get(id);
     if (m && !seen.has(id)) {
       seen.add(id);
-      if (!deepEqual(fromContent(m, id), fromContent(item, id))) edited[id] = { ...item, id };
+      if (sameContent(m, item)) {
+        ownFinal.push(m);
+      } else {
+        const e = { ...item, id };
+        edited[id] = e;
+        ownFinal.push(e);
+      }
     } else {
-      unmatched.push(item);
+      const withId = item.id ? item : { ...item, id: newId() };
+      unmatched.push(withId);
+      ownFinal.push(withId);
     }
   });
   const removed = markRemoved ? modelIds.filter((id) => !seen.has(id)) : [];
@@ -273,22 +291,28 @@ function matchPatch<T extends { id?: string }, In extends { id?: string }>(
     edited: Object.keys(edited).length ? edited : undefined,
     removed: removed.length ? removed : undefined,
     unmatched,
+    ownFinal,
   };
 }
 
+/**
+ * Ajuste a partir do que foi encontrado. \`addUnmatched\`: o que não tem par vira
+ * "acrescentado"; senão fica fora do ajuste (regras próprias, guardadas no conteúdo).
+ */
 function toPatch<T extends { id?: string }>(
-  m: { edited?: Record<string, T>; removed?: string[]; unmatched: T[] },
+  model: T[],
+  m: { edited?: Record<string, T>; removed?: string[]; unmatched: T[]; ownFinal: T[] },
+  getId: (item: T) => string,
   addUnmatched: boolean,
 ): ItemPatch<T> | undefined {
-  const added = addUnmatched
-    ? m.unmatched.map((i) => (i.id ? i : { ...i, id: newId() }))
-    : undefined;
-  if (!m.edited && !m.removed && !added?.length) return undefined;
-  return {
+  const p: ItemPatch<T> = {
     ...(m.edited ? { edited: m.edited } : {}),
     ...(m.removed ? { removed: m.removed } : {}),
-    ...(added?.length ? { added } : {}),
+    ...(addUnmatched && m.unmatched.length ? { added: m.unmatched } : {}),
   };
+  const natural = uniqueIds(mergeItems(model, p, getId, addUnmatched ? [] : m.unmatched), getId);
+  withOrder(p, uniqueIds(m.ownFinal, getId), natural);
+  return isEmptyPatch(p) ? undefined : p;
 }
 
 /**
@@ -310,80 +334,54 @@ export function legacyToPatches(
   let ownRules = content.rules.items;
 
   if (isOwn("rules")) {
-    const m = matchPatch<Rule, ReturnType<typeof ruleFromContent>>(
-      building.rules.items,
-      content.rules.items,
-      ruleId,
-      ruleFromContent,
-      true,
-    );
-    patches.rules = toPatch(m, false);
+    const m = matchPatch<Rule>(building.rules.items, content.rules.items, ruleId, true);
+    patches.rules = toPatch(building.rules.items, m, ruleId, false);
     ownRules = m.unmatched;
   }
   if (isOwn("home")) {
     patches.slides = toPatch(
-      matchPatch<Slide, ReturnType<typeof slideFromContent>>(
-        building.home.slides,
-        content.home.slides,
-        slideId,
-        slideFromContent,
-        true,
-      ),
+      building.home.slides,
+      matchPatch<Slide>(building.home.slides, content.home.slides, slideId, true),
+      slideId,
       true,
     );
     patches.accordions = toPatch(
-      matchPatch<Accordion, ReturnType<typeof accordionFromContent>>(
-        building.home.accordions,
-        content.home.accordions,
-        accordionId,
-        accordionFromContent,
-        true,
-      ),
+      building.home.accordions,
+      matchPatch<Accordion>(building.home.accordions, content.home.accordions, accordionId, true),
+      accordionId,
       true,
     );
   }
   if (isOwn("amenities")) {
     patches.amenities = toPatch(
-      matchPatch<Amenity, ReturnType<typeof amenityFromContent>>(
-        building.amenities.items,
-        content.amenities.items,
-        amenityId,
-        amenityFromContent,
-        true,
-      ),
+      building.amenities.items,
+      matchPatch<Amenity>(building.amenities.items, content.amenities.items, amenityId, true),
+      amenityId,
       true,
     );
   }
   for (const key of ["tourism", "dining"] as const) {
     if (!isOwn(key)) continue;
     patches[key] = toPatch(
-      matchPatch<Place, ReturnType<typeof placeFromContent>>(
-        building[key].items,
-        content[key].items,
-        placeId,
-        placeFromContent,
-        true,
-      ),
+      building[key].items,
+      matchPatch<Place>(building[key].items, content[key].items, placeId, true),
+      placeId,
       true,
     );
   }
   // Check-in/check-out sempre foram cópias do modelo (nunca ao vivo).
+  const ciModel = filledCheckin(building, vars).cards;
   patches.checkin = toPatch(
-    matchPatch<CheckinCard, ReturnType<typeof cardFromContent>>(
-      filledCheckin(building, vars).cards,
-      content.checkin.cards,
-      cardId,
-      cardFromContent,
-    ),
+    ciModel,
+    matchPatch<CheckinCard>(ciModel, content.checkin.cards, cardId),
+    cardId,
     true,
   );
+  const coModel = filledCheckout(building, vars).steps;
   patches.checkout = toPatch(
-    matchPatch<Step, StepInput>(
-      filledCheckout(building, vars).steps,
-      content.checkout?.steps ?? [],
-      stepId,
-      stepFromContent,
-    ),
+    coModel,
+    matchPatch<Step>(coModel, content.checkout?.steps ?? [], stepId),
+    stepId,
     true,
   );
 
