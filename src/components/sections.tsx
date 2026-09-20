@@ -122,7 +122,7 @@ export function Hero({ ap }: { ap: Apartment }) {
           {ap.hero.facts.map((f, i) => (
             <div
               key={i}
-              className="rounded-2xl border border-line bg-card p-[12px_10px] text-center"
+              className="flex flex-col items-center justify-center rounded-2xl border border-line bg-card p-[12px_10px] text-center"
             >
               <div className="font-display text-[20px] leading-[1.15] text-coffee">
                 {t(f.k)}
