@@ -696,16 +696,16 @@ export function Home({ ap }: { ap: Apartment }) {
                     className="mb-3.5 block max-h-[60svh] w-full rounded-xl border border-line bg-black"
                   />
                 ) : (
-                  <div className="mb-3.5 overflow-hidden rounded-xl border border-line">
+                  <div className="mb-3.5 overflow-hidden rounded-xl border border-line bg-bg-soft">
                     <Zoomable src={acc.media} alt={t(acc.title)}>
-                      <div className="relative h-[240px]">
-                        <Media
-                          src={acc.media}
-                          fill
-                          sizes="(max-width:640px) 100vw, 640px"
-                          className="object-cover"
-                        />
-                      </div>
+                      <Image
+                        src={acc.media}
+                        alt={t(acc.title)}
+                        width={800}
+                        height={600}
+                        sizes="(max-width:640px) 100vw, 640px"
+                        className="mx-auto block h-auto max-h-[min(340px,48svh)] w-full object-contain"
+                      />
                     </Zoomable>
                   </div>
                 ))}
