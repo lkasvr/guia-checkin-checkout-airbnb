@@ -60,15 +60,19 @@ const ES: Record<string, string> = {
   "Subsolo −3": "Subsuelo −3",
   "600 Mega · ideal para streaming e home office": "600 Mega · ideal para streaming y home office",
 
-  // ── Check-in ───────────────────────────────────────────────────────────
+  // ── Check-in / check-out (modelo do prédio) ─────────────────────────────
+  // As chaves usam os marcadores {{TOKEN}} tal como ficam gravados no modelo do
+  // prédio (antes de virarem "Torre E", "17º andar" etc. de cada apartamento) —
+  // assim o espanhol vale para qualquer torre/andar/vaga, não só para quem
+  // tinha exatamente os dados originais do 1305C.
   "Da portaria até a porta do apartamento.": "Desde la recepción hasta la puerta del apartamento.",
   "Entrando no prédio": "Entrando al edificio",
-  '<strong>De Uber/táxi?</strong> Desça no DF Plaza Shopping, entrada do restaurante <strong>Coco Bambu (2º piso)</strong>.<span class="hint">Essa entrada fica a poucos metros da portaria da Torre C.</span>':
-    '<strong>¿En Uber/taxi?</strong> Bájate en el DF Plaza Shopping, en la entrada del restaurante <strong>Coco Bambu (2.º piso)</strong>.<span class="hint">Esa entrada está a pocos metros de la recepción de la Torre C.</span>',
-  [`Vá à <strong>portaria 24h da Torre C</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`]:
-    `Ve a la <strong>recepción 24 h de la Torre C</strong>, junto al restaurante <strong>Spoleto</strong>, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT}).`,
-  "Suba ao <strong>13º andar</strong>, apartamento <strong>1305C</strong>.":
-    "Sube al <strong>piso 13</strong>, apartamento <strong>1305C</strong>.",
+  '<strong>De Uber/táxi?</strong> Desça no DF Plaza Shopping, entrada do restaurante <strong>Coco Bambu (2º piso)</strong>.<span class="hint">Essa entrada fica a poucos metros da portaria da {{TORRE}}.</span>':
+    '<strong>¿En Uber/taxi?</strong> Bájate en el DF Plaza Shopping, en la entrada del restaurante <strong>Coco Bambu (2.º piso)</strong>.<span class="hint">Esa entrada está a pocos metros de la recepción de la {{TORRE}}.</span>',
+  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`]:
+    `Ve a la <strong>recepción 24 h de la {{TORRE}}</strong>, junto al restaurante <strong>Spoleto</strong>, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT}).`,
+  "Suba ao <strong>{{ANDAR}}</strong>, apartamento <strong>{{UNIDADE}}</strong>.":
+    "Sube al <strong>{{ANDAR}}</strong>, apartamento <strong>{{UNIDADE}}</strong>.",
   [`Digite na fechadura eletrônica a <strong>senha enviada pelo ${CHAT}</strong>. Pronto, pode entrar.`]:
     `Ingresa en la cerradura electrónica el <strong>código enviado por el ${CHAT}</strong>. Listo, ya puedes entrar.`,
   "Chegou de carro?": "¿Llegas en auto?",
@@ -76,16 +80,32 @@ const ES: Record<string, string> = {
     'Estaciona primero en el <strong>Carrefour</strong> para descargar las maletas.<span class="hint">Gratis por 30 min, o con una compra superior a R$ 50.</span>',
   "Suba ao apartamento e pegue o <strong>Cartão Branco</strong> de acesso, deixado na sala de estar.":
     "Sube al apartamento y toma la <strong>Tarjeta Blanca</strong> de acceso, que está en la sala de estar.",
-  "Retire o carro e use o cartão na entrada do estacionamento residencial: <strong>Subsolo −3, vaga nº 269</strong>.":
-    "Saca el auto y usa la tarjeta en la entrada del estacionamiento residencial: <strong>Subsuelo −3, plaza n.º 269</strong>.",
-  "<strong>Anote:</strong> o GPS oscila no subsolo. Subsolo −3, vaga 269, próxima ao elevador da torre.":
-    "<strong>Anótalo:</strong> el GPS falla en el subsuelo. Subsuelo −3, plaza 269, cerca del ascensor de la torre.",
+  "Retire o carro e use o cartão na entrada do estacionamento residencial: <strong>{{VAGA}}</strong>.":
+    "Saca el auto y usa la tarjeta en la entrada del estacionamiento residencial: <strong>{{VAGA}}</strong>.",
+  "<strong>Anote:</strong> o GPS oscila no subsolo. {{VAGA}}, próxima ao elevador da torre.":
+    "<strong>Anótalo:</strong> el GPS falla en el subsuelo. {{VAGA}}, cerca del ascensor de la torre.",
   "<strong>Não esqueça o Cartão Branco</strong> antes de descer para guardar o carro. Perda ou não devolução: taxa de <strong>R$ 300</strong>.":
     "<strong>No olvides la Tarjeta Blanca</strong> antes de bajar a guardar el auto. Pérdida o no devolución: cargo de <strong>R$ 300</strong>.",
   "▶ Tutorial em vídeo · como chegar e estacionar": "▶ Tutorial en video · cómo llegar y estacionar",
 
+  // ── 1305C / demo: texto próprio deles (já com os dados reais embutidos, não
+  // {{TOKEN}}) — ficou "editado à mão" na conversão pro modelo por causa do
+  // inglês diferente, então continua precisando bater aqui também.
+  "<strong>De Uber/táxi?</strong> Desça no DF Plaza Shopping, entrada do restaurante <strong>Coco Bambu (2º piso)</strong>.<span class=\"hint\">Essa entrada fica a poucos metros da portaria da Torre C.</span>":
+    '<strong>¿En Uber/taxi?</strong> Bájate en el DF Plaza Shopping, en la entrada del restaurante <strong>Coco Bambu (2.º piso)</strong>.<span class="hint">Esa entrada está a pocos metros de la recepción de la Torre C.</span>',
+  [`Vá à <strong>portaria 24h da Torre C</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`]:
+    `Ve a la <strong>recepción 24 h de la Torre C</strong>, junto al restaurante <strong>Spoleto</strong>, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT}).`,
+  "Suba ao <strong>13º andar</strong>, apartamento <strong>1305C</strong>.":
+    "Sube al <strong>piso 13</strong>, apartamento <strong>1305C</strong>.",
+  "Retire o carro e use o cartão na entrada do estacionamento residencial: <strong>Subsolo −3, vaga nº 269</strong>.":
+    "Saca el auto y usa la tarjeta en la entrada del estacionamiento residencial: <strong>Subsuelo −3, plaza n.º 269</strong>.",
+  "<strong>Anote:</strong> o GPS oscila no subsolo. Subsolo −3, vaga 269, próxima ao elevador da torre.":
+    "<strong>Anótalo:</strong> el GPS falla en el subsuelo. Subsuelo −3, plaza 269, cerca del ascensor de la torre.",
+
   // ── Saída ──────────────────────────────────────────────────────────────
   "Alguns passos rápidos antes de você sair. Boa viagem!": "Unos pasos rápidos antes de irte. ¡Buen viaje!",
+  "O <strong>horário limite de saída é {{CHECKOUT_HORA}}</strong>. Precisa de late checkout? Fale com a anfitriã.":
+    "La <strong>hora límite de salida es a las {{CHECKOUT_HORA}}</strong>. ¿Necesitas late check-out? Habla con la anfitriona.",
   "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a anfitriã.":
     "La <strong>hora límite de salida es a las 11 h</strong>. ¿Necesitas late check-out? Habla con la anfitriona.",
   "Deixe o <strong>Cartão Branco</strong> de garagem sobre a mesa de jantar (a não devolução gera taxa de R$ 300).":
