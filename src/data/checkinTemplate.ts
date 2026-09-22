@@ -1,6 +1,7 @@
 import type { Alert, Apartment, ApartmentVars, CheckinCard, L, Step } from "@/data/types";
 import type { BuildingTemplate } from "@/data/buildingModel";
 import { withPrerequisiteCard } from "@/data/prerequisiteCard";
+import { translateEs } from "@/data/es";
 
 /** Troca `{{TOKEN}}` pelo valor correspondente — usado no template de check-in/check-out do prédio. */
 function fillTokens(text: string, tokens: Record<string, string>): string {
@@ -9,11 +10,20 @@ function fillTokens(text: string, tokens: Record<string, string>): string {
     text,
   );
 }
+/**
+ * O espanhol é procurado no dicionário a partir do texto do *template*, com os
+ * `{{TOKEN}}` ainda por preencher — assim um mesmo texto vale para todo
+ * apartamento, seja qual for a torre/andar/vaga dele. Sem isso, cada
+ * apartamento gerava um texto em português diferente (a torre certa já
+ * embutida) que nunca batia com a chave do dicionário, e o espanhol caía
+ * silenciosamente para o inglês.
+ */
 function fillL(l: L, tokens: Record<string, string>): L {
+  const es = l.es ?? translateEs(l.pt);
   return {
     pt: fillTokens(l.pt, tokens),
     en: fillTokens(l.en, tokens),
-    ...(l.es !== undefined ? { es: fillTokens(l.es, tokens) } : {}),
+    ...(es !== undefined ? { es: fillTokens(es, tokens) } : {}),
   };
 }
 function fillSteps(steps: Step[], tokens: Record<string, string>): Step[] {
