@@ -10,6 +10,7 @@ import {
   emptyAlert,
   emptyAmenity,
   emptyCard,
+  emptyL,
   emptyPlace,
   emptyRule,
   emptySlide,
@@ -20,9 +21,12 @@ import {
   type CheckinValue,
   type CheckoutValue,
   type HomeValue,
+  fromL,
+  type LInput,
   type PlacesValue,
   type RulesValue,
   type StepInput,
+  toL,
 } from "@/data/sectionContent";
 
 const field =
@@ -165,6 +169,103 @@ export function TokenHint() {
   );
 }
 
+/**
+ * Campo de texto traduzível: português sempre visível, inglês/espanhol
+ * escondidos atrás de "Traduzir manualmente" (a maioria dos campos nunca usa
+ * isso — sem preencher, o guia usa o português no inglês e tenta traduzir
+ * sozinho pro espanhol).
+ */
+function LField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  multiline,
+  className,
+}: {
+  label: string;
+  value: LInput;
+  onChange: (v: LInput) => void;
+  placeholder?: string;
+  multiline?: boolean;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(!!(value.en.trim() || value.es.trim()));
+  return (
+    <div className={className}>
+      <label className={labelCls}>
+        {label}
+        {multiline ? (
+          <textarea
+            rows={2}
+            className={field}
+            value={value.pt}
+            placeholder={placeholder}
+            onChange={(e) => onChange({ ...value, pt: e.target.value })}
+          />
+        ) : (
+          <input
+            className={field}
+            value={value.pt}
+            placeholder={placeholder}
+            onChange={(e) => onChange({ ...value, pt: e.target.value })}
+          />
+        )}
+      </label>
+      {open ? (
+        <div className="mt-1.5 grid gap-1.5 rounded-lg border border-dashed border-line bg-bg p-2">
+          <label className="grid gap-0.5 text-[11px] font-semibold text-soft">
+            Inglês (opcional)
+            {multiline ? (
+              <textarea
+                rows={2}
+                className={`${field} text-[13px]`}
+                value={value.en}
+                placeholder="Sem isso, usa o português."
+                onChange={(e) => onChange({ ...value, en: e.target.value })}
+              />
+            ) : (
+              <input
+                className={`${field} text-[13px]`}
+                value={value.en}
+                placeholder="Sem isso, usa o português."
+                onChange={(e) => onChange({ ...value, en: e.target.value })}
+              />
+            )}
+          </label>
+          <label className="grid gap-0.5 text-[11px] font-semibold text-soft">
+            Espanhol (opcional)
+            {multiline ? (
+              <textarea
+                rows={2}
+                className={`${field} text-[13px]`}
+                value={value.es}
+                placeholder="Sem isso, tenta traduzir sozinho."
+                onChange={(e) => onChange({ ...value, es: e.target.value })}
+              />
+            ) : (
+              <input
+                className={`${field} text-[13px]`}
+                value={value.es}
+                placeholder="Sem isso, tenta traduzir sozinho."
+                onChange={(e) => onChange({ ...value, es: e.target.value })}
+              />
+            )}
+          </label>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="mt-1 justify-self-start text-[11.5px] font-semibold text-terra underline underline-offset-2"
+        >
+          🌐 Traduzir manualmente (opcional)
+        </button>
+      )}
+    </div>
+  );
+}
+
 function StepListEditor({
   steps,
   onChange,
@@ -182,11 +283,12 @@ function StepListEditor({
             value={s.n}
             onChange={(e) => onChange(updateAt(steps, i, { n: e.target.value }))}
           />
-          <textarea
-            rows={2}
-            className={`${field} flex-1`}
+          <LField
+            className="min-w-0 flex-1"
+            label=""
+            multiline
             value={s.body}
-            onChange={(e) => onChange(updateAt(steps, i, { body: e.target.value }))}
+            onChange={(body) => onChange(updateAt(steps, i, { body }))}
           />
           <button
             type="button"
@@ -221,15 +323,12 @@ export function RulesListEditor({
   return (
     <div>
       {!lockShared && (
-        <label className={labelCls}>
-        Texto de apoio
-        <input
-          className={field}
+        <LField
+          label="Texto de apoio"
           value={value.sub}
           placeholder="ex.: Combinações simples para a boa convivência no prédio."
-          onChange={(e) => onChange({ ...value, sub: e.target.value })}
+          onChange={(sub) => onChange({ ...value, sub })}
         />
-      </label>
       )}
       <div className="mt-3 grid gap-2">
         {value.items.map((r, i) => (
@@ -245,27 +344,18 @@ export function RulesListEditor({
                 }
               />
             </label>
-            <label className={labelCls}>
-              Título
-              <input
-                className={field}
-                value={r.title}
-                placeholder="ex.: Lei do silêncio · 22h às 08h"
-                onChange={(e) =>
-                  onChange({ ...value, items: updateAt(value.items, i, { title: e.target.value }) })
-                }
-              />
-            </label>
-            <label className={`${labelCls} sm:col-span-2`}>
-              Texto
-              <input
-                className={field}
-                value={r.text}
-                onChange={(e) =>
-                  onChange({ ...value, items: updateAt(value.items, i, { text: e.target.value }) })
-                }
-              />
-            </label>
+            <LField
+              label="Título"
+              value={r.title}
+              placeholder="ex.: Lei do silêncio · 22h às 08h"
+              onChange={(title) => onChange({ ...value, items: updateAt(value.items, i, { title }) })}
+            />
+            <LField
+              className="sm:col-span-2"
+              label="Texto"
+              value={r.text}
+              onChange={(text) => onChange({ ...value, items: updateAt(value.items, i, { text }) })}
+            />
             <div className="flex items-center justify-between sm:col-span-2">
               <label className="flex items-center gap-2 text-[13px] text-soft">
                 <input
@@ -315,15 +405,12 @@ export function AmenityListEditor({
   return (
     <div>
       {!lockShared && (
-        <label className={labelCls}>
-        Texto de apoio
-        <input
-          className={field}
+        <LField
+          label="Texto de apoio"
           value={value.sub}
           placeholder="ex.: Tudo no Andar M (Mezanino), é só descer de elevador."
-          onChange={(e) => onChange({ ...value, sub: e.target.value })}
+          onChange={(sub) => onChange({ ...value, sub })}
         />
-      </label>
       )}
       <div className="mt-3 grid gap-2">
         {value.items.map((a, i) => (
@@ -334,27 +421,17 @@ export function AmenityListEditor({
                 onChange={(img) => onChange({ ...value, items: updateAt(value.items, i, { img }) })}
               />
             </div>
-            <label className={labelCls}>
-              Título
-              <input
-                className={field}
-                value={a.title}
-                placeholder="ex.: Piscina infinita · 25 m"
-                onChange={(e) =>
-                  onChange({ ...value, items: updateAt(value.items, i, { title: e.target.value }) })
-                }
-              />
-            </label>
-            <label className={labelCls}>
-              Texto
-              <input
-                className={field}
-                value={a.text}
-                onChange={(e) =>
-                  onChange({ ...value, items: updateAt(value.items, i, { text: e.target.value }) })
-                }
-              />
-            </label>
+            <LField
+              label="Título"
+              value={a.title}
+              placeholder="ex.: Piscina infinita · 25 m"
+              onChange={(title) => onChange({ ...value, items: updateAt(value.items, i, { title }) })}
+            />
+            <LField
+              label="Texto"
+              value={a.text}
+              onChange={(text) => onChange({ ...value, items: updateAt(value.items, i, { text }) })}
+            />
             <div className="flex items-center justify-between sm:col-span-2">
               <label className="flex items-center gap-2 text-[13px] text-soft">
                 <input
@@ -404,10 +481,7 @@ export function PlaceListEditor({
   return (
     <div>
       {!lockShared && (
-        <label className={labelCls}>
-        Texto de apoio
-        <input className={field} value={value.sub} onChange={(e) => onChange({ ...value, sub: e.target.value })} />
-      </label>
+        <LField label="Texto de apoio" value={value.sub} onChange={(sub) => onChange({ ...value, sub })} />
       )}
       <div className="mt-3 grid gap-2">
         {value.items.map((p, i) => (
@@ -439,16 +513,12 @@ export function PlaceListEditor({
                 }
               />
             </label>
-            <label className={`${labelCls} sm:col-span-2`}>
-              Texto
-              <input
-                className={field}
-                value={p.text}
-                onChange={(e) =>
-                  onChange({ ...value, items: updateAt(value.items, i, { text: e.target.value }) })
-                }
-              />
-            </label>
+            <LField
+              className="sm:col-span-2"
+              label="Texto"
+              value={p.text}
+              onChange={(text) => onChange({ ...value, items: updateAt(value.items, i, { text }) })}
+            />
             <label className={labelCls}>
               Site (opcional)
               <input
@@ -503,10 +573,7 @@ export function HomeEditor({
   return (
     <div>
       {!lockShared && (
-        <label className={labelCls}>
-        Texto de apoio
-        <input className={field} value={value.sub} onChange={(e) => onChange({ ...value, sub: e.target.value })} />
-      </label>
+        <LField label="Texto de apoio" value={value.sub} onChange={(sub) => onChange({ ...value, sub })} />
       )}
 
       {!lockShared && (
@@ -548,27 +615,17 @@ export function HomeEditor({
                 onChange={(img) => onChange({ ...value, slides: updateAt(value.slides, i, { img }) })}
               />
             </div>
-            <label className={labelCls}>
-              Título
-              <input
-                className={field}
-                value={s.title}
-                placeholder="ex.: Quarto premium"
-                onChange={(e) =>
-                  onChange({ ...value, slides: updateAt(value.slides, i, { title: e.target.value }) })
-                }
-              />
-            </label>
-            <label className={labelCls}>
-              Texto
-              <input
-                className={field}
-                value={s.text}
-                onChange={(e) =>
-                  onChange({ ...value, slides: updateAt(value.slides, i, { text: e.target.value }) })
-                }
-              />
-            </label>
+            <LField
+              label="Título"
+              value={s.title}
+              placeholder="ex.: Quarto premium"
+              onChange={(title) => onChange({ ...value, slides: updateAt(value.slides, i, { title }) })}
+            />
+            <LField
+              label="Texto"
+              value={s.text}
+              onChange={(text) => onChange({ ...value, slides: updateAt(value.slides, i, { text }) })}
+            />
             <button
               type="button"
               className={`${removeCls} justify-self-start sm:col-span-2`}
@@ -607,20 +664,14 @@ export function HomeEditor({
                 }
               />
             </label>
-            <label className={labelCls}>
-              Título
-              <input
-                className={field}
-                value={a.title}
-                placeholder="ex.: Cafeteira elétrica"
-                onChange={(e) =>
-                  onChange({
-                    ...value,
-                    accordions: updateAt(value.accordions, i, { title: e.target.value }),
-                  })
-                }
-              />
-            </label>
+            <LField
+              label="Título"
+              value={a.title}
+              placeholder="ex.: Cafeteira elétrica"
+              onChange={(title) =>
+                onChange({ ...value, accordions: updateAt(value.accordions, i, { title }) })
+              }
+            />
             <div className="sm:col-span-2">
               <span className="text-[12.5px] font-semibold text-soft">
                 Foto ou vídeo do equipamento (opcional)
@@ -716,21 +767,18 @@ export function HomeEditor({
                           })
                         }
                       />
-                      <input
-                        className={`${field} min-w-0 flex-1`}
-                        value={it.label.pt}
-                        aria-label="Nome do item"
+                      <LField
+                        className="min-w-0 flex-1"
+                        label=""
                         placeholder="ex.: Tampa do reservatório"
-                        onChange={(e) =>
+                        value={fromL(it.label)}
+                        onChange={(label) =>
                           onChange({
                             ...value,
                             accordions: updateAt(value.accordions, i, {
                               diagram: {
                                 ...a.diagram!,
-                                // Texto novo vale nos três idiomas (a tradução antiga não serve mais).
-                                legend: updateAt(a.diagram!.legend, li, {
-                                  label: { pt: e.target.value, en: e.target.value },
-                                }),
+                                legend: updateAt(a.diagram!.legend, li, { label: toL(label) }),
                               },
                             }),
                           })
@@ -836,11 +884,12 @@ function AlertListEditor({
             value={a.icon}
             onChange={(e) => onChange(updateAt(alerts, i, { icon: e.target.value }))}
           />
-          <textarea
-            rows={2}
-            className={`${field} flex-1`}
+          <LField
+            className="min-w-0 flex-1"
+            label=""
+            multiline
             value={a.body}
-            onChange={(e) => onChange(updateAt(alerts, i, { body: e.target.value }))}
+            onChange={(body) => onChange(updateAt(alerts, i, { body }))}
           />
           <button type="button" className={removeCls} onClick={() => onChange(removeAt(alerts, i))}>
             Remover
@@ -865,24 +914,18 @@ function CheckinCardEditor({
 }) {
   return (
     <div className={`${nestedRowCls} sm:grid-cols-2`}>
-      <label className={labelCls}>
-        Título do cartão
-        <input
-          className={field}
-          value={card.title}
-          placeholder="ex.: Entrando no prédio"
-          onChange={(e) => onChange({ ...card, title: e.target.value })}
-        />
-      </label>
-      <label className={labelCls}>
-        Etiqueta (opcional)
-        <input
-          className={field}
-          value={card.tag}
-          placeholder="ex.: {{VAGA}}"
-          onChange={(e) => onChange({ ...card, tag: e.target.value })}
-        />
-      </label>
+      <LField
+        label="Título do cartão"
+        value={card.title}
+        placeholder="ex.: Entrando no prédio"
+        onChange={(title) => onChange({ ...card, title })}
+      />
+      <LField
+        label="Etiqueta (opcional)"
+        value={card.tag}
+        placeholder="ex.: {{VAGA}}"
+        onChange={(tag) => onChange({ ...card, tag })}
+      />
       <div className="sm:col-span-2">
         <span className="text-[12.5px] font-semibold text-soft">Foto de banner (opcional)</span>
         <div className="mt-1">
@@ -899,24 +942,20 @@ function CheckinCardEditor({
           <MediaField
             value={card.video?.src ?? ""}
             onChange={(src) =>
-              onChange({ ...card, video: src ? { src, label: card.video?.label ?? "" } : undefined })
+              onChange({ ...card, video: src ? { src, label: card.video?.label ?? emptyL() } : undefined })
             }
             reuseOptions={reuseOptions}
-            onReuse={(v) => onChange({ ...card, video: { src: v.src, label: v.buttonLabel.pt } })}
+            onReuse={(v) => onChange({ ...card, video: { src: v.src, label: fromL(v.buttonLabel) } })}
           />
         </div>
         {card.video?.src && (
-          <label className={`${labelCls} mt-2`}>
-            Legenda do botão de vídeo
-            <input
-              className={field}
-              value={card.video.label}
-              placeholder="ex.: ▶ Tutorial em vídeo · como chegar e estacionar"
-              onChange={(e) =>
-                onChange({ ...card, video: { ...card.video!, label: e.target.value } })
-              }
-            />
-          </label>
+          <LField
+            className="mt-2"
+            label="Legenda do botão de vídeo"
+            value={card.video.label}
+            placeholder="ex.: ▶ Tutorial em vídeo · como chegar e estacionar"
+            onChange={(label) => onChange({ ...card, video: { ...card.video!, label } })}
+          />
         )}
       </div>
     </div>
@@ -939,10 +978,7 @@ export function CheckinCardsEditor({
   return (
     <div>
       {!lockShared && (
-        <label className={labelCls}>
-        Texto de apoio
-        <input className={field} value={value.sub} onChange={(e) => onChange({ ...value, sub: e.target.value })} />
-      </label>
+        <LField label="Texto de apoio" value={value.sub} onChange={(sub) => onChange({ ...value, sub })} />
       )}
       <TokenHint />
       <div className="mt-3 grid gap-3">
@@ -987,10 +1023,7 @@ export function CheckoutStepsEditor({
   return (
     <div>
       {!lockShared && (
-        <label className={labelCls}>
-        Texto de apoio
-        <input className={field} value={value.sub} onChange={(e) => onChange({ ...value, sub: e.target.value })} />
-      </label>
+        <LField label="Texto de apoio" value={value.sub} onChange={(sub) => onChange({ ...value, sub })} />
       )}
       <TokenHint />
       <div className="mt-3">
