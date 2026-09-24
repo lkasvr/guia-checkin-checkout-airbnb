@@ -123,7 +123,7 @@ export default async function AdminHome() {
               // Só o texto do número/torre vai pro navegador, não o conteúdo inteiro do guia.
               apartments: h.apartments.map(({ content, ...a }) => {
                 const c = content as unknown as Apartment;
-                return { ...a, exportLabel: exportLabel(c.unit, parseHeroFacts(c.hero.facts).tower) };
+                return { ...a, exportLabel: exportLabel(c.unit, parseHeroFacts(c.hero.facts).tower, c.building) };
               }),
             }}
           />
