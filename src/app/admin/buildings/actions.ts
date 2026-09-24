@@ -35,7 +35,7 @@ export type BuildingEditPayload = {
     address: string;
     mapsUrl: string;
     portariaPhone: string;
-    intercom: { tower: string; code: string }[];
+    intercom: { tower: string; code: string; restaurant?: string }[];
   };
 };
 
@@ -44,8 +44,12 @@ function buildData(payload: BuildingEditPayload) {
   const mapsUrl = payload.location.mapsUrl.trim();
   const portariaPhone = payload.location.portariaPhone.trim();
   const intercom = payload.location.intercom
-    .map((i) => ({ tower: i.tower.trim(), code: i.code.trim() }))
-    .filter((i) => i.tower && i.code);
+    .map((i) => ({
+      tower: i.tower.trim(),
+      code: i.code.trim(),
+      ...(i.restaurant?.trim() ? { restaurant: i.restaurant.trim() } : {}),
+    }))
+    .filter((i) => i.tower && (i.code || i.restaurant));
   const hasInfo = address || mapsUrl || portariaPhone || intercom.length > 0;
   return {
     location: hasInfo

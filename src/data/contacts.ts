@@ -1,22 +1,14 @@
 import type { Apartment, BuildingInfo, Contact, ContactInfo, IntercomCode } from "@/data/types";
 import { deriveVars } from "@/data/checkinTemplate";
+import { towerKey } from "@/data/towers";
+
+export { towerKey };
 
 /** Só dígitos, com `+55` na frente — formato `tel:` a partir do que a pessoa digitou. */
 export function toTel(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   if (!digits) return "";
   return digits.startsWith("55") ? `+${digits}` : `+55${digits}`;
-}
-
-/** "Torre C", "torre c" e "C" viram a mesma chave ("c"). */
-export function towerKey(tower: string): string {
-  return tower
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim()
-    .replace(/^(torre|bloco|tower|block)\s+/, "");
 }
 
 /** Código do interfone da torre digitada (ex.: "Torre C" → "*1"), ou "" se não houver. */

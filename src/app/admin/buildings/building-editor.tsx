@@ -106,7 +106,10 @@ export function BuildingEditor({
   const [name, setName] = useState(buildingName ?? "");
   const [form, setForm] = useState<BuildingEditPayload>(initial);
 
-  function updateIntercom(i: number, patch: Partial<{ tower: string; code: string }>) {
+  function updateIntercom(
+    i: number,
+    patch: Partial<{ tower: string; code: string; restaurant: string }>,
+  ) {
     setForm((f) => ({
       ...f,
       location: {
@@ -246,11 +249,15 @@ export function BuildingEditor({
           />
         </label>
         <div className="grid gap-2">
-          <span className={labelCls}>Código do interfone por torre</span>
+          <span className={labelCls}>Código do interfone e restaurante ao lado, por torre</span>
+          <p className="text-[12.5px] text-soft">
+            O restaurante entra no passo &quot;vá à portaria&quot; do check-in (use{" "}
+            <code className="text-ink">{"{{PORTARIA_REF}}"}</code> no texto). Em branco, some.
+          </p>
           {form.location.intercom.map((row, i) => (
-            <div key={i} className="flex items-center gap-2">
+            <div key={i} className="flex flex-wrap items-center gap-2">
               <input
-                className={`${field} min-w-0 flex-1`}
+                className={`${field} min-w-0 flex-1 basis-28`}
                 value={row.tower}
                 onChange={(e) => updateIntercom(i, { tower: e.target.value })}
                 placeholder="Torre C"
@@ -260,6 +267,12 @@ export function BuildingEditor({
                 value={row.code}
                 onChange={(e) => updateIntercom(i, { code: e.target.value })}
                 placeholder="*1"
+              />
+              <input
+                className={`${field} min-w-0 flex-1 basis-32`}
+                value={row.restaurant ?? ""}
+                onChange={(e) => updateIntercom(i, { restaurant: e.target.value })}
+                placeholder="Restaurante (ex.: Spoleto)"
               />
               <button
                 type="button"
@@ -283,7 +296,7 @@ export function BuildingEditor({
             onClick={() =>
               setForm((f) => ({
                 ...f,
-                location: { ...f.location, intercom: [...f.location.intercom, { tower: "", code: "" }] },
+                location: { ...f.location, intercom: [...f.location.intercom, { tower: "", code: "", restaurant: "" }] },
               }))
             }
             className="self-start rounded-full border border-line bg-card px-4 py-2 text-[13px] font-semibold text-soft"

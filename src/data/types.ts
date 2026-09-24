@@ -77,7 +77,12 @@ export type NavItem = { href: string; label: L };
 export type MapLocation = { address: string; mapsUrl: string };
 
 /** Código do interfone de uma torre (ex.: "Torre C" → "*1"). */
-export type IntercomCode = { tower: string; code: string };
+export type IntercomCode = {
+  tower: string;
+  code: string;
+  /** Restaurante ao lado da portaria dessa torre (ex.: "Spoleto") — entra no passo "vá à portaria" do check-in. */
+  restaurant?: string;
+};
 
 /**
  * O que o prédio guarda além do mapa (a coluna `Building.location` é JSON livre):

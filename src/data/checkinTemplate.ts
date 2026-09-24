@@ -2,6 +2,7 @@ import type { Alert, Apartment, ApartmentVars, CheckinCard, L, Step } from "@/da
 import type { BuildingTemplate } from "@/data/buildingModel";
 import { withPrerequisiteCard } from "@/data/prerequisiteCard";
 import { translateEs } from "@/data/es";
+import { portariaRefToken } from "@/data/towers";
 
 type DoorCode = Apartment["checkin"]["doorCode"];
 /** Valor de um marcador: igual em qualquer idioma (torre, vaga…) ou um por idioma (frases prontas). */
@@ -86,7 +87,11 @@ export function filledCheckin(
   vars: ApartmentVars,
   doorCode?: DoorCode,
 ): Apartment["checkin"] {
-  const tokens: Tokens = { ...varsToTokens(vars), SENHA_FECHADURA: doorCodeToken(doorCode) };
+  const tokens: Tokens = {
+    ...varsToTokens(vars),
+    SENHA_FECHADURA: doorCodeToken(doorCode),
+    PORTARIA_REF: portariaRefToken(building.location?.intercom, vars.TORRE),
+  };
   const ci = building.checkinTemplate;
   return {
     sub: fillL(ci.sub, tokens),
