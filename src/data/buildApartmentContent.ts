@@ -151,6 +151,39 @@ export const varsFromInput = (
   CHECKOUT_HORA: input.checkoutTime || "11h",
 });
 
+/**
+ * Faz o caminho de volta das regras que o formulário gera (texto livre + fumo +
+ * animais): lê do que foi gravado no apartamento, pra tela de edição mostrar o
+ * que a pessoa salvou em vez de sempre voltar ao padrão em branco. Só reconhece
+ * o que `buildApartmentContent` gera; outras regras ficam como estão.
+ */
+export function ownRulesToForm(items: Rule[]): {
+  rulesText: string;
+  smoking: ApartmentFormInput["smoking"];
+  pets: ApartmentFormInput["pets"];
+} {
+  const smokingTitles: Record<string, ApartmentFormInput["smoking"]> = {
+    "Proibido fumar": "no",
+    "Fumo permitido somente na varanda": "balcony",
+    "Fumo permitido": "yes",
+  };
+  const petTitles: Record<string, ApartmentFormInput["pets"]> = {
+    "Não são permitidos animais": "no",
+    "Animais são bem-vindos": "yes",
+  };
+  const known = new Set([...Object.keys(smokingTitles), ...Object.keys(petTitles)]);
+  const smokingRule = items.find((r) => r.title.pt in smokingTitles);
+  const petRule = items.find((r) => r.title.pt in petTitles);
+  return {
+    rulesText: items
+      .filter((r) => r.icon === "📌" && !r.text.pt.trim() && !known.has(r.title.pt))
+      .map((r) => r.title.pt)
+      .join("\n"),
+    smoking: smokingRule ? smokingTitles[smokingRule.title.pt] : "no",
+    pets: petRule ? petTitles[petRule.title.pt] : "no",
+  };
+}
+
 export const doorCodeFromInput = (
   input: Pick<ApartmentFormInput, "doorCodeMode" | "doorCode">,
 ): Apartment["checkin"]["doorCode"] =>
