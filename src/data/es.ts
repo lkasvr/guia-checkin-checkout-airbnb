@@ -73,8 +73,8 @@ const ES: Record<string, string> = {
     `Ve a la <strong>recepción 24 h de la {{TORRE}}</strong>, junto al restaurante <strong>Spoleto</strong>, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT}).`,
   "Suba ao <strong>{{ANDAR}}</strong>, apartamento <strong>{{UNIDADE}}</strong>.":
     "Sube al <strong>{{ANDAR}}</strong>, apartamento <strong>{{UNIDADE}}</strong>.",
-  [`Digite na fechadura eletrônica a <strong>senha enviada pelo ${CHAT}</strong>. Pronto, pode entrar.`]:
-    `Ingresa en la cerradura electrónica el <strong>código enviado por el ${CHAT}</strong>. Listo, ya puedes entrar.`,
+  [`Na fechadura eletrônica, digite {{SENHA_FECHADURA}}. Pronto, pode entrar.`]:
+    `En la cerradura electrónica, ingresa {{SENHA_FECHADURA}}. Listo, ya puedes entrar.`,
   "Chegou de carro?": "¿Llegas en auto?",
   'Estacione primeiro no <strong>Carrefour</strong> para descarregar as malas.<span class="hint">Grátis por 30 min, ou com compra acima de R$ 50.</span>':
     'Estaciona primero en el <strong>Carrefour</strong> para descargar las maletas.<span class="hint">Gratis por 30 min, o con una compra superior a R$ 50.</span>',
