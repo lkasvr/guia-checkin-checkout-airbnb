@@ -274,7 +274,7 @@ export function CheckIn({ ap }: { ap: Apartment }) {
         <Reveal key={ci}>
           <div className={`${CARD} ${card.banner ? "px-[22px] pb-6 pt-0" : "p-[24px_22px]"}`}>
             {card.banner && (
-              <div className="relative -mx-[22px] mb-[18px] h-[130px]">
+              <div className="relative -mx-[22px] mb-[18px] aspect-[4/5] max-h-[320px] sm:aspect-[16/10]">
                 <Media
                   src={card.banner}
                   fill
