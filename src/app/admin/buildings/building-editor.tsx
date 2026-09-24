@@ -86,12 +86,19 @@ export function BuildingEditor({
   buildingId,
   buildingName,
   initial,
+  initialUpdatedAt,
   buildings,
 }: {
   mode: "create" | "edit";
   buildingId?: string;
   buildingName?: string;
   initial: BuildingEditPayload;
+  /**
+   * `updatedAt` de quando esta página carregou — evita que salvar aqui
+   * sobrescreva uma mudança feita por outra aba/sessão nesse meio-tempo (ex.:
+   * duas abas abertas no mesmo prédio, uma delas com dado desatualizado).
+   */
+  initialUpdatedAt?: string;
   /** Todos os outros prédios já cadastrados — alimenta o "Copiar de" em cada seção. */
   buildings: BuildingOption[];
 }) {
@@ -152,7 +159,7 @@ export function BuildingEditor({
           const created = await createBuilding(name, form);
           router.push(`/admin/buildings/${created.id}/edit`);
         } else {
-          await updateBuilding(buildingId!, form);
+          await updateBuilding(buildingId!, form, initialUpdatedAt);
           router.push("/admin");
         }
       } catch (e) {

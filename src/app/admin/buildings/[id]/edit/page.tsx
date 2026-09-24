@@ -27,6 +27,7 @@ const BUILDING_SELECT = {
   defaultHeroImg: true,
   defaultFooterImg: true,
   location: true,
+  updatedAt: true,
 } as const;
 
 export default async function EditBuildingPage({
@@ -78,6 +79,7 @@ export default async function EditBuildingPage({
       buildingId={building.id}
       buildingName={building.name}
       initial={initial}
+      initialUpdatedAt={building.updatedAt.toISOString()}
       buildings={otherBuildings}
     />
   );

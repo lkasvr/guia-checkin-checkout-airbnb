@@ -218,18 +218,37 @@ export async function createApartmentDetailed(
  * Atualiza um apartamento existente com os mesmos campos do formulário
  * detalhado — preserva as seções que o formulário não cobre (home,
  * amenities, tourism, dining) em vez de zerá-las.
+ *
+ * `expectedUpdatedAt`: quando vem (a página sempre manda), recusa gravar se o
+ * apartamento tiver sido salvo por outra aba/sessão depois que esta página
+ * abriu — senão essa gravação sobrescreveria mudanças mais novas sem ninguém
+ * perceber (ex.: duas abas abertas no mesmo apartamento, uma esquecida com
+ * dado velho).
  */
 export async function updateApartmentDetailed(
   apartmentId: string,
   payload: ApartmentWizardPayload,
+  expectedUpdatedAt?: string,
 ): Promise<ApartmentActionResult> {
   await requireAdmin();
 
   const apt = await prisma.apartment.findUnique({
     where: { id: apartmentId },
-    select: { content: true, hostId: true, host: { select: { name: true, email: true } } },
+    select: {
+      content: true,
+      hostId: true,
+      host: { select: { name: true, email: true } },
+      updatedAt: true,
+    },
   });
   if (!apt) return { ok: false, error: "Apartamento não encontrado." };
+  if (expectedUpdatedAt && apt.updatedAt.toISOString() !== expectedUpdatedAt) {
+    return {
+      ok: false,
+      error:
+        "Este apartamento foi alterado em outra aba ou sessão depois que esta página abriu — recarregue a página e refaça a edição, pra não sobrescrever a mudança mais recente.",
+    };
+  }
 
   const slug = slugify(payload.slug);
   if (!slug) return { ok: false, error: "Informe o link do apartamento." };
