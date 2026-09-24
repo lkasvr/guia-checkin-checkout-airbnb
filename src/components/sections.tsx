@@ -274,12 +274,12 @@ export function CheckIn({ ap }: { ap: Apartment }) {
         <Reveal key={ci}>
           <div className={`${CARD} ${card.banner ? "px-[22px] pb-6 pt-0" : "p-[24px_22px]"}`}>
             {card.banner && (
-              <div className="relative -mx-[22px] mb-[18px] aspect-[4/5] max-h-[320px] sm:aspect-[16/10]">
+              <div className="relative -mx-[22px] mb-[18px] h-[210px] sm:h-[260px]">
                 <Media
                   src={card.banner}
                   fill
                   sizes="(max-width:640px) 100vw, 640px"
-                  className="object-cover"
+                  className="object-cover object-[center_35%]"
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(59_45_36/0)_40%,rgb(255_253_249/0.9)_96%)]" />
               </div>
