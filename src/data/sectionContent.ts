@@ -126,7 +126,16 @@ const stepsToContent = (steps: StepInput[]): Step[] =>
 const stepsFromContent = (steps: Step[]): StepInput[] =>
   steps.map((s) => ({ n: s.n, body: s.body.pt }));
 
-const withId = (id: string | undefined): { id?: string } => (id ? { id } : {});
+/**
+ * Todo item gravado ganha um id de verdade — nunca fica sem, mesmo que ainda
+ * não tivesse um (conteúdo antigo usa o título como id provisório, ver
+ * `legacyId` em `itemMerge.ts`). Assim, a próxima vez que o título mudar, o id
+ * já gravado não muda junto — e o ajuste que um apartamento fez nesse item não
+ * "solta" dele (bug real: editar o título de um item no modelo do prédio
+ * duplicava o item nos apartamentos que tinham personalizado ele, porque o id
+ * deles era calculado a partir do título antigo).
+ */
+const withId = (id: string | undefined): { id: string } => ({ id: id || newId() });
 
 /* ------------------------------ Regras ------------------------------ */
 
