@@ -274,7 +274,7 @@ export function CheckIn({ ap }: { ap: Apartment }) {
         <Reveal key={ci}>
           <div className={`${CARD} ${card.banner ? "px-[22px] pb-6 pt-0" : "p-[24px_22px]"}`}>
             {card.banner && (
-              <div className="relative -mx-[22px] mb-[18px] h-[130px]">
+              <div className="relative -mx-[22px] mb-[18px] aspect-[4/5] max-h-[320px] sm:aspect-[16/10]">
                 <Media
                   src={card.banner}
                   fill
@@ -396,24 +396,28 @@ export function Wifi({ ap }: { ap: Apartment }) {
           <div className="relative mt-1.5 font-display text-[clamp(27px,7.4vw,34px)] leading-[1.1]">
             {ap.wifi.network}
           </div>
-          <div className="relative mt-5 text-[12px] uppercase tracking-[0.3em] opacity-80">
-            {t({ pt: "Senha", en: "Password", es: "Contraseña" })}
-          </div>
-          <button
-            type="button"
-            onClick={copy}
-            aria-label={t({ pt: "Copiar senha", en: "Copy password", es: "Copiar contraseña" })}
-            className="relative mt-1.5 block w-full break-all rounded-2xl border border-dashed border-[rgb(255_233_214/0.5)] bg-white/[0.12] p-[14px_10px] font-mono text-[clamp(29px,8.6vw,40px)] font-bold tracking-[0.02em] transition-transform active:scale-[0.98]"
-          >
-            {ap.wifi.password}
-          </button>
-          <button
-            type="button"
-            onClick={copy}
-            className="relative mt-4 min-h-[48px] rounded-full bg-[#faf0e8] px-[30px] py-3.5 text-[16px] font-bold text-terra-deep transition-transform active:scale-95"
-          >
-            {t({ pt: "Copiar senha", en: "Copy password", es: "Copiar contraseña" })}
-          </button>
+          {ap.wifi.password.trim() && (
+            <>
+              <div className="relative mt-5 text-[12px] uppercase tracking-[0.3em] opacity-80">
+                {t({ pt: "Senha", en: "Password", es: "Contraseña" })}
+              </div>
+              <button
+                type="button"
+                onClick={copy}
+                aria-label={t({ pt: "Copiar senha", en: "Copy password", es: "Copiar contraseña" })}
+                className="relative mt-1.5 block w-full break-all rounded-2xl border border-dashed border-[rgb(255_233_214/0.5)] bg-white/[0.12] p-[14px_10px] font-mono text-[clamp(29px,8.6vw,40px)] font-bold tracking-[0.02em] transition-transform active:scale-[0.98]"
+              >
+                {ap.wifi.password}
+              </button>
+              <button
+                type="button"
+                onClick={copy}
+                className="relative mt-4 min-h-[48px] rounded-full bg-[#faf0e8] px-[30px] py-3.5 text-[16px] font-bold text-terra-deep transition-transform active:scale-95"
+              >
+                {t({ pt: "Copiar senha", en: "Copy password", es: "Copiar contraseña" })}
+              </button>
+            </>
+          )}
         </div>
       </Reveal>
 
