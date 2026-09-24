@@ -63,6 +63,8 @@ export type PatchSource = {
   checkoutOverride?: CheckoutValue;
   /** Ajustes já gravados neste apartamento (pra não perder traduções ao salvar). */
   previousPatches?: ItemPatches;
+  /** Como a senha da fechadura chega neste apartamento — muda o texto do passo a passo. */
+  doorCodeSetting?: Apartment["checkin"]["doorCode"];
 };
 
 /* ------------------------------------------------------------------ */
@@ -80,7 +82,7 @@ export function overlayWithPatches(
   patches: ItemPatches,
 ): Apartment {
   const vars = deriveVars(content);
-  const ci = filledCheckin(building, vars);
+  const ci = filledCheckin(building, vars, content.checkin.doorCode);
   const co = filledCheckout(building, vars);
   return {
     ...content,
@@ -123,9 +125,10 @@ export function editorValues(
   building: BuildingTemplate,
   patches: ItemPatches | undefined,
   vars: ApartmentVars,
+  doorCode?: Apartment["checkin"]["doorCode"],
 ) {
   const p = patches ?? {};
-  const ci = filledCheckin(building, vars);
+  const ci = filledCheckin(building, vars, doorCode);
   const co = filledCheckout(building, vars);
   return {
     rules: rulesFromContent({
@@ -221,7 +224,7 @@ export function buildItemPatches(
   }
   if (src.checkinOverride) {
     patches.checkin = diffItems(
-      checkinFromContent(filledCheckin(building, vars)).cards,
+      checkinFromContent(filledCheckin(building, vars, src.doorCodeSetting)).cards,
       src.checkinOverride.cards,
       cardToContent,
       src.previousPatches?.checkin,

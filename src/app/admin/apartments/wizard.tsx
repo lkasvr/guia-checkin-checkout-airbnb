@@ -6,6 +6,7 @@ import Guide from "@/components/Guide";
 import {
   buildApartmentContent,
   buildOverrides,
+  doorCodeFromInput,
   overlayBuildingLiveContent,
   varsFromInput,
   type ApartmentFormInput,
@@ -348,7 +349,7 @@ export function ApartmentWizard({
     setForm((f) => {
       if (f.checkinOverride) return { ...f, checkinOverride: undefined };
       const value = matchedBuilding
-        ? editorValues(matchedBuilding, undefined, varsFromInput(f)).checkin
+        ? editorValues(matchedBuilding, undefined, varsFromInput(f), doorCodeFromInput(f)).checkin
         : checkinFromContent(preview.checkin);
       return { ...f, checkinOverride: value };
     });

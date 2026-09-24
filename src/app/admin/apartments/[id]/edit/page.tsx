@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { ApartmentWizard } from "@/app/admin/apartments/wizard";
 import {
+  doorCodeFromInput,
   parseHeroFacts,
   toBuildingTemplate,
   varsFromInput,
@@ -151,7 +152,7 @@ export default async function EditApartmentPage({
   };
   if (building && patches) {
     // Editor só abre pré-preenchido pra seção que este apartamento já ajustou.
-    const ev = editorValues(building, patches, varsFromInput(base));
+    const ev = editorValues(building, patches, varsFromInput(base), doorCodeFromInput(initial));
     const flags: ApartmentOverrides = {
       rules: !isEmptyPatch(patches.rules),
       home: !isEmptyPatch(patches.slides) || !isEmptyPatch(patches.accordions),

@@ -151,6 +151,13 @@ export const varsFromInput = (
   CHECKOUT_HORA: input.checkoutTime || "11h",
 });
 
+export const doorCodeFromInput = (
+  input: Pick<ApartmentFormInput, "doorCodeMode" | "doorCode">,
+): Apartment["checkin"]["doorCode"] =>
+  input.doorCodeMode === "fixed" && input.doorCode
+    ? { mode: "fixed", code: input.doorCode }
+    : { mode: "per_stay" };
+
 /**
  * O que vai em `Apartment.overrides`. Com prédio: só os ajustes item por item
  * (`patches`); sem prédio não há modelo pra seguir e valem os booleanos antigos.
@@ -160,7 +167,13 @@ export function buildOverrides(
   building: BuildingTemplate | null | undefined,
 ): ApartmentOverrides {
   if (!building) return input.overrides;
-  return { patches: buildItemPatches(input, building, varsFromInput(input)) };
+  return {
+    patches: buildItemPatches(
+      { ...input, doorCodeSetting: doorCodeFromInput(input) },
+      building,
+      varsFromInput(input),
+    ),
+  };
 }
 
 const EMERGENCY_CONTACTS: Apartment["contacts"]["items"] = [
@@ -307,10 +320,7 @@ export function buildApartmentContent(
         : input.checkinOverride
           ? checkinToContent(input.checkinOverride)
           : { ...base.checkin, cards: withPrerequisiteCard(base.checkin.cards) }),
-      doorCode:
-        input.doorCodeMode === "fixed" && input.doorCode
-          ? { mode: "fixed", code: input.doorCode }
-          : { mode: "per_stay" },
+      doorCode: doorCodeFromInput(input),
     },
     checkout: building
       ? { sub: t(""), steps: [] }
