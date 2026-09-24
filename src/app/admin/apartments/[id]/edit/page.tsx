@@ -40,6 +40,7 @@ export default async function EditApartmentPage({
         buildingId: true,
         hostId: true,
         host: { select: { name: true, email: true } },
+        updatedAt: true,
       },
     }),
     prisma.building.findMany({
@@ -199,6 +200,7 @@ export default async function EditApartmentPage({
         hostName={hostName}
         apartmentId={apt.id}
         initial={{ ...initial, ...editors, previousPatches: patches }}
+        initialUpdatedAt={apt.updatedAt.toISOString()}
         existingContent={content}
         otherContacts={reusableContacts(siblings)}
         buildings={buildings.map((b) => ({

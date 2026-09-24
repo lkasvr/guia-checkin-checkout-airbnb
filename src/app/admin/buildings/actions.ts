@@ -99,15 +99,29 @@ export async function createBuilding(
  * (exceto o item que o apartamento tenha editado à mão, `Apartment.overrides.patches`).
  * Check-in/check-out também: o template tem marcadores da unidade, preenchidos
  * em cada guia na hora de exibir.
+ *
+ * `expectedUpdatedAt`: quando veio (a página sempre manda), recusa gravar se o
+ * prédio tiver sido salvo por outra aba/sessão depois que esta página abriu —
+ * senão essa gravação sobrescreveria mudanças mais novas sem ninguém perceber
+ * (ex.: duas abas abertas no mesmo prédio, uma delas esquecida com dado velho).
  */
-export async function updateBuilding(buildingId: string, payload: BuildingEditPayload) {
+export async function updateBuilding(
+  buildingId: string,
+  payload: BuildingEditPayload,
+  expectedUpdatedAt?: string,
+) {
   await requireAdmin();
 
   const building = await prisma.building.findUnique({
     where: { id: buildingId },
-    select: { id: true },
+    select: { id: true, updatedAt: true },
   });
   if (!building) throw new Error("Prédio não encontrado");
+  if (expectedUpdatedAt && building.updatedAt.toISOString() !== expectedUpdatedAt) {
+    throw new Error(
+      "Este prédio foi alterado em outra aba ou sessão depois que esta página abriu — recarregue a página e refaça a edição, pra não sobrescrever a mudança mais recente.",
+    );
+  }
 
   await prisma.building.update({
     where: { id: buildingId },

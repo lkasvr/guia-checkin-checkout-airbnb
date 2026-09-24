@@ -217,6 +217,7 @@ export function ApartmentWizard({
   mode,
   apartmentId,
   initial,
+  initialUpdatedAt,
   existingContent,
   buildings,
   otherContacts = [],
@@ -226,6 +227,11 @@ export function ApartmentWizard({
   mode: "create" | "edit";
   apartmentId?: string;
   initial?: FormState;
+  /**
+   * `updatedAt` de quando esta página carregou — evita que salvar aqui
+   * sobrescreva uma mudança feita por outra aba/sessão nesse meio-tempo.
+   */
+  initialUpdatedAt?: string;
   existingContent?: Apartment;
   buildings: BuildingOption[];
   otherContacts?: ReusableContacts[];
@@ -375,7 +381,7 @@ export function ApartmentWizard({
         const result =
           mode === "create"
             ? await createApartmentDetailed(hostId, payload)
-            : await updateApartmentDetailed(apartmentId!, payload);
+            : await updateApartmentDetailed(apartmentId!, payload, initialUpdatedAt);
         if (!result.ok) {
           setError(result.error);
           return;
