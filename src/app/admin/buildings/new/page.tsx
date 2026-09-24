@@ -3,19 +3,19 @@ import { BuildingEditor, type BuildingOption } from "@/app/admin/buildings/build
 import type { BuildingEditPayload } from "@/app/admin/buildings/actions";
 import { toBuildingTemplate } from "@/data/buildApartmentContent";
 import { PREREQUISITE_CARD } from "@/data/prerequisiteCard";
-import { checkinFromContent } from "@/data/sectionContent";
+import { checkinFromContent, emptyL } from "@/data/sectionContent";
 
 export const dynamic = "force-dynamic";
 
 const EMPTY: BuildingEditPayload = {
-  rules: { sub: "", items: [] },
-  home: { sub: "", slides: [], accordions: [] },
+  rules: { sub: emptyL(), items: [] },
+  home: { sub: emptyL(), slides: [], accordions: [] },
   // Todo modelo novo já nasce com o cartão de documento/veículo no topo.
   checkin: checkinFromContent({ sub: { pt: "", en: "" }, cards: [PREREQUISITE_CARD] }),
-  checkout: { sub: "", steps: [] },
-  amenities: { sub: "", items: [] },
-  tourism: { sub: "", items: [] },
-  dining: { sub: "", items: [] },
+  checkout: { sub: emptyL(), steps: [] },
+  amenities: { sub: emptyL(), items: [] },
+  tourism: { sub: emptyL(), items: [] },
+  dining: { sub: emptyL(), items: [] },
   defaultHeroImg: "",
   defaultFooterImg: "",
   location: { address: "", mapsUrl: "", portariaPhone: "", intercom: [] },
