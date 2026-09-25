@@ -95,6 +95,9 @@ export type ApartmentVars = {
   UNIDADE: string;
   VAGA: string;
   CHECKOUT_HORA: string;
+  /** Andar e vaga com tradução digitada à mão (opcional): sem isso o guia em inglês/espanhol mostra o português. */
+  ANDAR_L?: L;
+  VAGA_L?: L;
 };
 
 /** Contatos digitados no formulário — guardados pra poder reaproveitar em outro apartamento do anfitrião. */

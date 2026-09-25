@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { ApartmentWizard } from "@/app/admin/apartments/wizard";
 import {
   doorCodeFromInput,
+  ownRulesToForm,
   parseHeroFacts,
   toBuildingTemplate,
   varsFromInput,
@@ -113,6 +114,10 @@ export default async function EditApartmentPage({
     maxGuests: facts.maxGuests,
     checkinTime: facts.checkinTime,
     checkoutTime: facts.checkoutTime,
+    floorEn: facts.floorEn,
+    floorEs: facts.floorEs,
+    parkingEn: facts.parkingEn,
+    parkingEs: facts.parkingEs,
   };
   const inheritedCode = building ? lookupIntercom(building.location?.intercom, base.tower) : "";
 
@@ -123,10 +128,8 @@ export default async function EditApartmentPage({
     doorCode: content.checkin.doorCode?.mode === "fixed" ? content.checkin.doorCode.code : "",
     wifiNetwork: content.wifi.network,
     wifiPassword: content.wifi.password,
-    // Regras/fumo/animais só são regerados se a pessoa mexer nesses campos.
-    rulesText: "",
-    smoking: "no" as const,
-    pets: "no" as const,
+    // Mostra o que foi salvo; as regras só são regeradas se a pessoa mexer nesses campos.
+    ...ownRulesToForm(content.rules.items),
     regenerateRules: false,
     hostWhatsapp: contacts.hostWhatsapp,
     coHostName: contacts.coHostName,

@@ -175,13 +175,15 @@ export function TokenHint() {
  * isso — sem preencher, o guia usa o português no inglês e tenta traduzir
  * sozinho pro espanhol).
  */
-function LField({
+export function LField({
   label,
   value,
   onChange,
   placeholder,
   multiline,
   className,
+  rows = 2,
+  hint,
 }: {
   label: string;
   value: LInput;
@@ -189,6 +191,10 @@ function LField({
   placeholder?: string;
   multiline?: boolean;
   className?: string;
+  /** Altura das caixas de texto (só com `multiline`). */
+  rows?: number;
+  /** Aviso mostrado junto das caixas de inglês/espanhol. */
+  hint?: string;
 }) {
   const [open, setOpen] = useState(!!(value.en.trim() || value.es.trim()));
   return (
@@ -197,7 +203,7 @@ function LField({
         {label}
         {multiline ? (
           <textarea
-            rows={2}
+            rows={rows}
             className={field}
             value={value.pt}
             placeholder={placeholder}
@@ -214,11 +220,12 @@ function LField({
       </label>
       {open ? (
         <div className="mt-1.5 grid gap-1.5 rounded-lg border border-dashed border-line bg-bg p-2">
+          {hint && <p className="text-[11.5px] text-soft">{hint}</p>}
           <label className="grid gap-0.5 text-[11px] font-semibold text-soft">
             Inglês (opcional)
             {multiline ? (
               <textarea
-                rows={2}
+                rows={rows}
                 className={`${field} text-[13px]`}
                 value={value.en}
                 placeholder="Sem isso, usa o português."
@@ -237,7 +244,7 @@ function LField({
             Espanhol (opcional)
             {multiline ? (
               <textarea
-                rows={2}
+                rows={rows}
                 className={`${field} text-[13px]`}
                 value={value.es}
                 placeholder="Sem isso, tenta traduzir sozinho."

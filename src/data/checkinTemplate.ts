@@ -51,11 +51,14 @@ function fillCard(card: CheckinCard, tokens: Tokens): CheckinCard {
   };
 }
 
-export const varsToTokens = (v: ApartmentVars): Record<string, string> => ({
+/** Andar/vaga com tradução vira um valor por idioma; sem tradução segue igual em todos (como sempre foi). */
+const withTranslation = (pt: string, l: L | undefined): TokenValue => (l ? { pt, en: l.en, es: l.es } : pt);
+
+export const varsToTokens = (v: ApartmentVars): Record<string, TokenValue> => ({
   TORRE: v.TORRE,
-  ANDAR: v.ANDAR,
+  ANDAR: withTranslation(v.ANDAR, v.ANDAR_L),
   UNIDADE: v.UNIDADE,
-  VAGA: v.VAGA,
+  VAGA: withTranslation(v.VAGA, v.VAGA_L),
   CHECKOUT_HORA: v.CHECKOUT_HORA || "11h",
 });
 
@@ -117,6 +120,11 @@ export function parseHeroFacts(facts: Apartment["hero"]["facts"]): {
   maxGuests: string;
   checkinTime: string;
   checkoutTime: string;
+  /** Tradução digitada à mão do andar/vaga ("" quando é igual ao português). */
+  floorEn: string;
+  floorEs: string;
+  parkingEn: string;
+  parkingEs: string;
 } {
   const FIXED_CAPTIONS = ["Garagem", "Capacidade máxima", "Check-in", "Check-out"];
   const find = (caption: string) => facts.find((f) => f.v.pt === caption);
@@ -124,6 +132,9 @@ export function parseHeroFacts(facts: Apartment["hero"]["facts"]): {
   // reconhecido por eliminação: o único fact cuja legenda não é uma das fixas.
   const towerFact = facts.find((f) => !FIXED_CAPTIONS.includes(f.v.pt));
   const guests = find("Capacidade máxima");
+  const floorFact = towerFact && towerFact.v.pt !== "—" ? towerFact.v : undefined;
+  const parkingFact = find("Garagem")?.k;
+  const own = (l: L | undefined, lang: "en" | "es") => (l && l[lang] && l[lang] !== l.pt ? (l[lang] as string) : "");
   return {
     tower: towerFact?.k.pt ?? "",
     floor: towerFact && towerFact.v.pt !== "—" ? towerFact.v.pt : "",
@@ -131,6 +142,10 @@ export function parseHeroFacts(facts: Apartment["hero"]["facts"]): {
     maxGuests: guests ? guests.k.pt.replace(/\s*hóspedes$/, "") : "",
     checkinTime: find("Check-in")?.k.pt ?? "",
     checkoutTime: find("Check-out")?.k.pt ?? "",
+    floorEn: own(floorFact, "en"),
+    floorEs: own(floorFact, "es"),
+    parkingEn: own(parkingFact, "en"),
+    parkingEs: own(parkingFact, "es"),
   };
 }
 

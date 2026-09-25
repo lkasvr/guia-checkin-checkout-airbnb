@@ -106,6 +106,14 @@ export type ApartmentFormInput = {
   wifiNetwork: string;
   wifiPassword: string;
   rulesText: string;
+  /** Tradução das regras específicas: uma linha por regra, na mesma ordem do português (opcional). */
+  rulesTextEn?: string;
+  rulesTextEs?: string;
+  /** Tradução digitada à mão do andar e da vaga (opcional). */
+  floorEn?: string;
+  floorEs?: string;
+  parkingEn?: string;
+  parkingEs?: string;
   smoking: "yes" | "no" | "balcony";
   pets: "yes" | "no";
   /**
@@ -142,14 +150,60 @@ export type ApartmentFormInput = {
 
 /** Valores que preenchem os marcadores {{TORRE}}, {{ANDAR}}… do check-in/check-out do prédio. */
 export const varsFromInput = (
-  input: Pick<ApartmentFormInput, "tower" | "floor" | "unit" | "parking" | "checkoutTime">,
-): ApartmentVars => ({
-  TORRE: input.tower,
-  ANDAR: input.floor,
-  UNIDADE: input.unit,
-  VAGA: input.parking,
-  CHECKOUT_HORA: input.checkoutTime || "11h",
-});
+  input: Pick<ApartmentFormInput, "tower" | "floor" | "unit" | "parking" | "checkoutTime"> &
+    Partial<Pick<ApartmentFormInput, "floorEn" | "floorEs" | "parkingEn" | "parkingEs">>,
+): ApartmentVars => {
+  const tr = (pt: string, en?: string, es?: string): L | undefined =>
+    en?.trim() || es?.trim()
+      ? { pt, en: en?.trim() || pt, ...(es?.trim() ? { es: es.trim() } : {}) }
+      : undefined;
+  const andarL = tr(input.floor, input.floorEn, input.floorEs);
+  const vagaL = tr(input.parking, input.parkingEn, input.parkingEs);
+  return {
+    TORRE: input.tower,
+    ANDAR: input.floor,
+    UNIDADE: input.unit,
+    VAGA: input.parking,
+    CHECKOUT_HORA: input.checkoutTime || "11h",
+    ...(andarL ? { ANDAR_L: andarL } : {}),
+    ...(vagaL ? { VAGA_L: vagaL } : {}),
+  };
+};
+
+/**
+ * Faz o caminho de volta das regras que o formulário gera (texto livre + fumo +
+ * animais): lê do que foi gravado no apartamento, pra tela de edição mostrar o
+ * que a pessoa salvou em vez de sempre voltar ao padrão em branco. Só reconhece
+ * o que `buildApartmentContent` gera; outras regras ficam como estão.
+ */
+export function ownRulesToForm(items: Rule[]): {
+  rulesText: string;
+  rulesTextEn: string;
+  rulesTextEs: string;
+  smoking: ApartmentFormInput["smoking"];
+  pets: ApartmentFormInput["pets"];
+} {
+  const smokingTitles: Record<string, ApartmentFormInput["smoking"]> = {
+    "Proibido fumar": "no",
+    "Fumo permitido somente na varanda": "balcony",
+    "Fumo permitido": "yes",
+  };
+  const petTitles: Record<string, ApartmentFormInput["pets"]> = {
+    "Não são permitidos animais": "no",
+    "Animais são bem-vindos": "yes",
+  };
+  const known = new Set([...Object.keys(smokingTitles), ...Object.keys(petTitles)]);
+  const smokingRule = items.find((r) => r.title.pt in smokingTitles);
+  const petRule = items.find((r) => r.title.pt in petTitles);
+  const own = items.filter((r) => r.icon === "📌" && !r.text.pt.trim() && !known.has(r.title.pt));
+  return {
+    rulesText: own.map((r) => r.title.pt).join("\n"),
+    rulesTextEn: own.map((r) => (r.title.en !== r.title.pt ? r.title.en : "")).join("\n"),
+    rulesTextEs: own.map((r) => r.title.es ?? "").join("\n"),
+    smoking: smokingRule ? smokingTitles[smokingRule.title.pt] : "no",
+    pets: petRule ? petTitles[petRule.title.pt] : "no",
+  };
+}
 
 export const doorCodeFromInput = (
   input: Pick<ApartmentFormInput, "doorCodeMode" | "doorCode">,
@@ -218,8 +272,17 @@ export function buildApartmentContent(
   const locationMapsUrl = input.locationMapsUrl.trim();
 
   const facts: Apartment["hero"]["facts"] = [];
-  if (input.tower) facts.push({ k: t(input.tower), v: t(input.floor || "—") });
-  if (input.parking) facts.push({ k: t(input.parking), v: t("Garagem", "Parking") });
+  const tr = (pt: string, en?: string, es?: string): L => ({
+    pt,
+    en: en?.trim() || pt,
+    ...(es?.trim() ? { es: es.trim() } : {}),
+  });
+  if (input.tower) {
+    facts.push({ k: t(input.tower), v: tr(input.floor || "—", input.floor ? input.floorEn : "", input.floorEs) });
+  }
+  if (input.parking) {
+    facts.push({ k: tr(input.parking, input.parkingEn, input.parkingEs), v: t("Garagem", "Parking") });
+  }
   if (input.maxGuests) {
     facts.push({
       k: t(`${input.maxGuests} hóspedes`, `${input.maxGuests} guests`),
@@ -229,11 +292,15 @@ export function buildApartmentContent(
   if (input.checkinTime) facts.push({ k: t(input.checkinTime), v: t("Check-in") });
   if (input.checkoutTime) facts.push({ k: t(input.checkoutTime), v: t("Check-out") });
 
+  // As traduções vão linha a linha, na mesma ordem: linha em branco no português
+  // só pula a regra, sem desalinhar as de baixo.
+  const enLines = (input.rulesTextEn ?? "").split("\n");
+  const esLines = (input.rulesTextEs ?? "").split("\n");
   const generatedRules: Rule[] = input.rulesText
     .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => ({ icon: "📌", title: t(line), text: t("") }));
+    .map((line, i) => ({ line: line.trim(), en: enLines[i], es: esLines[i] }))
+    .filter((r) => r.line)
+    .map((r) => ({ icon: "📌", title: tr(r.line, r.en, r.es), text: t("") }));
 
   if (input.smoking === "no") {
     generatedRules.push({
