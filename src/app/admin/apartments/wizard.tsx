@@ -14,6 +14,7 @@ import {
 } from "@/data/buildApartmentContent";
 import { slugify } from "@/lib/slug";
 import { formatPhoneBR } from "@/lib/phone";
+import { useEquipmentLibrary } from "@/app/admin/use-equipment-library";
 import { lookupIntercom, towerKey, type ReusableContacts } from "@/data/contacts";
 import { editorValues } from "@/data/patches";
 import {
@@ -243,6 +244,7 @@ export function ApartmentWizard({
   const [intercomTouched, setIntercomTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const equipmentLibrary = useEquipmentLibrary();
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => {
@@ -747,6 +749,7 @@ export function ApartmentWizard({
       >
         {form.overrideHome && (
           <HomeEditor
+            equipmentLibrary={equipmentLibrary}
             lockShared={!!matchedBuilding}
             value={form.overrideHome}
             onChange={(v) => set("overrideHome", v)}

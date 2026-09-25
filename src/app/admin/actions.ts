@@ -15,6 +15,7 @@ import {
 } from "@/data/buildApartmentContent";
 import { slugify } from "@/lib/slug";
 import type { Apartment } from "@/data/types";
+import { apartmentSource, collectEquipment, type EquipmentModel } from "@/data/equipmentLibrary";
 
 function str(v: FormDataEntryValue | null): string {
   return typeof v === "string" ? v.trim() : "";
@@ -432,4 +433,28 @@ export async function resetHostPassword(
   // senha nova vale do próximo login em diante.
   revalidatePath("/admin");
   return { ok: true };
+}
+
+/**
+ * Equipamentos (título, passos, foto com itens numerados, traduções) que já
+ * foram cadastrados em qualquer prédio ou apartamento — pra reaproveitar ao
+ * criar um equipamento que já existe. Pra cada título vale a versão salva por
+ * último. Ver `src/data/equipmentLibrary.ts`.
+ */
+export async function listEquipmentLibrary(): Promise<EquipmentModel[]> {
+  await requireAdmin();
+  const [buildings, apartments] = await Promise.all([
+    prisma.building.findMany({ select: { name: true, updatedAt: true, home: true } }),
+    prisma.apartment.findMany({
+      select: { label: true, updatedAt: true, content: true, overrides: true },
+    }),
+  ]);
+  return collectEquipment([
+    ...buildings.map((b) => ({
+      label: b.name,
+      updatedAt: b.updatedAt,
+      accordions: (b.home as unknown as Apartment["home"] | null)?.accordions ?? [],
+    })),
+    ...apartments.map(apartmentSource),
+  ]);
 }

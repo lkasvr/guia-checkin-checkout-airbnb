@@ -18,6 +18,7 @@ import {
 } from "@/app/admin/section-editors";
 import type { BuildingTemplate } from "@/data/buildApartmentContent";
 import { formatPhoneBR } from "@/lib/phone";
+import { useEquipmentLibrary } from "@/app/admin/use-equipment-library";
 import {
   amenitiesFromContent,
   checkinFromContent,
@@ -105,6 +106,7 @@ export function BuildingEditor({
   const router = useRouter();
   const [name, setName] = useState(buildingName ?? "");
   const [form, setForm] = useState<BuildingEditPayload>(initial);
+  const equipmentLibrary = useEquipmentLibrary();
 
   function updateIntercom(i: number, patch: Partial<{ tower: string; code: string }>) {
     setForm((f) => ({
@@ -339,7 +341,11 @@ export function BuildingEditor({
       </p>
       <div className="mt-3">
         <CopyFromSelector buildings={buildings} onApply={(id) => copyFrom("home", id)} />
-        <HomeEditor value={form.home} onChange={(home) => setForm((f) => ({ ...f, home }))} />
+        <HomeEditor
+          value={form.home}
+          onChange={(home) => setForm((f) => ({ ...f, home }))}
+          equipmentLibrary={equipmentLibrary}
+        />
       </div>
 
       <h2 className={sectionTitle}>Check-in</h2>

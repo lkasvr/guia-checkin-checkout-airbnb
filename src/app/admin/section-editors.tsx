@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { isVideoUrl, uploadMedia } from "@/lib/upload";
 import type { ReusableVideo } from "@/app/admin/actions";
+import { equipmentKey, type EquipmentModel } from "@/data/equipmentLibrary";
 import {
   emptyAccordion,
   emptyDiagram,
@@ -15,6 +16,7 @@ import {
   emptyRule,
   emptySlide,
   emptyStep,
+  accordionFromContent,
   type AlertInput,
   type AmenitiesValue,
   type CheckinCardInput,
@@ -560,15 +562,62 @@ export function PlaceListEditor({
   );
 }
 
+/**
+ * Sugestões de equipamento já cadastrado, logo abaixo do título: aparecem
+ * enquanto o equipamento ainda está em branco (sem passos, sem foto), filtradas
+ * pelo que a pessoa digita. Clicar puxa título, traduções, passos, foto/vídeo e
+ * a foto com itens numerados da última versão salva.
+ */
+function EquipmentSuggestions({
+  library,
+  current,
+  others,
+  onPick,
+}: {
+  library: EquipmentModel[];
+  current: { title: string; empty: boolean };
+  others: string[];
+  onPick: (m: EquipmentModel) => void;
+}) {
+  if (!current.empty) return null;
+  const typed = equipmentKey(current.title).slice(2);
+  const used = new Set(others.map(equipmentKey));
+  const matches = library.filter((m) => !used.has(m.key) && (!typed || m.key.slice(2).includes(typed)));
+  if (matches.length === 0) return null;
+  return (
+    <div className="sm:col-span-2">
+      <span className="text-[12.5px] font-semibold text-soft">
+        Já cadastrado antes — toque para puxar as instruções e a foto:
+      </span>
+      <div className="mt-1 flex flex-wrap gap-1.5">
+        {matches.slice(0, 8).map((m) => (
+          <button
+            key={m.key}
+            type="button"
+            title={`Última versão salva em: ${m.source}`}
+            onClick={() => onPick(m)}
+            className="rounded-full border border-line bg-card px-3 py-1.5 text-[13px] font-semibold text-ink"
+          >
+            {m.accordion.icon} {m.accordion.title.pt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function HomeEditor({
   lockShared,
   value,
   onChange,
+  equipmentLibrary = [],
 }: {
   /** Apartamento seguindo o modelo do prédio: texto de apoio e vídeo de A Casa vêm do prédio. */
   lockShared?: boolean;
   value: HomeValue;
   onChange: (v: HomeValue) => void;
+  /** Equipamentos já cadastrados, pra reaproveitar (ver `useEquipmentLibrary`). */
+  equipmentLibrary?: EquipmentModel[];
 }) {
   return (
     <div>
@@ -670,6 +719,22 @@ export function HomeEditor({
               placeholder="ex.: Cafeteira elétrica"
               onChange={(title) =>
                 onChange({ ...value, accordions: updateAt(value.accordions, i, { title }) })
+              }
+            />
+            <EquipmentSuggestions
+              library={equipmentLibrary}
+              current={{
+                title: a.title.pt,
+                empty: !a.steps.some((st) => st.body.pt.trim()) && !a.diagram?.img && !a.media,
+              }}
+              others={value.accordions.filter((_, j) => j !== i).map((x) => x.title.pt)}
+              onPick={(m) =>
+                onChange({
+                  ...value,
+                  accordions: value.accordions.map((x, j) =>
+                    j === i ? accordionFromContent(m.accordion, x.id) : x,
+                  ),
+                })
               }
             />
             <div className="sm:col-span-2">
