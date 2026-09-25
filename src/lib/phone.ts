@@ -1,7 +1,15 @@
 /** Formata progressivamente pro padrão "+55 61 98250-0188" enquanto a pessoa digita. */
 export function formatPhoneBR(value: string): string {
-  let digits = value.replace(/\D/g, "");
-  if (digits.startsWith("55") && digits.length > 11) digits = digits.slice(2);
+  const trimmed = value.trim();
+  let digits: string;
+  if (trimmed.startsWith("+55")) {
+    // O campo já mostra o "+55 " na frente: ao digitar, ele volta junto e não é DDD.
+    digits = trimmed.slice(3).replace(/\D/g, "");
+  } else {
+    digits = value.replace(/\D/g, "");
+    // Número colado com o 55 do país, sem o "+".
+    if (digits.startsWith("55") && digits.length > 11) digits = digits.slice(2);
+  }
   digits = digits.slice(0, 11);
   if (!digits) return "";
 
