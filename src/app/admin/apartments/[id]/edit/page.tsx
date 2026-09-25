@@ -114,6 +114,10 @@ export default async function EditApartmentPage({
     maxGuests: facts.maxGuests,
     checkinTime: facts.checkinTime,
     checkoutTime: facts.checkoutTime,
+    floorEn: facts.floorEn,
+    floorEs: facts.floorEs,
+    parkingEn: facts.parkingEn,
+    parkingEs: facts.parkingEs,
   };
   const inheritedCode = building ? lookupIntercom(building.location?.intercom, base.tower) : "";
 

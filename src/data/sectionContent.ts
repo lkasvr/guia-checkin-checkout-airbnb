@@ -71,7 +71,8 @@ export type CheckinCardInput = {
   banner: string;
   steps: StepInput[];
   alerts: AlertInput[];
-  video?: { src: string; label: LInput };
+  /** `poster` (miniatura) não tem campo de edição: só é guardado pra não se perder ao salvar. */
+  video?: { src: string; label: LInput; poster?: string };
 };
 
 export type RulesValue = { sub: LInput; items: RuleInput[] };
@@ -319,7 +320,13 @@ export function cardToContent(c: CheckinCardInput): CheckinCard | null {
         }
       : {}),
     ...(c.video?.src.trim()
-      ? { video: { src: c.video.src.trim(), label: toL(c.video.label.pt.trim() ? c.video.label : emptyL("▶ Vídeo")) } }
+      ? {
+          video: {
+            src: c.video.src.trim(),
+            ...(c.video.poster ? { poster: c.video.poster } : {}),
+            label: toL(c.video.label.pt.trim() ? c.video.label : emptyL("▶ Vídeo")),
+          },
+        }
       : {}),
   };
 }
@@ -331,7 +338,13 @@ export function cardFromContent(card: CheckinCard, id?: string): CheckinCardInpu
     banner: card.banner ?? "",
     steps: stepsFromContent(card.steps),
     alerts: (card.alerts ?? []).map((a) => ({ icon: a.icon, body: fromL(a.body) })),
-    video: card.video ? { src: card.video.src, label: fromL(card.video.label) } : undefined,
+    video: card.video
+      ? {
+          src: card.video.src,
+          label: fromL(card.video.label),
+          ...(card.video.poster ? { poster: card.video.poster } : {}),
+        }
+      : undefined,
   };
 }
 

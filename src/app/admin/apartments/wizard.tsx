@@ -37,6 +37,7 @@ import {
   CheckinCardsEditor,
   CheckoutStepsEditor,
   HomeEditor,
+  LField,
   MediaField,
   PlaceListEditor,
   RulesListEditor,
@@ -475,24 +476,18 @@ export function ApartmentWizard({
             placeholder="ex.: Torre C"
           />
         </label>
-        <label className={labelCls}>
-          Andar
-          <input
-            className={field}
-            value={form.floor}
-            onChange={(e) => set("floor", e.target.value)}
-            placeholder="ex.: 13º andar"
-          />
-        </label>
-        <label className={labelCls}>
-          Vaga(s) na garagem
-          <input
-            className={field}
-            value={form.parking}
-            onChange={(e) => set("parking", e.target.value)}
-            placeholder="ex.: Vaga 269, subsolo -3"
-          />
-        </label>
+        <LField
+          label="Andar"
+          placeholder="ex.: 13º andar"
+          value={{ pt: form.floor, en: form.floorEn ?? "", es: form.floorEs ?? "" }}
+          onChange={(v) => setForm((f) => ({ ...f, floor: v.pt, floorEn: v.en, floorEs: v.es }))}
+        />
+        <LField
+          label="Vaga(s) na garagem"
+          placeholder="ex.: Vaga 269, subsolo -3"
+          value={{ pt: form.parking, en: form.parkingEn ?? "", es: form.parkingEs ?? "" }}
+          onChange={(v) => setForm((f) => ({ ...f, parking: v.pt, parkingEn: v.en, parkingEs: v.es }))}
+        />
         <label className={labelCls}>
           Nº máximo de hóspedes
           <input
@@ -686,16 +681,23 @@ export function ApartmentWizard({
 
       <h2 className={sectionTitle}>Regras</h2>
       <div className="mt-3 grid gap-3">
-        <label className={labelCls}>
-          Regras específicas deste apartamento (uma por linha)
-          <textarea
-            rows={4}
-            className={field}
-            value={form.rulesText}
-            onChange={(e) => set("rulesText", e.target.value)}
-            placeholder={"Não mexer no quadro de energia da área de serviço"}
-          />
-        </label>
+        <LField
+          multiline
+          rows={4}
+          label="Regras específicas deste apartamento (uma por linha)"
+          placeholder="Não mexer no quadro de energia da área de serviço"
+          hint="Uma regra por linha, na mesma ordem do português. Linha em branco = essa regra fica sem tradução manual."
+          value={{ pt: form.rulesText, en: form.rulesTextEn ?? "", es: form.rulesTextEs ?? "" }}
+          onChange={(v) =>
+            setForm((f) => ({
+              ...f,
+              rulesText: v.pt,
+              rulesTextEn: v.en,
+              rulesTextEs: v.es,
+              regenerateRules: true,
+            }))
+          }
+        />
         <div className="grid gap-3 sm:grid-cols-2">
           <label className={labelCls}>
             Fumo
