@@ -437,9 +437,16 @@ export function AmenityListEditor({
               onChange={(title) => onChange({ ...value, items: updateAt(value.items, i, { title }) })}
             />
             <LField
-              label="Texto"
+              className="sm:col-span-2"
+              label="Texto (só sobre o espaço — sem horário aqui)"
               value={a.text}
               onChange={(text) => onChange({ ...value, items: updateAt(value.items, i, { text }) })}
+            />
+            <LField
+              label="Horário de funcionamento (opcional)"
+              placeholder="ex.: 6h às 22h"
+              value={a.hours}
+              onChange={(hours) => onChange({ ...value, items: updateAt(value.items, i, { hours }) })}
             />
             <div className="flex items-center justify-between sm:col-span-2">
               <label className="flex items-center gap-2 text-[13px] text-soft">
