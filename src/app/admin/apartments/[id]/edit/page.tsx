@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { ApartmentWizard } from "@/app/admin/apartments/wizard";
 import {
   doorCodeFromInput,
-  ownRulesToForm,
+  extraRulesToForm,
   parseHeroFacts,
   toBuildingTemplate,
   varsFromInput,
@@ -129,7 +129,7 @@ export default async function EditApartmentPage({
     wifiNetwork: content.wifi.network,
     wifiPassword: content.wifi.password,
     // Mostra o que foi salvo; as regras só são regeradas se a pessoa mexer nesses campos.
-    ...ownRulesToForm(content.rules.items),
+    ...extraRulesToForm(content.rules.items),
     regenerateRules: false,
     hostWhatsapp: contacts.hostWhatsapp,
     coHostName: contacts.coHostName,
