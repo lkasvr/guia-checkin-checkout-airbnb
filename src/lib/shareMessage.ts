@@ -19,17 +19,26 @@ export function multiMessage(items: { label: string; url: string }[]): string {
   return `${INTRO}\n${PREREQUISITE}\n\n${OUTRO}\n\n${links}`;
 }
 
+/** Nome do prédio sem a palavra genérica do começo ("Residencial DF Plaza" → "DF Plaza"). */
+const shortBuildingName = (building: string): string =>
+  building.trim().replace(/^(residencial|edifício|edificio|condomínio|condominio|ed\.)\s+/i, "");
+
 /**
- * "1305C", ou "1305 · Torre C" quando o número não traz a torre junto. Se o
- * número já termina na letra da torre (1305C + "Torre C") não repete.
+ * "1305C · DF Plaza", ou "1305 · Torre C · DF Plaza" quando o número não traz a
+ * torre junto. Se o número já termina na letra da torre (1305C + "Torre C")
+ * não repete a torre. Sem prédio, fica só número/torre.
  */
-export function exportLabel(unit: string, tower: string): string {
+export function exportLabel(unit: string, tower: string, building = ""): string {
   const u = unit.trim();
   const towerName = tower.trim();
-  if (!towerName) return u;
-  const towerId = towerName.replace(/^(torre|bloco|tower|block)\s+/i, "").trim();
-  if (towerId && u.toUpperCase().endsWith(towerId.toUpperCase())) return u;
-  return `${u} · ${towerName}`;
+  const buildingName = shortBuildingName(building);
+  const parts = [u];
+  if (towerName) {
+    const towerId = towerName.replace(/^(torre|bloco|tower|block)\s+/i, "").trim();
+    if (!(towerId && u.toUpperCase().endsWith(towerId.toUpperCase()))) parts.push(towerName);
+  }
+  if (buildingName) parts.push(buildingName);
+  return parts.join(" · ");
 }
 
 export const whatsappShareUrl = (text: string): string =>
