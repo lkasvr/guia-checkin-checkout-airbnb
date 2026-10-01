@@ -14,12 +14,15 @@ import {
   homeToContent,
   placesToContent,
   amenitiesToContent,
+  ruleFromContent,
+  ruleToContent,
   rulesToContent,
   type AmenitiesValue,
   type CheckinValue,
   type CheckoutValue,
   type HomeValue,
   type PlacesValue,
+  type RuleInput,
   type RulesValue,
 } from "@/data/sectionContent";
 import type { ApartmentOverrides, BuildingTemplate } from "@/data/buildingModel";
@@ -105,10 +108,8 @@ export type ApartmentFormInput = {
   doorCode: string;
   wifiNetwork: string;
   wifiPassword: string;
-  rulesText: string;
-  /** Tradução das regras específicas: uma linha por regra, na mesma ordem do português (opcional). */
-  rulesTextEn?: string;
-  rulesTextEs?: string;
+  /** Regras específicas deste apartamento — além das de fumo/animais, geradas à parte. */
+  ownRules: RuleInput[];
   /** Tradução digitada à mão do andar e da vaga (opcional). */
   floorEn?: string;
   floorEs?: string;
@@ -116,12 +117,6 @@ export type ApartmentFormInput = {
   parkingEs?: string;
   smoking: "yes" | "no" | "balcony";
   pets: "yes" | "no";
-  /**
-   * Regenera as regras do apartamento (texto + fumo + animais) a partir do
-   * formulário. Na edição só quando a pessoa mexeu nesses campos — senão
-   * mantém as que já existem em vez de trocá-las pelos valores em branco.
-   */
-  regenerateRules?: boolean;
   hostWhatsapp: string;
   coHostName: string;
   coHostWhatsapp: string;
@@ -170,38 +165,35 @@ export const varsFromInput = (
   };
 };
 
+/** Título de regra gerado automaticamente (fumo/animais) — não entra na lista de "regras específicas". */
+const SMOKING_TITLES: Record<string, ApartmentFormInput["smoking"]> = {
+  "Proibido fumar": "no",
+  "Fumo permitido somente na varanda": "balcony",
+  "Fumo permitido": "yes",
+};
+const PET_TITLES: Record<string, ApartmentFormInput["pets"]> = {
+  "Não são permitidos animais": "no",
+  "Animais são bem-vindos": "yes",
+};
+
 /**
- * Faz o caminho de volta das regras que o formulário gera (texto livre + fumo +
- * animais): lê do que foi gravado no apartamento, pra tela de edição mostrar o
- * que a pessoa salvou em vez de sempre voltar ao padrão em branco. Só reconhece
- * o que `buildApartmentContent` gera; outras regras ficam como estão.
+ * Faz o caminho de volta das regras do apartamento: separa fumo/animais (viram
+ * os dois campos de escolha) do resto (vira a lista de "regras específicas"),
+ * pra tela de edição mostrar o que foi salvo em vez de voltar em branco.
  */
-export function ownRulesToForm(items: Rule[]): {
-  rulesText: string;
-  rulesTextEn: string;
-  rulesTextEs: string;
+export function extraRulesToForm(items: Rule[]): {
+  ownRules: RuleInput[];
   smoking: ApartmentFormInput["smoking"];
   pets: ApartmentFormInput["pets"];
 } {
-  const smokingTitles: Record<string, ApartmentFormInput["smoking"]> = {
-    "Proibido fumar": "no",
-    "Fumo permitido somente na varanda": "balcony",
-    "Fumo permitido": "yes",
-  };
-  const petTitles: Record<string, ApartmentFormInput["pets"]> = {
-    "Não são permitidos animais": "no",
-    "Animais são bem-vindos": "yes",
-  };
-  const known = new Set([...Object.keys(smokingTitles), ...Object.keys(petTitles)]);
-  const smokingRule = items.find((r) => r.title.pt in smokingTitles);
-  const petRule = items.find((r) => r.title.pt in petTitles);
-  const own = items.filter((r) => r.icon === "📌" && !r.text.pt.trim() && !known.has(r.title.pt));
+  const known = new Set([...Object.keys(SMOKING_TITLES), ...Object.keys(PET_TITLES)]);
+  const smokingRule = items.find((r) => r.title.pt in SMOKING_TITLES);
+  const petRule = items.find((r) => r.title.pt in PET_TITLES);
+  const own = items.filter((r) => !known.has(r.title.pt));
   return {
-    rulesText: own.map((r) => r.title.pt).join("\n"),
-    rulesTextEn: own.map((r) => (r.title.en !== r.title.pt ? r.title.en : "")).join("\n"),
-    rulesTextEs: own.map((r) => r.title.es ?? "").join("\n"),
-    smoking: smokingRule ? smokingTitles[smokingRule.title.pt] : "no",
-    pets: petRule ? petTitles[petRule.title.pt] : "no",
+    ownRules: own.map((r) => ruleFromContent(r)),
+    smoking: smokingRule ? SMOKING_TITLES[smokingRule.title.pt] : "no",
+    pets: petRule ? PET_TITLES[petRule.title.pt] : "no",
   };
 }
 
@@ -292,15 +284,9 @@ export function buildApartmentContent(
   if (input.checkinTime) facts.push({ k: t(input.checkinTime), v: t("Check-in") });
   if (input.checkoutTime) facts.push({ k: t(input.checkoutTime), v: t("Check-out") });
 
-  // As traduções vão linha a linha, na mesma ordem: linha em branco no português
-  // só pula a regra, sem desalinhar as de baixo.
-  const enLines = (input.rulesTextEn ?? "").split("\n");
-  const esLines = (input.rulesTextEs ?? "").split("\n");
-  const generatedRules: Rule[] = input.rulesText
-    .split("\n")
-    .map((line, i) => ({ line: line.trim(), en: enLines[i], es: esLines[i] }))
-    .filter((r) => r.line)
-    .map((r) => ({ icon: "📌", title: tr(r.line, r.en, r.es), text: t("") }));
+  const generatedRules: Rule[] = input.ownRules
+    .map(ruleToContent)
+    .filter((r): r is Rule => r !== null);
 
   if (input.smoking === "no") {
     generatedRules.push({
@@ -332,7 +318,7 @@ export function buildApartmentContent(
         }
       : { icon: "🐾", title: t("Animais são bem-vindos", "Pets are welcome"), text: t("") },
   );
-  const ownRules = input.regenerateRules === false ? base.rules.items : generatedRules;
+  const ownRules = generatedRules;
 
   const contacts: Apartment["contacts"]["items"] = [];
   if (input.hostWhatsapp) {
