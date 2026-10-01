@@ -29,6 +29,7 @@ import {
   amenitiesFromContent,
   checkinFromContent,
   checkoutFromContent,
+  emptyL,
   homeFromContent,
   placesFromContent,
   rulesFromContent,
@@ -70,7 +71,7 @@ const EMPTY: FormState = {
   doorCode: "",
   wifiNetwork: "",
   wifiPassword: "",
-  rulesText: "",
+  ownRules: [],
   smoking: "no",
   pets: "no",
   hostWhatsapp: "",
@@ -253,7 +254,6 @@ export function ApartmentWizard({
       if (!slugTouched && (key === "building" || key === "unit" || key === "tower")) {
         next.slug = autoSlug(next.building, next.unit, next.tower);
       }
-      if (key === "rulesText" || key === "smoking" || key === "pets") next.regenerateRules = true;
       // Torre digitada (ou prédio trocado): puxa o código do interfone dela.
       if ((key === "tower" || key === "building") && !intercomTouched) {
         const b = buildings.find(
@@ -683,23 +683,19 @@ export function ApartmentWizard({
 
       <h2 className={sectionTitle}>Regras</h2>
       <div className="mt-3 grid gap-3">
-        <LField
-          multiline
-          rows={4}
-          label="Regras específicas deste apartamento (uma por linha)"
-          placeholder="Não mexer no quadro de energia da área de serviço"
-          hint="Uma regra por linha, na mesma ordem do português. Linha em branco = essa regra fica sem tradução manual."
-          value={{ pt: form.rulesText, en: form.rulesTextEn ?? "", es: form.rulesTextEs ?? "" }}
-          onChange={(v) =>
-            setForm((f) => ({
-              ...f,
-              rulesText: v.pt,
-              rulesTextEn: v.en,
-              rulesTextEs: v.es,
-              regenerateRules: true,
-            }))
-          }
-        />
+        <div>
+          <span className={labelCls}>Regras específicas deste apartamento</span>
+          <p className="mt-0.5 text-[12.5px] text-soft">
+            Acrescente uma de cada vez, com o emoji que quiser pra ela.
+          </p>
+          <div className="mt-2">
+            <RulesListEditor
+              lockShared
+              value={{ sub: emptyL(), items: form.ownRules }}
+              onChange={(v) => setForm((f) => ({ ...f, ownRules: v.items }))}
+            />
+          </div>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className={labelCls}>
             Fumo
