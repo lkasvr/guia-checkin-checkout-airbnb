@@ -42,7 +42,15 @@ export const fromL = (l: L): LInput => ({ pt: l.pt, en: l.en === l.pt ? "" : l.e
 export type StepInput = { id?: string; n: string; body: LInput };
 export type AlertInput = { icon: string; body: LInput };
 export type RuleInput = { id?: string; icon: string; title: LInput; text: LInput; hot: boolean };
-export type AmenityInput = { id?: string; img: string; title: LInput; text: LInput; wide: boolean };
+export type AmenityInput = {
+  id?: string;
+  img: string;
+  title: LInput;
+  text: LInput;
+  /** Horário de funcionamento (opcional) — mostrado à parte, numa caixinha destacada. */
+  hours: LInput;
+  wide: boolean;
+};
 export type PlaceInput = {
   id?: string;
   img: string;
@@ -98,6 +106,7 @@ export const emptyAmenity = (): AmenityInput => ({
   img: AMENITY_PLACEHOLDER_IMG,
   title: emptyL(),
   text: emptyL(),
+  hours: emptyL(),
   wide: false,
 });
 export const emptyPlace = (): PlaceInput => ({
@@ -189,11 +198,19 @@ export function amenityToContent(a: AmenityInput): Amenity | null {
     img: a.img || AMENITY_PLACEHOLDER_IMG,
     title: toL(a.title),
     text: toL(a.text),
+    ...(a.hours.pt.trim() ? { hours: toL(a.hours) } : {}),
     wide: a.wide,
   };
 }
 export function amenityFromContent(a: Amenity, id?: string): AmenityInput {
-  return { id: id ?? amenityId(a), img: a.img, title: fromL(a.title), text: fromL(a.text), wide: !!a.wide };
+  return {
+    id: id ?? amenityId(a),
+    img: a.img,
+    title: fromL(a.title),
+    text: fromL(a.text),
+    hours: a.hours ? fromL(a.hours) : emptyL(),
+    wide: !!a.wide,
+  };
 }
 export function amenitiesToContent(v: AmenitiesValue): Apartment["amenities"] {
   return {

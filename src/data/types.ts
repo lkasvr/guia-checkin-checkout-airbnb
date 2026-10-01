@@ -57,7 +57,15 @@ export type Accordion = {
   diagram?: { img: string; alt: string; legend: LegendItem[] };
 };
 
-export type Amenity = { id?: string; img: string; title: L; text: L; wide?: boolean };
+export type Amenity = {
+  id?: string;
+  img: string;
+  title: L;
+  text: L;
+  /** Horário de funcionamento, mostrado à parte do texto, numa caixinha destacada. */
+  hours?: L;
+  wide?: boolean;
+};
 
 export type Place = {
   id?: string;

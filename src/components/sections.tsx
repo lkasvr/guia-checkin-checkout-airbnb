@@ -789,7 +789,12 @@ export function Amenities({ ap }: { ap: Apartment }) {
               </div>
               <div className="p-[12px_13px_14px]">
                 <b className="block text-[15px] leading-[1.25]">{t(a.title)}</b>
-                <span className="mt-1 block text-[13.5px] leading-[1.4] text-soft">{t(a.text)}</span>
+                {a.hours && (
+                  <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-terra-soft px-2.5 py-1 text-[12px] font-bold text-terra">
+                    🕐 {t(a.hours)}
+                  </span>
+                )}
+                <span className="mt-1.5 block text-[13.5px] leading-[1.4] text-soft">{t(a.text)}</span>
               </div>
             </div>
           </Reveal>
