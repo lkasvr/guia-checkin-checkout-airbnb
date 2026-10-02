@@ -593,18 +593,21 @@ function EquipmentSuggestions({
   others: string[];
   onPick: (m: EquipmentModel) => void;
 }) {
+  // Começa com 8 pra não ocupar a tela toda no celular; o resto abre no "+ N outros".
+  const [showAll, setShowAll] = useState(false);
   if (!current.empty) return null;
   const typed = equipmentKey(current.title).slice(2);
   const used = new Set(others.map(equipmentKey));
   const matches = library.filter((m) => !used.has(m.key) && (!typed || m.key.slice(2).includes(typed)));
   if (matches.length === 0) return null;
+  const hidden = showAll ? 0 : Math.max(0, matches.length - 8);
   return (
     <div className="sm:col-span-2">
       <span className="text-[12.5px] font-semibold text-soft">
         Já cadastrado antes — toque para puxar as instruções e a foto:
       </span>
       <div className="mt-1 flex flex-wrap gap-1.5">
-        {matches.slice(0, 8).map((m) => (
+        {matches.slice(0, matches.length - hidden).map((m) => (
           <button
             key={m.key}
             type="button"
@@ -615,6 +618,15 @@ function EquipmentSuggestions({
             {m.accordion.icon} {m.accordion.title.pt}
           </button>
         ))}
+        {hidden > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="rounded-full px-3 py-1.5 text-[13px] font-semibold text-terra underline underline-offset-2"
+          >
+            + {hidden} {hidden === 1 ? "outro" : "outros"}
+          </button>
+        )}
       </div>
     </div>
   );
