@@ -751,7 +751,7 @@ export function Home({ ap }: { ap: Apartment }) {
                         <b className="mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blush text-[13px] font-bold text-coffee">
                           {it.n}
                         </b>
-                        <span>{t(it.label)}</span>
+                        <Rich html={t(it.label)} />
                       </li>
                     ))}
                   </ol>
