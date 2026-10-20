@@ -3,6 +3,12 @@ import type { Apartment } from "@/data/types";
 
 const stripHtml = (html: string) => html.replace(/<[^>]+>/g, "").trim();
 
+function shortHash(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
 /**
  * Metadata por tenant derivado do conteúdo do apartamento (preenchido pelo
  * anfitrião). O `title` é passado por página (guia, check-in, checkout);
@@ -17,7 +23,8 @@ export function apartmentMetadata(
   const lang = content.lang.default;
   const description = stripHtml(content.hero.sub[lang]);
   const url = `https://${slug}.anfyi.com.br`;
-  const images = [content.hero.img];
+  // `v` muda quando a capa muda: o WhatsApp guarda o preview por URL de imagem.
+  const images = [{ url: `${url}/og?v=${shortHash(content.hero.img)}`, width: 1200, height: 630 }];
   return {
     title: { absolute: title },
     description,
