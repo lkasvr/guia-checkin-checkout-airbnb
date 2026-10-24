@@ -8,8 +8,8 @@
 const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
 
 /** Endereço (ou caminho do Blob) da Miniatura de um vídeo; `undefined` se não for vídeo. */
-export function miniaturaUrl(videoUrl: string): string | undefined {
-  return VIDEO_EXT.test(videoUrl) ? videoUrl.replace(VIDEO_EXT, ".jpg") : undefined;
+export function miniaturaUrl(url: string): string | undefined {
+  return VIDEO_EXT.test(url) ? url.replace(VIDEO_EXT, ".jpg") : undefined;
 }
 
 /** A Miniatura explícita nos dados (vídeos estáticos em `/media`) vence a deduzida. */
@@ -17,7 +17,11 @@ export function miniaturaToShow(videoUrl: string, explicit?: string): string | u
   return explicit || miniaturaUrl(videoUrl);
 }
 
-/** Dos caminhos listados no Blob, os vídeos cujo `.jpg` não está na lista. Fotos soltas não contam. */
+/**
+ * Dos caminhos (`pathname`) listados no Blob, os vídeos cujo `.jpg` não está na
+ * lista. Fotos soltas não contam. Precisa da lista inteira, com todas as páginas:
+ * numa lista parcial, um vídeo cujo `.jpg` ficou noutra página parece sem Miniatura.
+ */
 export function videosMissingMiniatura(paths: string[]): string[] {
   const existing = new Set(paths);
   return paths.filter((path) => {

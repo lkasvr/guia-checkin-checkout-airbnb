@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { miniaturaToShow, miniaturaUrl, videosMissingMiniatura } from "./miniatura";
+import { miniaturaToShow, miniaturaUrl, videosMissingMiniatura } from "@/lib/miniatura";
 
 describe("Miniatura de um endereço de vídeo", () => {
   it("troca .mp4 por .jpg", () => {
