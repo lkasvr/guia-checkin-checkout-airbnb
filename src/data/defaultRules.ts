@@ -1,4 +1,4 @@
-import type { Rule } from "@/data/types";
+import type { L, Rule } from "@/data/types";
 
 /**
  * Regras de convivência que valem em praticamente qualquer condomínio (vêm do
@@ -7,6 +7,17 @@ import type { Rule } from "@/data/types";
  * existentes não duplique. Regras que só existem em alguns prédios (entrega
  * na portaria, horário do lixo, piscina...) ficam no modelo de cada prédio.
  */
+/**
+ * Regras de piscina comuns a qualquer condomínio que tenha uma: entram no
+ * texto do item "Piscina" do Lazer (não na lista de regras), porque só valem
+ * pra quem tem piscina.
+ */
+export const POOL_RULES: L = {
+  pt: "Use traje de banho, chinelo e toalha, e circule de roupa de banho só na área da piscina. Não é permitido vidro, óleo bronzeador (protetor solar pode, retirando o excesso na ducha) nem animais. Antes de pegar o elevador, confira se a roupa de banho está seca.",
+  en: "Wear swimwear, sandals and bring a towel, and wear swimwear only in the pool area. No glass, tanning oil (sunscreen is fine, rinse off the excess in the shower first) or animals. Make sure your swimwear is dry before taking the elevator.",
+  es: "Usa traje de baño, chanclas y toalla, y circula en traje de baño solo en la zona de la piscina. No se permite vidrio, aceite bronceador (el protector solar sí, quitando el exceso en la ducha) ni animales. Antes de usar el ascensor, comprueba que tu traje de baño esté seco.",
+};
+
 export const DEFAULT_CONDO_RULES: Rule[] = [
   {
     id: "default-vizinhanca",
@@ -62,6 +73,20 @@ export const DEFAULT_CONDO_RULES: Rule[] = [
       pt: "Não segure a porta além do tempo necessário, não leve comida, não pule e respeite o número máximo de pessoas.",
       en: "Don't hold the doors longer than needed, don't bring food inside, no jumping, and respect the maximum number of people.",
       es: "No sujetes la puerta más tiempo del necesario, no lleves comida, no saltes y respeta el número máximo de personas.",
+    },
+  },
+  {
+    id: "default-delivery",
+    icon: "🛵",
+    title: {
+      pt: "Delivery e entregas",
+      en: "Delivery and couriers",
+      es: "Delivery y entregas",
+    },
+    text: {
+      pt: "Entregadores de aplicativo não sobem aos apartamentos: retire seu pedido na portaria.",
+      en: "Delivery couriers can't go up to the apartments: please pick up your order at the front desk.",
+      es: "Los repartidores de aplicaciones no suben a los apartamentos: recoge tu pedido en la portería.",
     },
   },
   {
