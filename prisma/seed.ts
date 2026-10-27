@@ -34,14 +34,6 @@ const dfPlazaRules = {
       text: { pt: "Respeite o sossego dos vizinhos.", en: "Please respect the neighbors' rest." },
     },
     {
-      icon: "🗑️",
-      title: { pt: "Lixo ensacado", en: "Bag your trash" },
-      text: {
-        pt: "Deposite na lixeira comum do corredor, perto dos elevadores.",
-        en: "Drop it in the shared bin in the hallway, near the elevators.",
-      },
-    },
-    {
       icon: "👕",
       title: { pt: "Passe roupa só na tábua", en: "Iron only on the board" },
       text: { pt: "Nunca sobre a cama ou os móveis.", en: "Never on the bed or furniture." },
@@ -57,10 +49,10 @@ const dfPlazaRules = {
     {
       icon: "💳",
       hot: true,
-      title: { pt: "Cartão de garagem · R$ 300", en: "Garage card · R$ 300" },
+      title: { pt: "Cartão de garagem", en: "Garage card" },
       text: {
-        pt: "Taxa em caso de perda ou não devolução.",
-        en: "Fee in case of loss or non-return.",
+        pt: "Em caso de perda ou não devolução, o condomínio cobra R$ 300 pela reposição.",
+        en: "If it's lost or not returned, the building charges R$ 300 for a replacement.",
       },
     },
   ],
@@ -148,8 +140,8 @@ const dfPlazaCheckinTemplate = {
         {
           icon: "💳",
           body: {
-            pt: "<strong>Não esqueça o Cartão Branco</strong> antes de descer para guardar o carro. Perda ou não devolução: taxa de <strong>R$ 300</strong>.",
-            en: "<strong>Don't forget the White Card</strong> before going down to park. Loss or non-return: <strong>R$ 300</strong> fee.",
+            pt: "<strong>Não esqueça o Cartão Branco</strong> antes de descer para guardar o carro. Perda ou não devolução: reposição de <strong>R$ 300</strong>, cobrada pelo condomínio.",
+            en: "<strong>Don't forget the White Card</strong> before going down to park. Loss or non-return: <strong>R$ 300</strong> replacement fee, charged by the building.",
           },
         },
       ],
@@ -178,19 +170,12 @@ const dfPlazaCheckoutTemplate = {
     {
       n: "2",
       body: {
-        pt: "Deixe o <strong>Cartão Branco</strong> de garagem sobre a mesa de jantar (a não devolução gera taxa de R$ 300).",
-        en: "Leave the <strong>White garage Card</strong> on the dining table (non-return incurs a R$ 300 fee).",
+        pt: "Deixe o <strong>Cartão Branco</strong> de garagem sobre a mesa de jantar (em caso de não devolução, o condomínio cobra R$ 300 pela reposição).",
+        en: "Leave the <strong>White garage Card</strong> on the dining table (if it isn't returned, the building charges R$ 300 for a replacement).",
       },
     },
     {
       n: "3",
-      body: {
-        pt: "Ensaque o lixo e deixe na lixeira comum do corredor, perto dos elevadores.",
-        en: "Bag the trash and drop it in the shared hallway bin, near the elevators.",
-      },
-    },
-    {
-      n: "4",
       body: {
         pt: "Feche as janelas, desligue o ar-condicionado e confira se não esqueceu nada. É só fechar a porta ao sair.",
         en: "Close the windows, turn off the A/C and double-check for forgotten items. Just shut the door on your way out.",
