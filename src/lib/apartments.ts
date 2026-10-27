@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { isSameDayBR } from "@/lib/tz";
+import { cleanUnit } from "@/lib/unit";
 import type { Apartment } from "@/data/types";
 import {
   overlayBuildingLiveContent,
@@ -84,6 +85,7 @@ export const getGuide = cache(
     const dbContent = row.content as unknown as Apartment;
     const rawContent: Apartment = {
       ...dbContent,
+      unit: cleanUnit(dbContent.unit),
       footer: { ...dbContent.footer, img: dbContent.footer.img ?? "/media/mesa.webp" },
     };
     const overrides = (row.overrides as ApartmentOverrides | null) ?? {};
