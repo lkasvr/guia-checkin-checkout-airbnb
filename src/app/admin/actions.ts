@@ -14,6 +14,7 @@ import {
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
 import { slugify } from "@/lib/slug";
+import { cleanUnit } from "@/lib/unit";
 import type { Apartment } from "@/data/types";
 import { apartmentSource, collectEquipment, type EquipmentModel } from "@/data/equipmentLibrary";
 
@@ -187,7 +188,7 @@ export async function createApartmentDetailed(
 
   const slug = slugify(payload.slug);
   if (!slug) return { ok: false, error: "Informe o link do apartamento." };
-  const label = payload.label.trim() || `Ap ${payload.unit.toUpperCase()}`;
+  const label = payload.label.trim() || `Ap ${cleanUnit(payload.unit).toUpperCase()}`;
 
   const taken = await prisma.apartment.findUnique({ where: { slug }, select: { id: true } });
   if (taken) return slugInUse(slug);
@@ -253,7 +254,7 @@ export async function updateApartmentDetailed(
 
   const slug = slugify(payload.slug);
   if (!slug) return { ok: false, error: "Informe o link do apartamento." };
-  const label = payload.label.trim() || `Ap ${payload.unit.toUpperCase()}`;
+  const label = payload.label.trim() || `Ap ${cleanUnit(payload.unit).toUpperCase()}`;
 
   const taken = await prisma.apartment.findFirst({
     where: { slug, NOT: { id: apartmentId } },
