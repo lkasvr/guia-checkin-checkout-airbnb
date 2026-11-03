@@ -29,9 +29,9 @@ const dfPlazaRules = {
         es: "Ropa y objetos en la barandilla del balcón",
       },
       text: {
-        pt: "Não é permitido estender roupas, toalhas ou objetos na sacada, na grade ou no parapeito da varanda. Para secar roupas e toalhas, use o varal, quando disponível. O descumprimento gera multa de um salário mínimo, aplicada pelo condomínio.",
-        en: "Hanging clothes, towels or any other items on the balcony railing or ledge is not allowed. To dry clothes and towels, use the clothes rack when available. Violations carry a fine of one minimum wage, charged by the building.",
-        es: "No está permitido tender ropa, toallas ni objetos en la barandilla ni en el antepecho del balcón. Para secar ropa y toallas, usa el tendedero cuando esté disponible. El incumplimiento genera una multa de un salario mínimo, aplicada por el condominio.",
+        pt: "Não é permitido estender roupas, toalhas ou objetos na sacada, na grade ou no parapeito da varanda. Para secar roupas e toalhas, use o varal, quando disponível. O descumprimento gera multa, aplicada pelo condomínio.",
+        en: "Hanging clothes, towels or any other items on the balcony railing or ledge is not allowed. To dry clothes and towels, use the clothes rack when available. Violations carry a fine, charged by the building.",
+        es: "No está permitido tender ropa, toallas ni objetos en la barandilla ni en el antepecho del balcón. Para secar ropa y toallas, usa el tendedero cuando esté disponible. El incumplimiento genera una multa, aplicada por el condominio.",
       },
     },
     {
