@@ -20,12 +20,18 @@ const dfPlazaRules = {
   sub: { pt: "Combinações simples para a boa convivência no prédio.", en: "Simple ground rules for getting along in the building." },
   items: [
     {
+      id: "t:uso-da-varanda",
       icon: "🧺",
       hot: true,
-      title: { pt: "Uso da varanda", en: "Balcony use" },
+      title: {
+        pt: "Roupas e objetos na sacada",
+        en: "Clothes and items on the balcony railing",
+        es: "Ropa y objetos en la barandilla del balcón",
+      },
       text: {
-        pt: "É terminantemente proibido estender roupas, toalhas ou objetos na sacada. O descumprimento gera multa de um salário mínimo aplicada pelo condomínio.",
-        en: "Hanging clothes, towels or any objects on the balcony is strictly prohibited. Violations carry a fine of one minimum wage, charged by the building association.",
+        pt: "Não é permitido estender roupas, toalhas ou objetos na sacada, na grade ou no parapeito da varanda. Para secar roupas e toalhas, use o varal, quando disponível. O descumprimento gera multa de um salário mínimo, aplicada pelo condomínio.",
+        en: "Hanging clothes, towels or any other items on the balcony railing or ledge is not allowed. To dry clothes and towels, use the clothes rack when available. Violations carry a fine of one minimum wage, charged by the building.",
+        es: "No está permitido tender ropa, toallas ni objetos en la barandilla ni en el antepecho del balcón. Para secar ropa y toallas, usa el tendedero cuando esté disponible. El incumplimiento genera una multa de un salario mínimo, aplicada por el condominio.",
       },
     },
     {
