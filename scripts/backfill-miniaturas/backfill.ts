@@ -25,12 +25,13 @@ export type Outcome = {
 /** Os vídeos do Blob e, entre eles, os que ainda não têm Miniatura. Só vídeo tem Miniatura. */
 export function backlogOf(files: BlobFile[]): Backlog {
   const missing = new Set(videosMissingMiniatura(files.map((file) => file.pathname)));
+  const videos = files.flatMap((video): PendingVideo[] => {
+    const miniatura = miniaturaPathname(video.pathname);
+    return miniatura === undefined ? [] : [{ video, miniatura }];
+  });
   return {
-    found: files.filter((file) => miniaturaPathname(file.pathname) !== undefined).length,
-    pending: files.flatMap((video) => {
-      const miniatura = miniaturaPathname(video.pathname);
-      return miniatura && missing.has(video.pathname) ? [{ video, miniatura }] : [];
-    }),
+    found: videos.length,
+    pending: videos.filter(({ video }) => missing.has(video.pathname)),
   };
 }
 
