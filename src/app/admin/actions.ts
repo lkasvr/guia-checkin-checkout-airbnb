@@ -50,19 +50,19 @@ async function resolveBuilding(
   const trimmed = name.trim();
   if (!trimmed) return null;
 
-  const modelo = newBuildingTemplate();
+  const template = newBuildingTemplate();
   const building = await prisma.building.upsert({
     where: { name: trimmed },
     update: {},
     create: {
       name: trimmed,
-      rules: modelo.rules as object,
-      home: modelo.home as object,
-      amenities: modelo.amenities as object,
-      tourism: modelo.tourism as object,
-      dining: modelo.dining as object,
-      checkinTemplate: modelo.checkinTemplate as object,
-      checkoutTemplate: modelo.checkoutTemplate as object,
+      rules: template.rules as object,
+      home: template.home as object,
+      amenities: template.amenities as object,
+      tourism: template.tourism as object,
+      dining: template.dining as object,
+      checkinTemplate: template.checkinTemplate as object,
+      checkoutTemplate: template.checkoutTemplate as object,
     },
   });
   return { id: building.id, ...toBuildingTemplate(building) };
