@@ -49,7 +49,6 @@ describe("Miniatura de um endereço de vídeo", () => {
 
   it("preserva query e fragmento do endereço", () => {
     assert.equal(miniaturaUrl("https://exemplo.com/tour.mp4?v=2"), "https://exemplo.com/tour.jpg?v=2");
-    // O guia monta o `src` do vídeo com `#t=0.1` (sections.tsx).
     assert.equal(miniaturaUrl("/media/tour.mp4#t=0.1"), "/media/tour.jpg#t=0.1");
   });
 
