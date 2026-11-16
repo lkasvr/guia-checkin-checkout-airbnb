@@ -65,7 +65,7 @@ export function Hero({ ap }: { ap: Apartment }) {
           alt=""
           fill
           priority
-          sizes="100vw"
+          sizes="(max-width:640px) 100vw, 640px"
           className="object-cover object-[center_24%]"
           onLoad={(e) => {
             const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
