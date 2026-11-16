@@ -156,9 +156,10 @@ export function parseHeroFacts(facts: Apartment["hero"]["facts"]): {
 
 /**
  * Marcadores deste apartamento: os gravados ou, em conteúdo antigo, lidos dos
- * quadradinhos da capa. Saem como estão gravados, unidade inclusive; o guia
- * recebe a unidade já limpa (`guideContentFromStored`), e a conversão do modo
- * antigo (`legacyToPatches`) precisa dela como foi digitada.
+ * quadradinhos da capa. Saem como estão gravados, unidade e horário de saída
+ * inclusive; o guia os recebe já limpos (`guideContentFromStored`), e a
+ * conversão do modo antigo (`legacyToPatches`) precisa deles como foram
+ * digitados.
  */
 export function deriveVars(content: Apartment): ApartmentVars {
   if (content.vars) return content.vars;

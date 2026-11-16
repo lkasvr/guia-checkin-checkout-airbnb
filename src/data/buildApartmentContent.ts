@@ -8,6 +8,7 @@ import type {
 } from "@/data/types";
 import { starterContent } from "@/data/starter";
 import { cleanUnit } from "@/lib/unit";
+import { cleanCheckoutTime } from "@/lib/checkoutTime";
 import { withPrerequisiteCard } from "@/data/prerequisiteCard";
 import {
   checkinToContent,
@@ -28,6 +29,7 @@ import {
 } from "@/data/sectionContent";
 import type { ApartmentOverrides, BuildingTemplate } from "@/data/buildingModel";
 import { buildItemPatches, overlayWithPatches } from "@/data/patches";
+import { deriveVars } from "@/data/checkinTemplate";
 import { lookupIntercom, portariaContact, toTel, withPortaria } from "@/data/contacts";
 
 // Quem já importava daqui continua importando daqui.
@@ -104,6 +106,13 @@ export function overlayBuildingLiveContent(
  *   modelo escreve "apartamento {{UNIDADE}}"), então um apartamento gravado
  *   com "Ap 2202" aparece limpo sem ninguém salvar de novo. Na gravação, quem
  *   limpa é `buildApartmentContent` e `varsFromInput`.
+ * - O marcador {{CHECKOUT_HORA}} recebe só o horário, sem o "Até às" na
+ *   frente: o modelo escreve "O horário limite de saída é {{CHECKOUT_HORA}}",
+ *   e quem digitou "Até às 11h" gerava "é Até às 11h". O quadradinho
+ *   "Check-out" da Capa fica como foi digitado. Na gravação, quem limpa é
+ *   `varsFromInput`.
+ * - Os marcadores saem sempre preenchidos: os gravados ou, em conteúdo antigo
+ *   sem eles, os lidos da Capa (`deriveVars`), já limpos.
  * - `footer.img` não existia antes de uma versão: conteúdo gravado antes dela
  *   não tem a chave, e o guia quebraria ao mostrar a foto de despedida.
  */
@@ -112,10 +121,15 @@ export function guideContentFromStored(
   building: BuildingTemplate | null,
   overrides: ApartmentOverrides,
 ): Apartment {
+  const vars = deriveVars(stored);
   const content: Apartment = {
     ...stored,
     unit: cleanUnit(stored.unit),
-    ...(stored.vars ? { vars: { ...stored.vars, UNIDADE: cleanUnit(stored.vars.UNIDADE) } } : {}),
+    vars: {
+      ...vars,
+      UNIDADE: cleanUnit(vars.UNIDADE),
+      CHECKOUT_HORA: cleanCheckoutTime(vars.CHECKOUT_HORA),
+    },
     footer: { ...stored.footer, img: stored.footer.img ?? "/media/mesa.webp" },
   };
   // Sempre passa pelo overlay: com prédio ele traz o conteúdo ao vivo (modelo +
@@ -176,9 +190,10 @@ export type ApartmentFormInput = {
 
 /**
  * Valores que preenchem os marcadores {{TORRE}}, {{ANDAR}}… do check-in/check-out
- * do prédio. A unidade sai sem o "Ap", como o guia a mostra
- * (`guideContentFromStored`): o editor do Cartão de check-in mostra o mesmo
- * texto que o guia, e o que se grava já sai limpo.
+ * do prédio. A unidade sai sem o "Ap" e o horário de saída sem o "Até às",
+ * como o guia os mostra (`guideContentFromStored`): os editores do check-in e
+ * do check-out mostram o mesmo texto que o guia, o cálculo dos ajustes compara
+ * com esse texto, e o que se grava já sai limpo.
  */
 export const varsFromInput = (
   input: Pick<ApartmentFormInput, "tower" | "floor" | "unit" | "parking" | "checkoutTime"> &
@@ -195,7 +210,7 @@ export const varsFromInput = (
     ANDAR: input.floor,
     UNIDADE: cleanUnit(input.unit),
     VAGA: input.parking,
-    CHECKOUT_HORA: input.checkoutTime || "11h",
+    CHECKOUT_HORA: cleanCheckoutTime(input.checkoutTime),
     ...(andarL ? { ANDAR_L: andarL } : {}),
     ...(vagaL ? { VAGA_L: vagaL } : {}),
   };

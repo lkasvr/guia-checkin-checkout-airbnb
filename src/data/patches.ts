@@ -373,10 +373,11 @@ export function legacyToPatches(
     );
   }
   // Check-in/check-out sempre foram cópias do modelo (nunca ao vivo), gravadas
-  // já preenchidas com a unidade como foi digitada ("apartamento Ap 2202"). Por
-  // isso o modelo é preenchido com os marcadores gravados, sem a limpeza que o
-  // guia aplica: a diferença "Ap 2202" × "2202" viraria ajuste, e o ajuste
-  // congelaria o texto sujo no cartão.
+  // já preenchidas com a unidade e o horário de saída como foram digitados
+  // ("apartamento Ap 2202", "saída é Até às 11h"). Por isso o modelo é
+  // preenchido com os marcadores gravados, sem a limpeza que o guia aplica: a
+  // diferença "Ap 2202" × "2202" ou "Até às 11h" × "11h" viraria ajuste, e o
+  // ajuste congelaria o texto sujo no cartão ou no passo.
   const ciModel = filledCheckin(building, vars).cards;
   patches.checkin = toPatch(
     ciModel,
