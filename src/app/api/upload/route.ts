@@ -1,6 +1,7 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { blobToken } from "@/lib/blobToken";
 import { MAX_UPLOAD_BYTES, UPLOAD_TYPES } from "@/lib/mediaAccept";
 
 /**
@@ -15,12 +16,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const body = (await request.json()) as HandleUploadBody;
-
-  // O prefixo que a Vercel deu à variável ao conectar o Blob Store veio
-  // diferente do padrão esperado pelo SDK (`BLOB_READ_WRITE_TOKEN`) — aceita
-  // os dois nomes pra não depender de qual prefixo foi usado.
-  const token =
-    process.env.BLOB_VERCEL_STORAGE_READ_WRITE_TOKEN ?? process.env.BLOB_READ_WRITE_TOKEN;
+  const token = blobToken(process.env);
 
   try {
     const jsonResponse = await handleUpload({
