@@ -1,9 +1,10 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { MAX_UPLOAD_BYTES, UPLOAD_TYPES } from "@/lib/mediaAccept";
 
 /**
- * Emite o token de upload direto-pro-Blob (o arquivo nunca passa pelo corpo
+ * Emite o token de envio direto pro Blob (o arquivo nunca passa pelo corpo
  * desta rota, só o pedido de token e a confirmação) — só pro superadmin,
  * mesma checagem de `requireAdmin` em `src/app/admin/actions.ts`.
  */
@@ -27,16 +28,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       request,
       token,
       onBeforeGenerateToken: async () => ({
-        allowedContentTypes: [
-          "image/jpeg",
-          "image/png",
-          "image/webp",
-          "video/mp4",
-          "video/webm",
-          "video/quicktime",
-        ],
+        allowedContentTypes: UPLOAD_TYPES,
         addRandomSuffix: true,
-        maximumSizeInBytes: 100 * 1024 * 1024,
+        maximumSizeInBytes: MAX_UPLOAD_BYTES,
       }),
     });
     return NextResponse.json(jsonResponse);
