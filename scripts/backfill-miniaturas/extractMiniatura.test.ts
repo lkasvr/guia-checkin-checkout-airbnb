@@ -9,11 +9,20 @@ import { extractMiniatura } from "./extractMiniatura";
 
 const hasFfmpeg = spawnSync("ffmpeg", ["-version"]).status === 0;
 
-/** Gera um vídeo MPEG-4 feito de trechos de cor sólida, um depois do outro. */
-function makeVideo(path: string, size: string, segments: [color: string, seconds: number][]) {
-  const inputs = segments.flatMap(([color, seconds]) => ["-f", "lavfi", "-i", `color=c=${color}:s=${size}:r=25:d=${seconds}`]);
+/**
+ * Gera um vídeo MPEG-4 feito de trechos de cor sólida, um depois do outro, a `rate` quadros por
+ * segundo; `frames` corta o vídeo nesse número de quadros.
+ */
+function makeVideo(
+  path: string,
+  size: string,
+  segments: [color: string, seconds: number][],
+  { rate = "25", frames }: { rate?: string; frames?: number } = {},
+) {
+  const inputs = segments.flatMap(([color, seconds]) => ["-f", "lavfi", "-i", `color=c=${color}:s=${size}:r=${rate}:d=${seconds}`]);
   const concat = `${segments.map((_, i) => `[${i}]`).join("")}concat=n=${segments.length}:v=1:a=0`;
-  const result = spawnSync("ffmpeg", ["-v", "error", ...inputs, "-filter_complex", concat, "-c:v", "mpeg4", "-q:v", "2", path]);
+  const cut = frames === undefined ? [] : ["-frames:v", String(frames)];
+  const result = spawnSync("ffmpeg", ["-v", "error", ...inputs, "-filter_complex", concat, ...cut, "-c:v", "mpeg4", "-q:v", "2", path]);
   assert.equal(result.status, 0, result.stderr.toString());
 }
 
@@ -53,6 +62,8 @@ describe("Miniatura tirada do vídeo pelo ffmpeg", { skip: !hasFfmpeg && "precis
     dir = await mkdtemp(join(tmpdir(), "miniatura-"));
     makeVideo(video("tres-segundos.mp4"), "64x48", [["red", 0.7], ["blue", 0.6], ["lime", 1.7]]);
     makeVideo(video("meio-segundo.mp4"), "64x48", [["red", 0.2], ["blue", 0.3]]);
+    // 30 quadros a 29,97 fps: dura 1,001 s, mas o último quadro começa em 0,968 s.
+    makeVideo(video("trinta-quadros.mp4"), "64x48", [["red", 0.5], ["blue", 1]], { rate: "30000/1001", frames: 30 });
     makeVideo(video("paisagem.mp4"), "1920x1080", [["red", 1.2]]);
     await makeTruncatedVideo(video("truncado.mp4"));
     await writeFile(video("nao-e-video.mp4"), "isto não é um vídeo");
@@ -70,6 +81,10 @@ describe("Miniatura tirada do vídeo pelo ffmpeg", { skip: !hasFfmpeg && "precis
 
   it("num vídeo com menos de 1 s, é o primeiro quadro", async () => {
     assert.equal(await dominantColor(await extractMiniatura(video("meio-segundo.mp4"))), "vermelho");
+  });
+
+  it("num vídeo de pouco mais de 1 s sem quadro em 1 s, é o primeiro quadro", async () => {
+    assert.equal(await dominantColor(await extractMiniatura(video("trinta-quadros.mp4"))), "vermelho");
   });
 
   it("tem o lado maior limitado a 1280 px, sem distorcer", async () => {
