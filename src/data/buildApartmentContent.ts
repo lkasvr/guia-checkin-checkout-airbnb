@@ -39,7 +39,7 @@ const t = (pt: string, en?: string): L => ({ pt, en: en ?? pt });
 
 /**
  * Sobrepõe o conteúdo compartilhado do prédio no conteúdo do apartamento —
- * usado tanto no carregamento do guia público (`src/lib/apartments.ts`)
+ * usado tanto no carregamento do guia público (`guideContentFromStored`)
  * quanto na prévia do formulário, pra garantir que os dois mostrem a mesma
  * coisa.
  *
@@ -91,6 +91,31 @@ export function overlayBuildingLiveContent(
     items: withPortaria(overlaid.contacts.items, portariaContact(content, info)),
   };
   return overlaid;
+}
+
+/**
+ * O conteúdo que o guia público mostra (`src/lib/apartments.ts`), a partir do
+ * que está gravado no banco: conserta o que foi gravado antes das regras atuais
+ * e sobrepõe o prédio.
+ *
+ * - A unidade sai sem o "Ap" na frente: o guia já escreve "Apartamento …" e
+ *   "Ap …" antes dela, e quem digitou "Ap 2202" gerava "Ap Ap 2202".
+ * - `footer.img` não existia antes de uma versão: conteúdo gravado antes dela
+ *   não tem a chave, e o guia quebraria ao mostrar a foto de despedida.
+ */
+export function guideContentFromStored(
+  stored: Apartment,
+  building: BuildingTemplate | null,
+  overrides: ApartmentOverrides,
+): Apartment {
+  const content: Apartment = {
+    ...stored,
+    unit: cleanUnit(stored.unit),
+    footer: { ...stored.footer, img: stored.footer.img ?? "/media/mesa.webp" },
+  };
+  // Sempre passa pelo overlay: com prédio ele traz o conteúdo ao vivo (modelo +
+  // ajustes do apartamento); com ou sem prédio ele resolve mapa e portaria.
+  return overlayBuildingLiveContent(content, building, overrides);
 }
 
 export type ApartmentFormInput = {
