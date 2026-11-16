@@ -1,7 +1,7 @@
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -15,6 +15,27 @@ function makeVideo(path: string, size: string, segments: [color: string, seconds
   const concat = `${segments.map((_, i) => `[${i}]`).join("")}concat=n=${segments.length}:v=1:a=0`;
   const result = spawnSync("ffmpeg", ["-v", "error", ...inputs, "-filter_complex", concat, "-c:v", "mpeg4", "-q:v", "2", path]);
   assert.equal(result.status, 0, result.stderr.toString());
+}
+
+/**
+ * Um vídeo de 3 s cortado logo depois de 0,6 s: o índice, no começo do arquivo, ainda diz 3 s,
+ * mas os bytes do quadro de 1 s não existem. Imita uma leitura que falha no meio do vídeo.
+ */
+async function makeTruncatedVideo(path: string) {
+  const full = `${path}.inteiro.mp4`;
+  const encode = spawnSync("ffmpeg", [
+    "-v", "error", "-f", "lavfi", "-i", "testsrc2=s=64x48:r=25:d=3",
+    "-c:v", "mpeg4", "-q:v", "2", "-movflags", "+faststart", full,
+  ]);
+  assert.equal(encode.status, 0, encode.stderr.toString());
+  const packets = spawnSync("ffprobe", [
+    "-v", "error", "-select_streams", "v:0", "-show_entries", "packet=pts_time,pos", "-of", "csv=p=0", full,
+  ]).stdout.toString();
+  const cut = packets
+    .split("\n")
+    .map((line) => line.split(",").map(Number))
+    .find(([time]) => time >= 0.6)![1];
+  await writeFile(path, (await readFile(full)).subarray(0, cut));
 }
 
 /** A cor dominante do JPEG: o canal com a maior média. */
@@ -35,6 +56,7 @@ describe("Miniatura tirada do vídeo pelo ffmpeg", { skip: !hasFfmpeg && "precis
     makeVideo(video("paisagem.mp4"), "1920x1080", [["red", 1.2]]);
     makeVideo(video("retrato.mp4"), "1080x1920", [["red", 1.2]]);
     makeVideo(video("pequeno.mp4"), "320x240", [["red", 1.2]]);
+    await makeTruncatedVideo(video("truncado.mp4"));
     await writeFile(video("nao-e-video.mp4"), "isto não é um vídeo");
   });
 
@@ -60,6 +82,10 @@ describe("Miniatura tirada do vídeo pelo ffmpeg", { skip: !hasFfmpeg && "precis
     assert.equal(await size("paisagem.mp4"), "1280x720");
     assert.equal(await size("retrato.mp4"), "720x1280");
     assert.equal(await size("pequeno.mp4"), "320x240");
+  });
+
+  it("num vídeo longo cujo quadro de 1 s não sai, falha com o motivo em vez de usar o primeiro quadro", async () => {
+    await assert.rejects(extractMiniatura(video("truncado.mp4")), /partial file/);
   });
 
   it("falha com o motivo dado pelo ffmpeg", async () => {
