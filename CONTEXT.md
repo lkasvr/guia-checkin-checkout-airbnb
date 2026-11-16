@@ -43,6 +43,13 @@ _Avoid_: placeholder, token
 Uma mudança que um apartamento faz num item do conteúdo herdado do prédio: o item editado, removido ou acrescentado. O que não tem ajuste segue o prédio ao vivo.
 _Avoid_: patch, override
 
+**Modelo de prédio novo**:
+O conteúdo com que um prédio nasce quando o cadastro de apartamento recebe um "Edifício" que ainda não existe: as regras de convivência padrão, o check-in com o cartão "Antes de chegar" e as outras seções vazias. A tela "Novo prédio" não o usa, porque tem os próprios valores iniciais. "Modelo" aqui é conteúdo de prédio, não um modo de apartamento: não confundir com o Modo antigo.
+_Avoid_: prédio em branco, modelo padrão
+
+**Prédio da prévia**:
+O prédio com que a prévia do cadastro de apartamento monta o guia e com que o apartamento é gravado: o prédio cadastrado com o nome digitado em "Edifício", sem diferenciar maiúsculas nem espaços nas pontas; o Modelo de prédio novo, quando esse nome ainda não existe; ou nenhum, com o nome vazio.
+
 **Modo antigo**:
 Um apartamento com prédio e sem ajustes: cada seção segue o prédio inteira ou é inteira do apartamento, e o check-in e o check-out ficam guardados como cópia, com os marcadores já preenchidos. Ao ser salvo pela edição, passa ao modo atual e guarda só os ajustes.
 _Avoid_: modelo antigo, legado
