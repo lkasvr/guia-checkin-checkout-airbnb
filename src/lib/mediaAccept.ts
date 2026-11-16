@@ -2,8 +2,9 @@
  * O que um campo de mídia do painel aceita. Este módulo é o único lugar que decide, para cada
  * caso, o que o seletor de arquivo oferece, que arquivo passa no envio (pelo tipo e pelo
  * tamanho), como a recusa se explica, o que o botão diz e que orientação o campo mostra: o
- * campo e o `uploadMedia` consultam o módulo em vez de repetir a regra, e o token de envio
- * (`uploadTokenOptions`) lê daqui os tipos e o tamanho que aceita. O envio testa o arquivo de
+ * campo e o `uploadMedia` consultam o módulo em vez de repetir a regra, e o token de envio de foto
+ * e vídeo (`uploadTokenOptions`) lê daqui os tipos e o tamanho que aceita; o da Miniatura, que
+ * ninguém escolhe no seletor, tem regra própria em `uploadToken`. O envio testa o arquivo de
  * novo porque o filtro do seletor não basta: quem troca para "todos os arquivos" escolhe
  * qualquer coisa. Sem dependências, pra rodar igual no navegador, no servidor e no teste.
  */

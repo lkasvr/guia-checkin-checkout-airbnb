@@ -7,6 +7,9 @@
  */
 
 const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
+/** Extensão e tipo do arquivo da Miniatura: um JPEG com o nome do vídeo. */
+export const MINIATURA_EXT = ".jpg";
+export const MINIATURA_TYPE = "image/jpeg";
 // origem (`https://host`, opcional) · caminho · query e fragmento
 const URL_PARTS = /^((?:[a-z][a-z\d+.-]*:)?\/\/[^/?#]*)?([^?#]*)([\s\S]*)$/i;
 
@@ -30,7 +33,7 @@ export function isVideoUrl(url: string): boolean {
  */
 export function miniaturaUrl(url: string): string | undefined {
   const { origin, path, rest } = splitUrl(url);
-  return VIDEO_EXT.test(path) ? origin + path.replace(VIDEO_EXT, ".jpg") + rest : undefined;
+  return VIDEO_EXT.test(path) ? origin + path.replace(VIDEO_EXT, MINIATURA_EXT) + rest : undefined;
 }
 
 /**

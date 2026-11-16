@@ -4,6 +4,8 @@
  * backfill, em `scripts/backfill-miniaturas/extractMiniatura.ts`).
  */
 
+import { MINIATURA_TYPE } from "@/lib/miniatura";
+
 /** Lado maior da Miniatura, em px. */
 const MAX_SIDE = 1280;
 /** Qualidade do JPEG (0 a 1). */
@@ -74,8 +76,8 @@ export async function captureMiniatura(file: File): Promise<Blob> {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("o navegador não desenha em canvas");
     ctx.drawImage(video, 0, 0, width, height);
-    const jpeg = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", QUALITY));
-    if (!jpeg || jpeg.type !== "image/jpeg") throw new Error("o navegador não gerou o JPEG");
+    const jpeg = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, MINIATURA_TYPE, QUALITY));
+    if (!jpeg || jpeg.type !== MINIATURA_TYPE) throw new Error("o navegador não gerou o JPEG");
     return jpeg;
   } finally {
     video.removeAttribute("src");
