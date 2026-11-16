@@ -90,6 +90,9 @@ describe("Montagem do guia: marcador {{CHECKOUT_HORA}}", () => {
     ["Até 11h", "11h"],
     ["às 11h", "11h"],
     ["as 11h", "11h"],
+    // Só o prefixo, sem horário: não sobra nada, e fica como digitado.
+    ["Até às", "Até às"],
+    ["Até", "Até"],
     // Horário já limpo sai igual; vazio continua virando o padrão de hoje.
     ["11h", "11h"],
     ["11:30", "11:30"],
