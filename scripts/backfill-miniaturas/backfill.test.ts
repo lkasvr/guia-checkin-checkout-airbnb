@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { backlogOf, createMiniaturas, formatReport } from "./backfill";
+import { backlogOf, createMiniaturas } from "./backfill";
 
 const BLOB = "https://k3x9qz7w.public.blob.vercel-storage.com";
 const file = (pathname: string) => ({ pathname, url: `${BLOB}/${pathname}` });
@@ -75,32 +75,5 @@ describe("Lote de Miniaturas", () => {
       "[1/2] hevc-A1.MOV: falhou (Decoder (codec hevc) not found)",
       "[2/2] tour-B2.mp4 → tour-B2.jpg",
     ]);
-  });
-});
-
-describe("Relatório final", () => {
-  it("traz as quatro contagens e o motivo de cada falha", () => {
-    const text = formatReport(
-      backlogOf(["hevc-A1.MOV", "tour-B2.mp4", "fogao-C3.webm", "sofa-D4.mp4", "sala-E5.mp4", "sala-E5.jpg"].map(file)),
-      { kind: "gravar" },
-      {
-        created: ["fogao-C3.jpg", "sofa-D4.jpg"],
-        failures: [
-          { video: "hevc-A1.MOV", reason: "Decoder (codec hevc) not found" },
-          { video: "tour-B2.mp4", reason: "This blob already exists" },
-        ],
-      },
-    );
-    const lines = text.split("\n").map((line) => line.trim());
-    for (const line of [
-      "Vídeos encontrados: 5",
-      "Miniaturas criadas: 2",
-      "Pulados (já tinham Miniatura): 1",
-      "Falhas: 2",
-      "hevc-A1.MOV: Decoder (codec hevc) not found",
-      "tour-B2.mp4: This blob already exists",
-    ]) {
-      assert.ok(lines.includes(line), `falta a linha "${line}" em:\n${text}`);
-    }
   });
 });

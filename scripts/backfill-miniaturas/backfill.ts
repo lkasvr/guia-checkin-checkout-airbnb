@@ -65,35 +65,3 @@ export async function createMiniaturas(
   }
   return outcome;
 }
-
-/**
- * Para onde vão as Miniaturas, um modo por opção da linha de comando: `gravar` grava no Blob;
- * `pasta` salva numa pasta local, o que testa a extração sem gravar no Blob; `ensaio` não
- * guarda nada e só lista o que faria.
- */
-export type Destination = { kind: "gravar" } | { kind: "pasta"; dir: string } | { kind: "ensaio" };
-
-/** Os vídeos sem Miniatura, cada um com o caminho da Miniatura que vai ganhar. */
-export function formatPending({ pending }: Backlog): string {
-  const lines = pending.map(({ video, miniatura }) => `  ${video.pathname} → ${miniatura}`);
-  return [`Vídeos sem Miniatura (${pending.length}):`, ...lines].join("\n");
-}
-
-/** O relatório que o script imprime no fim: as quatro contagens e o motivo de cada falha. */
-export function formatReport(
-  backlog: Backlog,
-  destination: Destination,
-  { created, failures }: Outcome = { created: [], failures: [] },
-): string {
-  const out: string[] = [];
-  if (destination.kind === "ensaio") out.push("Ensaio: nada foi gravado.", formatPending(backlog), "");
-  if (destination.kind === "pasta") out.push(`Miniaturas salvas em ${destination.dir}: nada foi gravado no Blob.`, "");
-  out.push(
-    `Vídeos encontrados: ${backlog.found}`,
-    `Miniaturas criadas: ${created.length}`,
-    `Pulados (já tinham Miniatura): ${backlog.found - backlog.pending.length}`,
-    `Falhas: ${failures.length}`,
-    ...failures.map(({ video, reason }) => `  ${video}: ${reason}`),
-  );
-  return out.join("\n");
-}

@@ -23,8 +23,9 @@ import { parseArgs } from "node:util";
 import { list, put } from "@vercel/blob";
 import { config as loadEnv } from "dotenv";
 import { blobToken } from "../../src/lib/blobToken";
-import { backlogOf, createMiniaturas, formatPending, formatReport, type BlobFile, type Destination } from "./backfill";
+import { backlogOf, createMiniaturas, type Backlog, type BlobFile, type Save } from "./backfill";
 import { extractMiniatura } from "./extractMiniatura";
+import { formatPending, formatReport } from "./report";
 
 const USAGE = `Uso (da raiz do projeto):
   npm run backfill:miniaturas -- --ensaio         só lista o que faria, sem gravar nada
@@ -36,8 +37,14 @@ function exitWithError(message: string): never {
   process.exit(1);
 }
 
-/** O destino escolhido na linha de comando: exatamente um dos três modos. */
-function destinationFromArgs(): Destination {
+/**
+ * Um modo da linha de comando: `ensaio` só lista o que faria; `pasta` salva as Miniaturas numa
+ * pasta local, o que testa a extração sem gravar no Blob; `gravar` grava no Blob de produção.
+ */
+type Mode = { kind: "ensaio" } | { kind: "pasta"; dir: string } | { kind: "gravar" };
+
+/** O modo escolhido na linha de comando: exatamente um dos três. */
+function modeFromArgs(): Mode {
   let values;
   try {
     ({ values } = parseArgs({
@@ -107,17 +114,19 @@ function ask(question: string): Promise<string> {
   });
 }
 
-/** Onde cada modo guarda o JPEG. */
-function saverFor(destination: Destination, token: string) {
-  if (destination.kind === "pasta") {
-    return async (miniaturaPath: string, jpeg: Buffer) => {
-      const target = resolve(destination.dir, miniaturaPath);
-      if (!target.startsWith(destination.dir + sep)) throw new Error(`caminho fora da pasta: ${miniaturaPath}`);
-      await mkdir(dirname(target), { recursive: true });
-      await writeFile(target, jpeg);
-    };
-  }
-  return async (miniaturaPath: string, jpeg: Buffer) => {
+/** Salva cada Miniatura numa pasta local, no caminho que ela teria no Blob. */
+function saveToFolder(dir: string): Save {
+  return async (miniaturaPath, jpeg) => {
+    const target = resolve(dir, miniaturaPath);
+    if (!target.startsWith(dir + sep)) throw new Error(`caminho fora da pasta: ${miniaturaPath}`);
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, jpeg);
+  };
+}
+
+/** Grava cada Miniatura no Blob, sem sufixo aleatório e sem sobrescrever arquivo existente. */
+function saveToBlob(token: string): Save {
+  return async (miniaturaPath, jpeg) => {
     await put(miniaturaPath, jpeg, {
       access: "public",
       token,
@@ -128,22 +137,13 @@ function saverFor(destination: Destination, token: string) {
   };
 }
 
-async function main() {
-  const destination = destinationFromArgs();
-  const token = requireBlobToken();
-  if (destination.kind !== "ensaio") requireFfmpeg();
-
-  console.log("Listando o Blob...");
-  const files = await listBlob(token);
-  console.log(`${files.length} arquivos no Blob.`);
-
-  const backlog = backlogOf(files);
-  if (destination.kind === "ensaio") {
-    console.log(`\n${formatReport(backlog, destination)}`);
-    return;
-  }
-
-  if (destination.kind === "gravar" && backlog.pending.length > 0) {
+/**
+ * Cria as Miniaturas que faltam e imprime o relatório. Com `confirm`, mostra antes a lista do que
+ * vai ser criado e só segue se a resposta for `s`; `header` abre o relatório.
+ */
+async function createAndReport(backlog: Backlog, { save, confirm = false, header }: { save: Save; confirm?: boolean; header?: string }) {
+  requireFfmpeg();
+  if (confirm && backlog.pending.length > 0) {
     console.log(`\n${formatPending(backlog)}\n`);
     const answer = await ask(`Gravar ${backlog.pending.length} Miniaturas no Blob de PRODUÇÃO? Digite "s" para seguir: `);
     if (answer.toLowerCase() !== "s") exitWithError("\nCancelado: nada foi gravado.");
@@ -152,11 +152,34 @@ async function main() {
   console.log("");
   const outcome = await createMiniaturas(backlog.pending, {
     extract: extractMiniatura,
-    save: saverFor(destination, token),
+    save,
     onProgress: (line) => console.log(line),
   });
-  console.log(`\n${formatReport(backlog, destination, outcome)}`);
+  console.log(`\n${[header, formatReport(backlog, outcome)].filter(Boolean).join("\n\n")}`);
   if (outcome.failures.length > 0) process.exitCode = 1;
+}
+
+async function main() {
+  const mode = modeFromArgs();
+  const token = requireBlobToken();
+
+  console.log("Listando o Blob...");
+  const files = await listBlob(token);
+  console.log(`${files.length} arquivos no Blob.`);
+  const backlog = backlogOf(files);
+
+  switch (mode.kind) {
+    case "ensaio":
+      console.log(`\nEnsaio: nada foi gravado.\n${formatPending(backlog)}\n\n${formatReport(backlog)}`);
+      return;
+    case "pasta":
+      return createAndReport(backlog, {
+        save: saveToFolder(mode.dir),
+        header: `Miniaturas salvas em ${mode.dir}: nada foi gravado no Blob.`,
+      });
+    case "gravar":
+      return createAndReport(backlog, { save: saveToBlob(token), confirm: true });
+  }
 }
 
 main().catch((error) => exitWithError(`O script parou: ${error instanceof Error ? error.message : error}`));
