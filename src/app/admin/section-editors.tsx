@@ -76,6 +76,9 @@ function ReuseVideoSelect({
   );
 }
 
+/** Aviso do vídeo que subiu sem Miniatura: no guia, ele aparece sem imagem até o play. */
+const MINIATURA_WARNING = "Não deu para gerar a miniatura deste vídeo.";
+
 /** Miniatura + botão de upload — usado em todo campo de foto/vídeo dos editores abaixo. */
 export function MediaField({
   value,
@@ -99,15 +102,22 @@ export function MediaField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [miniaturaMissing, setMiniaturaMissing] = useState(false);
   const video = value && isVideoUrl(value);
   const field = MEDIA_ACCEPT[accepts];
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
     setError(null);
+    setMiniaturaMissing(false);
     setPending(true);
     try {
-      onChange(await uploadMedia(file, accepts));
+      const { url, miniaturaError } = await uploadMedia(file, accepts);
+      onChange(url);
+      if (miniaturaError) {
+        console.warn("Miniatura não gravada:", miniaturaError);
+        setMiniaturaMissing(true);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha no upload.");
     } finally {
@@ -143,11 +153,16 @@ export function MediaField({
         </label>
         {field.hint && <p className="mt-1 text-[12px] text-soft">{field.hint}</p>}
         {error && <p className="mt-1 text-[12px] text-terra">{error}</p>}
+        {miniaturaMissing && <p className="mt-1 text-[12px] text-terra">{MINIATURA_WARNING}</p>}
         {reuseOptions && reuseOptions.length > 0 && (
           <div>
             <ReuseVideoSelect
               options={reuseOptions}
-              onPick={(v) => (onReuse ? onReuse(v) : onChange(v.src))}
+              onPick={(v) => {
+                setMiniaturaMissing(false);
+                if (onReuse) onReuse(v);
+                else onChange(v.src);
+              }}
             />
           </div>
         )}

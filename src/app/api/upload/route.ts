@@ -2,12 +2,13 @@ import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { blobToken } from "@/lib/blobToken";
-import { MAX_UPLOAD_BYTES, UPLOAD_TYPES } from "@/lib/mediaAccept";
+import { uploadTokenOptions } from "@/lib/uploadToken";
 
 /**
  * Emite o token de envio direto pro Blob (o arquivo nunca passa pelo corpo
  * desta rota, só o pedido de token e a confirmação) — só pro superadmin,
- * mesma checagem de `requireAdmin` em `src/app/admin/actions.ts`.
+ * mesma checagem de `requireAdmin` em `src/app/admin/actions.ts`. O que o
+ * token deixa gravar, inclusive a Miniatura de um vídeo, está em `uploadTokenOptions`.
  */
 export async function POST(request: Request): Promise<NextResponse> {
   const session = await auth();
@@ -23,11 +24,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       body,
       request,
       token,
-      onBeforeGenerateToken: async () => ({
-        allowedContentTypes: UPLOAD_TYPES,
-        addRandomSuffix: true,
-        maximumSizeInBytes: MAX_UPLOAD_BYTES,
-      }),
+      onBeforeGenerateToken: async (pathname, clientPayload) => uploadTokenOptions(pathname, clientPayload),
     });
     return NextResponse.json(jsonResponse);
   } catch (error) {

@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { isVideoUrl, miniaturaToShow, miniaturaUrl, videosMissingMiniatura } from "@/lib/miniatura";
+import { isVideoUrl, miniaturaPathname, miniaturaToShow, miniaturaUrl, videosMissingMiniatura } from "@/lib/miniatura";
 
 describe("O que conta como vídeo", () => {
   it("decide pela extensão, sem diferenciar maiúsculas", () => {
@@ -71,6 +71,27 @@ describe("Miniatura de um endereço de vídeo", () => {
   });
 });
 
+describe("Miniatura de um caminho no Blob", () => {
+  it("troca a extensão do vídeo por .jpg e preserva o sufixo aleatório", () => {
+    assert.equal(miniaturaPathname("tour-Xy8QzR2b.mp4"), "tour-Xy8QzR2b.jpg");
+    assert.equal(miniaturaPathname("IMG_0042-Xy8QzR2b.MOV"), "IMG_0042-Xy8QzR2b.jpg");
+  });
+
+  it("lê # e ? como parte do nome do arquivo, não como fragmento ou query", () => {
+    assert.equal(miniaturaPathname("tour#1-Xy8QzR2b.mp4"), "tour#1-Xy8QzR2b.jpg");
+    assert.equal(miniaturaPathname("sala?2-Xy8QzR2b.webm"), "sala?2-Xy8QzR2b.jpg");
+    assert.equal(miniaturaPathname("casa/fogao #3 100%-Xy8QzR2b.mov"), "casa/fogao #3 100%-Xy8QzR2b.jpg");
+  });
+
+  it("um nome com a extensão de vídeo só depois do # não é vídeo", () => {
+    assert.equal(miniaturaPathname("tour.mp4#foto-Xy8QzR2b.jpg"), undefined);
+  });
+
+  it("foto não tem Miniatura", () => {
+    assert.equal(miniaturaPathname("sala-Xy8QzR2b.jpg"), undefined);
+  });
+});
+
 describe("Miniatura a exibir", () => {
   it("a miniatura explícita vence a deduzida", () => {
     assert.equal(
@@ -103,6 +124,13 @@ describe("Vídeos sem Miniatura", () => {
   it("só conta o .jpg minúsculo, que é o que a convenção grava", () => {
     assert.deepEqual(videosMissingMiniatura(["IMG_0042-Xy8QzR2b.MOV", "IMG_0042-Xy8QzR2b.JPG"]), [
       "IMG_0042-Xy8QzR2b.MOV",
+    ]);
+  });
+
+  it("lê # e ? do caminho como parte do nome do arquivo", () => {
+    assert.deepEqual(videosMissingMiniatura(["tour#1-A1.mp4", "sala?2-B2.MOV", "casa/fogao #3-C3.webm", "casa/fogao #3-C3.jpg"]), [
+      "tour#1-A1.mp4",
+      "sala?2-B2.MOV",
     ]);
   });
 
