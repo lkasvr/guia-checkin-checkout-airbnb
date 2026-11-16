@@ -1,4 +1,4 @@
-import { isVideoUrl, miniaturaUrl, videosMissingMiniatura } from "../../src/lib/miniatura";
+import { miniaturaPathname, videosMissingMiniatura } from "../../src/lib/miniatura";
 
 /** Um arquivo listado no Blob: o caminho dentro do armazenamento e o endereço público. */
 export type BlobFile = { pathname: string; url: string };
@@ -22,24 +22,14 @@ export type Outcome = {
   failures: { video: string; reason: string }[];
 };
 
-/**
- * O caminho no Blob é nome de arquivo, não endereço: pode ter `#` ou `?`, que as funções da
- * Miniatura leriam como começo do fragmento ou da query (`tour#1.mp4` viraria `tour`). Por isso
- * elas recebem o caminho codificado, trecho a trecho entre as barras, e a Miniatura volta
- * decodificada para o caminho de verdade.
- */
-const toUrlPath = (pathname: string) => pathname.split("/").map(encodeURIComponent).join("/");
-const fromUrlPath = (path: string) => path.split("/").map(decodeURIComponent).join("/");
-
-/** Os vídeos do Blob e, entre eles, os que ainda não têm Miniatura. */
+/** Os vídeos do Blob e, entre eles, os que ainda não têm Miniatura. Só vídeo tem Miniatura. */
 export function backlogOf(files: BlobFile[]): Backlog {
-  const paths = files.map((file) => toUrlPath(file.pathname));
-  const missing = new Set(videosMissingMiniatura(paths));
+  const missing = new Set(videosMissingMiniatura(files.map((file) => file.pathname)));
   return {
-    found: paths.filter(isVideoUrl).length,
-    pending: files.flatMap((video, i) => {
-      const miniatura = miniaturaUrl(paths[i]);
-      return miniatura && missing.has(paths[i]) ? [{ video, miniatura: fromUrlPath(miniatura) }] : [];
+    found: files.filter((file) => miniaturaPathname(file.pathname) !== undefined).length,
+    pending: files.flatMap((video) => {
+      const miniatura = miniaturaPathname(video.pathname);
+      return miniatura && missing.has(video.pathname) ? [{ video, miniatura }] : [];
     }),
   };
 }

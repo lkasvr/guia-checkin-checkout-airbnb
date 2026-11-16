@@ -66,7 +66,7 @@ export function miniaturaToShow(videoUrl: string, explicitMiniatura?: string): s
 export function videosMissingMiniatura(paths: string[]): string[] {
   const existing = new Set(paths);
   return paths.filter((path) => {
-    const miniatura = miniaturaUrl(path);
+    const miniatura = miniaturaPathname(path);
     return miniatura !== undefined && !existing.has(miniatura);
   });
 }

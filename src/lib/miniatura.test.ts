@@ -127,6 +127,13 @@ describe("Vídeos sem Miniatura", () => {
     ]);
   });
 
+  it("lê # e ? do caminho como parte do nome do arquivo", () => {
+    assert.deepEqual(videosMissingMiniatura(["tour#1-A1.mp4", "sala?2-B2.MOV", "casa/fogao #3-C3.webm", "casa/fogao #3-C3.jpg"]), [
+      "tour#1-A1.mp4",
+      "sala?2-B2.MOV",
+    ]);
+  });
+
   it("numa lista mista, ignora fotos soltas e trata igual toda extensão de vídeo", () => {
     const paths = [
       "tour-A1b2C3.mp4",
