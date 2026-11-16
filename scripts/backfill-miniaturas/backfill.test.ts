@@ -84,7 +84,7 @@ describe("Relatório final", () => {
           { video: "tour-B2.mp4", reason: "This blob already exists" },
         ],
       },
-      { kind: "blob" },
+      { kind: "gravar" },
     );
     for (const line of [
       "Vídeos encontrados: 5",

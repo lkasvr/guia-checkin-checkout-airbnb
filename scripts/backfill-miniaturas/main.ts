@@ -1,29 +1,29 @@
 /**
  * Backfill das Miniaturas: cria a Miniatura de cada vídeo que já estava no Blob antes de o
  * painel passar a gerá-la no envio (spec #33, ADR 0001). Uso único, roda localmente, da raiz
- * do projeto:
+ * do projeto; os modos estão em `USAGE`, logo abaixo, que o script imprime quando chamado sem
+ * modo.
  *
- *   npm run backfill:miniaturas -- --ensaio         só lista o que faria, sem gravar nada
- *   npm run backfill:miniaturas -- --pasta=<pasta>  tira as Miniaturas e salva na pasta local
- *   npm run backfill:miniaturas -- --gravar         grava as Miniaturas no Blob de PRODUÇÃO
- *
- * O `--gravar` escreve no armazenamento de produção: só com o OK explícito do dono do projeto.
+ * O `--gravar` escreve no armazenamento de produção: só com o OK explícito do dono do projeto,
+ * e ainda pede, antes de gravar, que se digite `s` diante da lista do que vai ser criado.
  * Repetir o script não sobrescreve nada, porque pula os vídeos que já têm Miniatura e o Blob
  * recusa gravar por cima de um arquivo existente.
  *
  * Precisa da chave do Blob no `.env.development.local` (os mesmos nomes de variável que a rota
- * de envio aceita) e, menos no ensaio, do `ffmpeg` instalado. O ffmpeg precisa decodificar HEVC
- * (H.265), o formato de parte dos tours: o pacote `ffmpeg-free` do Fedora não decodifica, e
- * esses vídeos falham com "no decoder found for: hevc"; o `ffmpeg` do RPM Fusion decodifica.
+ * de envio aceita) e, menos no ensaio, do `ffmpeg` e do `ffprobe` instalados. O ffmpeg precisa
+ * decodificar HEVC (H.265), o formato de parte dos tours: o pacote `ffmpeg-free` do Fedora não
+ * decodifica, e esses vídeos falham com "no decoder found for: hevc"; o `ffmpeg` do RPM Fusion
+ * decodifica.
  */
 import { spawnSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
+import { createInterface } from "node:readline";
 import { parseArgs } from "node:util";
 import { list, put } from "@vercel/blob";
 import { config as loadEnv } from "dotenv";
 import { BLOB_TOKEN_VARS, blobToken } from "../../src/lib/blobToken";
-import { backfill, formatReport, type BlobFile, type Destination } from "./backfill";
+import { backfill, formatPending, formatReport, type BlobFile, type Destination } from "./backfill";
 import { extractMiniatura } from "./extractMiniatura";
 
 const USAGE = `Uso (da raiz do projeto):
@@ -31,7 +31,7 @@ const USAGE = `Uso (da raiz do projeto):
   npm run backfill:miniaturas -- --pasta=<pasta>  tira as Miniaturas e salva na pasta local
   npm run backfill:miniaturas -- --gravar         grava as Miniaturas no Blob de PRODUÇÃO`;
 
-function stop(message: string): never {
+function exitWithError(message: string): never {
   console.error(message);
   process.exit(1);
 }
@@ -44,16 +44,16 @@ function destinationFromArgs(): Destination {
       options: { ensaio: { type: "boolean" }, pasta: { type: "string" }, gravar: { type: "boolean" } },
     }));
   } catch (error) {
-    stop(`${error instanceof Error ? error.message : error}\n\n${USAGE}`);
+    exitWithError(`${(error as Error).message}\n\n${USAGE}`);
   }
   const chosen = [values.ensaio, values.pasta !== undefined, values.gravar].filter(Boolean).length;
-  if (chosen !== 1) stop(`Escolha um modo, e só um.\n\n${USAGE}`);
+  if (chosen !== 1) exitWithError(`Escolha um modo, e só um.\n\n${USAGE}`);
   if (values.ensaio) return { kind: "ensaio" };
   if (values.pasta !== undefined) {
-    if (!values.pasta) stop(`Diga a pasta: --pasta=<pasta>.\n\n${USAGE}`);
+    if (!values.pasta) exitWithError(`Diga a pasta: --pasta=<pasta>.\n\n${USAGE}`);
     return { kind: "pasta", dir: resolve(values.pasta) };
   }
-  return { kind: "blob" };
+  return { kind: "gravar" };
 }
 
 /**
@@ -68,7 +68,7 @@ function requireBlobToken(): string {
   const token = blobToken({ ...fromFiles, ...process.env });
   if (!token) {
     const [preferred, fallback] = BLOB_TOKEN_VARS;
-    stop(
+    exitWithError(
       `Falta a chave do Blob: defina ${preferred} (ou ${fallback}) no .env.development.local da raiz do projeto.\n` +
         "Copie o valor do painel da Vercel → Storage → o armazenamento → aba .env.local.",
     );
@@ -77,8 +77,10 @@ function requireBlobToken(): string {
 }
 
 function requireFfmpeg() {
-  if (spawnSync("ffmpeg", ["-version"]).status !== 0) {
-    stop("Falta o ffmpeg: instale o ffmpeg nesta máquina e rode de novo.");
+  for (const tool of ["ffmpeg", "ffprobe"]) {
+    if (spawnSync(tool, ["-version"]).status !== 0) {
+      exitWithError(`Falta o ${tool}: instale o ffmpeg (que traz o ffprobe) nesta máquina e rode de novo.`);
+    }
   }
 }
 
@@ -92,6 +94,19 @@ async function listBlob(token: string): Promise<BlobFile[]> {
     cursor = page.hasMore ? page.cursor : undefined;
   } while (cursor);
   return files;
+}
+
+/** Uma linha da entrada padrão; entrada vazia ou fechada vale como resposta vazia. */
+function ask(question: string): Promise<string> {
+  process.stdout.write(question);
+  return new Promise((answer) => {
+    const input = createInterface({ input: process.stdin });
+    input.once("line", (line) => {
+      answer(line.trim());
+      input.close();
+    });
+    input.once("close", () => answer(""));
+  });
 }
 
 /** Onde cada modo guarda o JPEG. */
@@ -122,19 +137,28 @@ async function main() {
 
   console.log("Listando o Blob...");
   const files = await listBlob(token);
-  console.log(`${files.length} arquivos no Blob.\n`);
+  console.log(`${files.length} arquivos no Blob.`);
 
-  const report =
-    destination.kind === "ensaio"
-      ? await backfill(files, { dryRun: true })
-      : await backfill(files, {
-          extract: extractMiniatura,
-          save: saverFor(destination, token),
-          onProgress: (line) => console.log(line),
-        });
+  const plan = await backfill(files, { dryRun: true });
+  if (destination.kind === "ensaio") {
+    console.log(`\n${formatReport(plan, destination)}`);
+    return;
+  }
 
+  if (destination.kind === "gravar" && plan.pending.length > 0) {
+    console.log(`\n${formatPending(plan)}\n`);
+    const answer = await ask(`Gravar ${plan.pending.length} Miniaturas no Blob de PRODUÇÃO? Digite "s" para seguir: `);
+    if (answer.toLowerCase() !== "s") exitWithError("\nCancelado: nada foi gravado.");
+  }
+
+  console.log("");
+  const report = await backfill(files, {
+    extract: extractMiniatura,
+    save: saverFor(destination, token),
+    onProgress: (line) => console.log(line),
+  });
   console.log(`\n${formatReport(report, destination)}`);
   if (report.failures.length > 0) process.exitCode = 1;
 }
 
-main().catch((error) => stop(`O script parou: ${error instanceof Error ? error.message : error}`));
+main().catch((error) => exitWithError(`O script parou: ${error instanceof Error ? error.message : error}`));

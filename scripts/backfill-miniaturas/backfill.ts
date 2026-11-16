@@ -56,18 +56,23 @@ export async function backfill(files: BlobFile[], options: Options): Promise<Rep
 }
 
 /**
- * Para onde vão as Miniaturas: para o Blob; para uma pasta local, o que testa a extração sem
- * gravar no Blob; ou para lugar nenhum, no ensaio, que só lista o que faria.
+ * Para onde vão as Miniaturas, um modo por opção da linha de comando: `gravar` grava no Blob;
+ * `pasta` salva numa pasta local, o que testa a extração sem gravar no Blob; `ensaio` não
+ * guarda nada e só lista o que faria.
  */
-export type Destination = { kind: "blob" } | { kind: "pasta"; dir: string } | { kind: "ensaio" };
+export type Destination = { kind: "gravar" } | { kind: "pasta"; dir: string } | { kind: "ensaio" };
+
+/** Os vídeos sem Miniatura, cada um com o caminho da Miniatura que vai ganhar. */
+export function formatPending(report: Report): string {
+  const lines = report.pending.map((video) => `  ${video} → ${miniaturaUrl(video)}`);
+  return [`Vídeos sem Miniatura (${report.pending.length}):`, ...lines].join("\n");
+}
 
 /** O relatório que o script imprime no fim: as quatro contagens e o motivo de cada falha. */
 export function formatReport(report: Report, destination: Destination): string {
   const out: string[] = [];
   if (destination.kind === "ensaio") {
-    out.push("Ensaio: nada foi gravado.", `Vídeos sem Miniatura (${report.pending.length}):`);
-    for (const video of report.pending) out.push(`  ${video} → ${miniaturaUrl(video)}`);
-    out.push("");
+    out.push("Ensaio: nada foi gravado.", formatPending(report), "");
   }
   if (destination.kind === "pasta") {
     out.push(`Miniaturas salvas em ${destination.dir}: nada foi gravado no Blob.`, "");
