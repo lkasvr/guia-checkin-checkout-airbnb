@@ -2,13 +2,20 @@
 
 import Image from "next/image";
 import { motion, type Variants } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Apartment } from "@/data/types";
 import { useLang } from "@/lib/i18n";
 import { CARD, LangToggle, Reveal, Rich, SectionHead, Steps, useCopy } from "@/components/ui";
 import { Media } from "@/components/media";
 import { isVideoUrl } from "@/lib/miniatura";
 import { mapsEmbedUrl, mapsSearchUrl, normalizeMapsUrl, whatsappDigits } from "@/lib/maps";
+
+/**
+ * `sizes` da foto que ocupa a largura toda da coluna do guia: a coluna tem no máximo 640px (o
+ * `max-w-[640px]` do <main> em Guide.tsx), então o navegador pede a foto nessa largura, e não na
+ * da janela.
+ */
+const FULL_COLUMN_SIZES = "(max-width:640px) 100vw, 640px";
 
 /* ----------------------------- HERO ----------------------------- */
 
@@ -25,33 +32,6 @@ const heroItem: Variants = {
   },
 };
 
-/**
- * Proporção (largura/altura) da foto ou vídeo da capa, lida depois de carregar.
- * A capa usa isso pra acompanhar o formato de cada foto em vez de uma altura
- * fixa — foto de celular (em pé) não perde metade do topo e do rodapé.
- */
-function useCoverRatio(boxRef: React.RefObject<HTMLElement | null>, src: string) {
-  const [ratio, setRatio] = useState<number | null>(null);
-  useEffect(() => {
-    const el = boxRef.current?.querySelector<HTMLImageElement | HTMLVideoElement>("img, video");
-    if (!el) return;
-    const read = () => {
-      const w = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth;
-      const h = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight;
-      if (w && h) setRatio(w / h);
-    };
-    const event = el instanceof HTMLVideoElement ? "loadedmetadata" : "load";
-    el.addEventListener(event, read);
-    // Imagem que já carregou antes da hidratação não dispara "load" de novo.
-    const frame = requestAnimationFrame(read);
-    return () => {
-      el.removeEventListener(event, read);
-      cancelAnimationFrame(frame);
-    };
-  }, [boxRef, src]);
-  return ratio;
-}
-
 /** Ícone de cada quadradinho da capa, pela legenda (em português) que o formulário gera. */
 const FACT_ICON: Record<string, string> = {
   Garagem: "🚗",
@@ -62,8 +42,11 @@ const FACT_ICON: Record<string, string> = {
 
 export function Hero({ ap }: { ap: Apartment }) {
   const { t } = useLang();
-  const coverRef = useRef<HTMLDivElement>(null);
-  const ratio = useCoverRatio(coverRef, ap.hero.img);
+  // Proporção (largura/altura) da foto da capa, lida quando ela carrega: a capa acompanha o
+  // formato de cada foto em vez de uma altura fixa — foto de celular (em pé) não perde metade do
+  // topo e do rodapé. O `onLoad` do next/image também dispara para a foto que carregou antes da
+  // hidratação.
+  const [ratio, setRatio] = useState<number | null>(null);
   // Grade de duas colunas: quadradinhos curtos lado a lado (o último, se sobrar sozinho, ocupa a
   // linha toda); texto comprido (ex.: "Vaga rotativa (sinalizada na cor verde)") ganha a linha
   // inteira, no fim.
@@ -76,7 +59,6 @@ export function Hero({ ap }: { ap: Apartment }) {
   return (
     <header className="relative -mx-[18px] px-6 pb-2.5 text-left">
       <div
-        ref={coverRef}
         className="relative -mx-6"
         // Altura = largura ÷ proporção da foto, entre 300px e ~450px (520px em tela larga).
         // Sem `aspect-ratio`: junto de min-height ele alarga a caixa além da tela.
@@ -84,13 +66,18 @@ export function Hero({ ap }: { ap: Apartment }) {
           height: `clamp(300px, calc(min(100vw, 640px) / ${ratio ?? 0.85}), min(520px, 120vw))`,
         }}
       >
-        <Media
+        {/* A Capa é sempre foto: nada toca sozinho no topo do guia. */}
+        <Image
           src={ap.hero.img}
+          alt=""
           fill
           priority
-          sizes="100vw"
+          sizes={FULL_COLUMN_SIZES}
           className="object-cover object-[center_24%]"
-          autoPlayLoop
+          onLoad={(e) => {
+            const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+            if (w && h) setRatio(w / h);
+          }}
         />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(59_45_36/0.22)_0%,rgb(250_245_238/0)_28%,rgb(250_245_238/0)_56%,rgb(250_245_238/0.32)_76%,rgb(250_245_238/0.8)_91%,var(--color-bg)_100%)]" />
       </div>
@@ -278,7 +265,7 @@ export function CheckIn({ ap }: { ap: Apartment }) {
                 <Media
                   src={card.banner}
                   fill
-                  sizes="(max-width:640px) 100vw, 640px"
+                  sizes={FULL_COLUMN_SIZES}
                   className="object-cover object-[center_35%]"
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(59_45_36/0)_40%,rgb(255_253_249/0.9)_96%)]" />
@@ -725,7 +712,7 @@ export function Home({ ap }: { ap: Apartment }) {
                         alt={t(acc.title)}
                         width={800}
                         height={600}
-                        sizes="(max-width:640px) 100vw, 640px"
+                        sizes={FULL_COLUMN_SIZES}
                         className="mx-auto block h-auto max-h-[min(340px,48svh)] w-full object-contain"
                       />
                     </Zoomable>
@@ -783,7 +770,7 @@ export function Amenities({ ap }: { ap: Apartment }) {
                 <Media
                   src={a.img}
                   fill
-                  sizes={a.wide ? "(max-width:640px) 100vw, 640px" : "(max-width:640px) 50vw, 320px"}
+                  sizes={a.wide ? FULL_COLUMN_SIZES : "(max-width:640px) 50vw, 320px"}
                   className="object-cover"
                 />
               </div>
@@ -839,7 +826,7 @@ function PlaceCards({
                 <Media
                   src={p.img}
                   fill
-                  sizes="(max-width:640px) 100vw, 640px"
+                  sizes={FULL_COLUMN_SIZES}
                   className="object-cover"
                 />
               </div>
@@ -921,7 +908,7 @@ export function Footer({ ap }: { ap: Apartment }) {
             <Media
               src={ap.footer.img}
               fill
-              sizes="(max-width:640px) 100vw, 640px"
+              sizes={FULL_COLUMN_SIZES}
               className="object-cover"
             />
           </div>
