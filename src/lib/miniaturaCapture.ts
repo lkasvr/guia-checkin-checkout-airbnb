@@ -18,7 +18,7 @@ const TIMEOUT_MS = 15_000;
 /**
  * Em que segundo tirar o quadro: `MINIATURA_FRAME_S`; num vídeo mais curto que isso, o primeiro
  * quadro. Sem duração conhecida (WebM sem duração no cabeçalho), tenta `MINIATURA_FRAME_S`: o
- * navegador para no fim de um vídeo mais curto.
+ * navegador para no fim de um vídeo mais curto, e `captureMiniatura` volta ao primeiro quadro.
  */
 export function frameTime(duration: number): number {
   return Number.isFinite(duration) && duration < MINIATURA_FRAME_S ? 0 : MINIATURA_FRAME_S;
@@ -58,6 +58,13 @@ function waitFor(video: HTMLVideoElement, event: "loadeddata" | "seeked", deadli
   });
 }
 
+/** Salta o vídeo para `time` e espera o quadro, dentro do mesmo prazo. */
+async function seekTo(video: HTMLVideoElement, time: number, deadline: number): Promise<void> {
+  const seeked = waitFor(video, "seeked", deadline);
+  video.currentTime = time;
+  await seeked;
+}
+
 /**
  * O JPEG da Miniatura do vídeo. Falha quando o navegador não decodifica a imagem do vídeo (um
  * `.mov` em HEVC no Chrome, por exemplo): quem chama sobe o vídeo assim mesmo.
@@ -75,9 +82,10 @@ export async function captureMiniatura(file: File): Promise<Blob> {
     await loaded;
     const time = frameTime(video.duration);
     if (time > 0) {
-      const seeked = waitFor(video, "seeked", deadline);
-      video.currentTime = time;
-      await seeked;
+      await seekTo(video, time, deadline);
+      // Sem duração no cabeçalho, ela só aparece depois do salto: um vídeo mais curto parou no
+      // último quadro, e a Miniatura dele é o primeiro.
+      if (video.duration < MINIATURA_FRAME_S) await seekTo(video, 0, deadline);
     }
     // Vídeo cuja imagem o navegador não decodifica pode abrir só com o som, sem largura.
     if (!video.videoWidth || !video.videoHeight) throw new Error("o navegador não decodifica a imagem deste vídeo");
