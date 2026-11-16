@@ -23,7 +23,7 @@ import { parseArgs } from "node:util";
 import { list, put } from "@vercel/blob";
 import { config as loadEnv } from "dotenv";
 import { blobToken } from "../../src/lib/blobToken";
-import { createMiniaturas, formatPending, formatReport, plan, type BlobFile, type Destination } from "./backfill";
+import { backlogOf, createMiniaturas, formatPending, formatReport, type BlobFile, type Destination } from "./backfill";
 import { extractMiniatura } from "./extractMiniatura";
 
 const USAGE = `Uso (da raiz do projeto):
@@ -137,7 +137,7 @@ async function main() {
   const files = await listBlob(token);
   console.log(`${files.length} arquivos no Blob.`);
 
-  const backlog = plan(files);
+  const backlog = backlogOf(files);
   if (destination.kind === "ensaio") {
     console.log(`\n${formatReport(backlog, destination)}`);
     return;

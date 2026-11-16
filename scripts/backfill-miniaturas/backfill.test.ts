@@ -1,22 +1,30 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { createMiniaturas, formatReport, plan } from "./backfill";
+import { backlogOf, createMiniaturas, formatReport } from "./backfill";
 
 const BLOB = "https://k3x9qz7w.public.blob.vercel-storage.com";
 const file = (pathname: string) => ({ pathname, url: `${BLOB}/${pathname}` });
+/** Um vídeo pendente e o caminho da Miniatura dele. */
+const pending = (pathname: string, miniatura: string) => ({ video: file(pathname), miniatura });
 const quiet = () => {};
 
 describe("Lote de Miniaturas", () => {
   it("conta os vídeos encontrados e separa os que ainda não têm Miniatura", () => {
-    const { found, pending } = plan([file("tour-A1.mp4"), file("tour-A1.jpg"), file("fogao-B2.webm"), file("sala-C3.jpg")]);
-    assert.equal(found, 2);
-    assert.deepEqual(pending, [file("fogao-B2.webm")]);
+    const backlog = backlogOf([file("tour-A1.mp4"), file("tour-A1.jpg"), file("fogao-B2.webm"), file("sala-C3.jpg")]);
+    assert.equal(backlog.found, 2);
+    assert.deepEqual(backlog.pending, [pending("fogao-B2.webm", "fogao-B2.jpg")]);
   });
 
-  it("grava, no caminho do vídeo com .jpg, o quadro tirado do endereço público do vídeo", async () => {
+  it("dá a cada vídeo pendente o caminho do vídeo com .jpg", () => {
+    const { pending: videos } = backlogOf([file("tour-A1.mp4"), file("IMG_0042-D4.MOV")]);
+    assert.deepEqual(videos, [pending("tour-A1.mp4", "tour-A1.jpg"), pending("IMG_0042-D4.MOV", "IMG_0042-D4.jpg")]);
+  });
+
+  it("grava, no caminho da Miniatura, o quadro tirado do endereço público do vídeo", async () => {
     const extracted: string[] = [];
     const saved: [string, string][] = [];
-    const { created } = await createMiniaturas([file("tour-A1.mp4"), file("IMG_0042-D4.MOV")], {
+    const videos = [pending("tour-A1.mp4", "tour-A1.jpg"), pending("IMG_0042-D4.MOV", "IMG_0042-D4.jpg")];
+    const { created } = await createMiniaturas(videos, {
       extract: async (url) => {
         extracted.push(url);
         return Buffer.from(`quadro de ${url}`);
@@ -35,7 +43,8 @@ describe("Lote de Miniaturas", () => {
   });
 
   it("uma falha não interrompe os demais vídeos e guarda o motivo", async () => {
-    const { created, failures } = await createMiniaturas([file("hevc-A1.MOV"), file("tour-B2.mp4"), file("fogao-C3.webm")], {
+    const videos = [pending("hevc-A1.MOV", "hevc-A1.jpg"), pending("tour-B2.mp4", "tour-B2.jpg"), pending("fogao-C3.webm", "fogao-C3.jpg")];
+    const { created, failures } = await createMiniaturas(videos, {
       extract: async (url) => {
         if (url.endsWith("hevc-A1.MOV")) throw new Error("Decoder (codec hevc) not found");
         return Buffer.from("jpeg");
@@ -54,7 +63,7 @@ describe("Lote de Miniaturas", () => {
 
   it("avisa o andamento, vídeo a vídeo", async () => {
     const progress: string[] = [];
-    await createMiniaturas([file("hevc-A1.MOV"), file("tour-B2.mp4")], {
+    await createMiniaturas([pending("hevc-A1.MOV", "hevc-A1.jpg"), pending("tour-B2.mp4", "tour-B2.jpg")], {
       extract: async (url) => {
         if (url.endsWith(".MOV")) throw new Error("Decoder (codec hevc) not found");
         return Buffer.from("jpeg");
@@ -72,7 +81,7 @@ describe("Lote de Miniaturas", () => {
 describe("Relatório final", () => {
   it("traz as quatro contagens e o motivo de cada falha", () => {
     const text = formatReport(
-      { found: 5, pending: ["hevc-A1.MOV", "tour-B2.mp4", "fogao-C3.webm", "sofa-D4.mp4"].map(file) },
+      backlogOf(["hevc-A1.MOV", "tour-B2.mp4", "fogao-C3.webm", "sofa-D4.mp4", "sala-E5.mp4", "sala-E5.jpg"].map(file)),
       { kind: "gravar" },
       {
         created: ["fogao-C3.jpg", "sofa-D4.jpg"],

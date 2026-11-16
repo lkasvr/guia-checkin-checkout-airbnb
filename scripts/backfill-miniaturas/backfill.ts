@@ -3,12 +3,15 @@ import { isVideoUrl, miniaturaUrl, videosMissingMiniatura } from "../../src/lib/
 /** Um arquivo listado no Blob: o caminho dentro do armazenamento e o endereço público. */
 export type BlobFile = { pathname: string; url: string };
 
-/** O que o lote encontrou no Blob. */
-export type Plan = {
+/** Um vídeo sem Miniatura e o caminho da Miniatura que ele vai ganhar. */
+export type PendingVideo = { video: BlobFile; miniatura: string };
+
+/** O que falta fazer no Blob. */
+export type Backlog = {
   /** Quantos vídeos há no Blob. */
   found: number;
   /** Os vídeos sem Miniatura: o que o lote cria. */
-  pending: BlobFile[];
+  pending: PendingVideo[];
 };
 
 /** O que o lote fez. */
@@ -20,14 +23,19 @@ export type Outcome = {
 };
 
 /** Os vídeos do Blob e, entre eles, os que ainda não têm Miniatura. */
-export function plan(files: BlobFile[]): Plan {
-  const byPath = new Map(files.map((file) => [file.pathname, file]));
-  const paths = [...byPath.keys()];
+export function backlogOf(files: BlobFile[]): Backlog {
+  const missing = new Set(videosMissingMiniatura(files.map((file) => file.pathname)));
   return {
-    found: paths.filter(isVideoUrl).length,
-    pending: videosMissingMiniatura(paths).map((path) => byPath.get(path)!),
+    found: files.filter((file) => isVideoUrl(file.pathname)).length,
+    pending: files.flatMap((video) => {
+      const miniatura = miniaturaUrl(video.pathname);
+      return miniatura && missing.has(video.pathname) ? [{ video, miniatura }] : [];
+    }),
   };
 }
+
+/** Guarda o JPEG de uma Miniatura no caminho dela. */
+export type Save = (miniaturaPath: string, jpeg: Buffer) => Promise<void>;
 
 /**
  * Cria a Miniatura de cada vídeo, um de cada vez; a falha de um não derruba o lote.
@@ -35,16 +43,15 @@ export function plan(files: BlobFile[]): Plan {
  * e `onProgress` recebe uma linha por vídeo, para acompanhar um lote demorado.
  */
 export async function createMiniaturas(
-  pending: BlobFile[],
+  pending: PendingVideo[],
   { extract, save, onProgress }: {
     extract: (videoUrl: string) => Promise<Buffer>;
-    save: (miniaturaPath: string, jpeg: Buffer) => Promise<void>;
+    save: Save;
     onProgress: (line: string) => void;
   },
 ): Promise<Outcome> {
   const outcome: Outcome = { created: [], failures: [] };
-  for (const [i, video] of pending.entries()) {
-    const miniatura = miniaturaUrl(video.pathname)!;
+  for (const [i, { video, miniatura }] of pending.entries()) {
     const step = `[${i + 1}/${pending.length}] ${video.pathname}`;
     try {
       await save(miniatura, await extract(video.url));
@@ -67,24 +74,24 @@ export async function createMiniaturas(
 export type Destination = { kind: "gravar" } | { kind: "pasta"; dir: string } | { kind: "ensaio" };
 
 /** Os vídeos sem Miniatura, cada um com o caminho da Miniatura que vai ganhar. */
-export function formatPending({ pending }: Plan): string {
-  const lines = pending.map(({ pathname }) => `  ${pathname} → ${miniaturaUrl(pathname)}`);
+export function formatPending({ pending }: Backlog): string {
+  const lines = pending.map(({ video, miniatura }) => `  ${video.pathname} → ${miniatura}`);
   return [`Vídeos sem Miniatura (${pending.length}):`, ...lines].join("\n");
 }
 
 /** O relatório que o script imprime no fim: as quatro contagens e o motivo de cada falha. */
 export function formatReport(
-  plan: Plan,
+  backlog: Backlog,
   destination: Destination,
   { created, failures }: Outcome = { created: [], failures: [] },
 ): string {
   const out: string[] = [];
-  if (destination.kind === "ensaio") out.push("Ensaio: nada foi gravado.", formatPending(plan), "");
+  if (destination.kind === "ensaio") out.push("Ensaio: nada foi gravado.", formatPending(backlog), "");
   if (destination.kind === "pasta") out.push(`Miniaturas salvas em ${destination.dir}: nada foi gravado no Blob.`, "");
   out.push(
-    `Vídeos encontrados: ${plan.found}`,
+    `Vídeos encontrados: ${backlog.found}`,
     `Miniaturas criadas: ${created.length}`,
-    `Pulados (já tinham Miniatura): ${plan.found - plan.pending.length}`,
+    `Pulados (já tinham Miniatura): ${backlog.found - backlog.pending.length}`,
     `Falhas: ${failures.length}`,
     ...failures.map(({ video, reason }) => `  ${video}: ${reason}`),
   );
