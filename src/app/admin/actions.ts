@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { newBuildingTemplate, starterContent } from "@/data/starter";
+import { findBuilding } from "@/data/buildingModel";
 import {
   buildApartmentContent,
   buildOverrides,
@@ -38,16 +39,26 @@ export async function requireAdmin(): Promise<void> {
 }
 
 /**
- * Acha o prédio pelo nome (sem espaço nas pontas) ou cria um novo com o modelo
- * de prédio novo (`newBuildingTemplate`), o mesmo que a prévia do cadastro
- * mostra. Nome vazio = apartamento sem prédio (`null`), comportamento igual ao
- * de antes desse recurso existir.
+ * Acha o prédio pelo nome, sem diferenciar maiúsculas nem espaços nas pontas,
+ * ou cria um novo com o modelo de prédio novo (`newBuildingTemplate`). É a
+ * mesma escolha da prévia do cadastro (`apartmentPreview`), para o guia gravado
+ * ser o que a prévia mostrou. Nome vazio = apartamento sem prédio (`null`),
+ * comportamento igual ao de antes desse recurso existir.
  */
 async function resolveBuilding(
   name: string,
 ): Promise<({ id: string } & BuildingTemplate) | null> {
   const trimmed = name.trim();
   if (!trimmed) return null;
+
+  // A busca da prévia, na ordem da lista que o cadastro recebe: com dois nomes
+  // que só diferem em maiúsculas, os dois escolhem o mesmo prédio.
+  const known = findBuilding(
+    trimmed,
+    await prisma.building.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+  );
+  const row = known && (await prisma.building.findUnique({ where: { id: known.id } }));
+  if (row) return { id: row.id, ...toBuildingTemplate(row) };
 
   const template = newBuildingTemplate();
   const building = await prisma.building.upsert({
