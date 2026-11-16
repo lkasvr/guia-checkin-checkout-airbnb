@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { isVideoUrl } from "@/lib/upload";
+import { isVideoUrl } from "@/lib/miniatura";
 
 /**
  * Foto ou vídeo no mesmo campo — decide sozinho pela extensão do arquivo

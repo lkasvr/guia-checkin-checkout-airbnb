@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import { getGuide } from "@/lib/apartments";
+import { isVideoUrl } from "@/lib/miniatura";
 
 /**
  * Imagem de pré-visualização do link (WhatsApp, Instagram, iMessage): a capa
@@ -10,10 +11,9 @@ import { getGuide } from "@/lib/apartments";
 
 const W = 1200;
 const H = 630;
-const VIDEO_EXT = /\.(mp4|webm|mov)(\?|$)/i;
 
 async function loadCover(src: string, base: string): Promise<Buffer | null> {
-  if (VIDEO_EXT.test(src)) return null;
+  if (isVideoUrl(src)) return null;
   try {
     const res = await fetch(new URL(src, base), { signal: AbortSignal.timeout(8000) });
     if (!res.ok) return null;

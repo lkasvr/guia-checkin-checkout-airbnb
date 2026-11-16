@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { isVideoUrl, uploadMedia } from "@/lib/upload";
+import { uploadMedia } from "@/lib/upload";
+import { isVideoUrl } from "@/lib/miniatura";
 import type { ReusableVideo } from "@/app/admin/actions";
 import { equipmentKey, type EquipmentModel } from "@/data/equipmentLibrary";
 import {
