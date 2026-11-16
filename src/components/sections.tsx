@@ -7,7 +7,7 @@ import type { Apartment } from "@/data/types";
 import { useLang } from "@/lib/i18n";
 import { CARD, LangToggle, Reveal, Rich, SectionHead, Steps, useCopy } from "@/components/ui";
 import { Media } from "@/components/media";
-import { isVideoUrl } from "@/lib/upload";
+import { isVideoUrl } from "@/lib/miniatura";
 import { mapsEmbedUrl, mapsSearchUrl, normalizeMapsUrl, whatsappDigits } from "@/lib/maps";
 
 /* ----------------------------- HERO ----------------------------- */

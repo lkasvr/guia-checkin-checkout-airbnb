@@ -1,6 +1,20 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { miniaturaToShow, miniaturaUrl, videosMissingMiniatura } from "@/lib/miniatura";
+import { isVideoUrl, miniaturaToShow, miniaturaUrl, videosMissingMiniatura } from "@/lib/miniatura";
+
+describe("O que conta como vídeo", () => {
+  it("decide pela extensão, sem diferenciar maiúsculas", () => {
+    assert.equal(isVideoUrl("https://exemplo.com/tour.mp4"), true);
+    assert.equal(isVideoUrl("/media/IMG_0042.MOV"), true);
+    assert.equal(isVideoUrl("https://exemplo.com/sala.jpg"), false);
+  });
+
+  it("olha só o caminho, não a query nem o fragmento", () => {
+    assert.equal(isVideoUrl("https://exemplo.com/tour.webm?v=2"), true);
+    assert.equal(isVideoUrl("/media/tour.mp4#t=0.1"), true);
+    assert.equal(isVideoUrl("https://exemplo.com/sala.jpg?de=tour.mp4"), false);
+  });
+});
 
 describe("Miniatura de um endereço de vídeo", () => {
   it("troca .mp4 por .jpg", () => {

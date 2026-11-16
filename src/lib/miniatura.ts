@@ -1,8 +1,9 @@
 /**
  * Miniatura: a imagem parada no lugar do vídeo até o play. Mora no mesmo
- * endereço do vídeo, trocando a extensão por `.jpg` (ADR 0001), e este é o
- * único lugar que conhece essa convenção: guia, painel e backfill passam por
- * aqui. Sem dependências, pra rodar igual no navegador, no servidor e no script.
+ * endereço do vídeo, trocando a extensão por `.jpg` (ADR 0001). Este módulo é o
+ * único lugar que conhece essa convenção e o que conta como vídeo: o guia, o
+ * envio e o backfill devem usar estas funções em vez de repetir a regra. Sem
+ * dependências, pra rodar igual no navegador, no servidor e no script.
  */
 
 const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
@@ -11,6 +12,11 @@ const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
 function splitPath(url: string): [path: string, rest: string] {
   const cut = url.search(/[?#]/);
   return cut === -1 ? [url, ""] : [url.slice(0, cut), url.slice(cut)];
+}
+
+/** A extensão do arquivo decide a renderização: não existe um campo de "tipo" separado. */
+export function isVideoUrl(url: string): boolean {
+  return VIDEO_EXT.test(splitPath(url)[0]);
 }
 
 /**

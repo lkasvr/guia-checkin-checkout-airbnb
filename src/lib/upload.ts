@@ -32,10 +32,3 @@ export async function uploadMedia(original: File): Promise<string> {
   });
   return blob.url;
 }
-
-const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
-
-/** Extensão do arquivo decide a renderização — não existe um campo de "tipo" separado. */
-export function isVideoUrl(url: string): boolean {
-  return VIDEO_EXT.test(url);
-}
