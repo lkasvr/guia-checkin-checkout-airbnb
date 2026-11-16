@@ -1,13 +1,11 @@
 /**
  * Tira a Miniatura de um vídeo no navegador de quem envia, a partir do arquivo local, antes de
- * ele subir: o quadro de 1 s, em JPEG, com o lado maior limitado a 1280 px (os mesmos valores do
- * backfill, em `scripts/backfill-miniaturas/extractMiniatura.ts`).
+ * ele subir: o quadro de 1 s, em JPEG, com o lado maior limitado a `MINIATURA_MAX_SIDE` (o mesmo
+ * quadro e o mesmo teto do backfill, em `scripts/backfill-miniaturas/extractMiniatura.ts`).
  */
 
-import { MINIATURA_TYPE } from "@/lib/miniatura";
+import { MINIATURA_MAX_SIDE, MINIATURA_TYPE } from "@/lib/miniatura";
 
-/** Lado maior da Miniatura, em px. */
-const MAX_SIDE = 1280;
 /** Qualidade do JPEG (0 a 1). */
 const QUALITY = 0.8;
 /**
@@ -25,9 +23,9 @@ export function frameTime(duration: number): number {
   return Number.isFinite(duration) && duration < 1 ? 0 : 1;
 }
 
-/** Tamanho da Miniatura: o do vídeo, reduzido até o lado maior caber em 1280 px. */
+/** Tamanho da Miniatura: o do vídeo, reduzido até o lado maior caber em `MINIATURA_MAX_SIDE`. */
 export function frameSize(width: number, height: number): { width: number; height: number } {
-  const scale = Math.min(1, MAX_SIDE / Math.max(width, height));
+  const scale = Math.min(1, MINIATURA_MAX_SIDE / Math.max(width, height));
   return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
 }
 

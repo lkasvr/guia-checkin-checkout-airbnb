@@ -1,7 +1,6 @@
 import { execFile } from "node:child_process";
+import { MINIATURA_MAX_SIDE } from "../../src/lib/miniatura";
 
-/** Lado maior da Miniatura, em px: o teto que a spec #33 sugere para a Miniatura gerada no painel. */
-const MAX_SIDE = 1280;
 /** Qualidade do JPEG na escala do ffmpeg (2 é a melhor, 31 a pior). */
 const JPEG_QSCALE = 5;
 /**
@@ -78,7 +77,7 @@ function runFfmpeg(video: string, { seekToOneSecond }: { seekToOneSecond: boolea
     "-i", video,
     "-frames:v", "1",
     "-an", "-sn", "-dn",
-    "-vf", `scale='min(${MAX_SIDE},iw)':'min(${MAX_SIDE},ih)':force_original_aspect_ratio=decrease`,
+    "-vf", `scale='min(${MINIATURA_MAX_SIDE},iw)':'min(${MINIATURA_MAX_SIDE},ih)':force_original_aspect_ratio=decrease`,
     // A faixa de cor do JPEG, dita de antemão: sem ela, quando não chega quadro nenhum, o
     // codificador ainda tenta abrir e enche o erro de mensagens que escondem a causa real.
     "-pix_fmt", "yuvj420p",

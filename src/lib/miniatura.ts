@@ -10,6 +10,8 @@ const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
 /** Extensão e tipo do arquivo da Miniatura: um JPEG com o nome do vídeo. */
 export const MINIATURA_EXT = ".jpg";
 export const MINIATURA_TYPE = "image/jpeg";
+/** Lado maior da Miniatura, em px: o envio e o backfill reduzem o quadro até caber nele. */
+export const MINIATURA_MAX_SIDE = 1280;
 // origem (`https://host`, opcional) · caminho · query e fragmento
 const URL_PARTS = /^((?:[a-z][a-z\d+.-]*:)?\/\/[^/?#]*)?([^?#]*)([\s\S]*)$/i;
 
