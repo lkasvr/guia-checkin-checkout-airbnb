@@ -17,6 +17,7 @@ import {
 } from "@/data/sectionContent";
 import type { Apartment, ItemPatches } from "@/data/types";
 import { isEmptyPatch } from "@/data/itemMerge";
+import { findBuilding } from "@/data/buildingModel";
 import { editorValues, legacyToPatches } from "@/data/patches";
 import { contactInfoFromContent, lookupIntercom, reusableContacts } from "@/data/contacts";
 
@@ -78,9 +79,7 @@ export default async function EditApartmentPage({
   const hostName = apt.host.name ?? apt.host.email;
   const overrides = (apt.overrides as ApartmentOverrides | null) ?? {};
 
-  const buildingRow = buildings.find(
-    (b) => b.name.trim().toLowerCase() === content.building.trim().toLowerCase(),
-  );
+  const buildingRow = findBuilding(content.building, buildings);
   const building = buildingRow ? toBuildingTemplate(buildingRow) : null;
 
   // Torre/andar/vaga/hóspedes/horários só voltam quando os facts batem com o

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { isSameDayBR } from "@/lib/tz";
 import type { Apartment } from "@/data/types";
 import {
-  overlayBuildingLiveContent,
+  guideContentFromStored,
   toBuildingTemplate,
   type ApartmentOverrides,
 } from "@/data/buildApartmentContent";
@@ -78,21 +78,10 @@ export const getGuide = cache(
     if (!row) return null;
 
     const s = row.stays[0];
-    // `footer.img` não existia antes desta versão — content já gravado no
-    // banco não tem a chave; sem isso o guia quebraria ao tentar mostrar a
-    // foto de despedida.
-    const dbContent = row.content as unknown as Apartment;
-    const rawContent: Apartment = {
-      ...dbContent,
-      footer: { ...dbContent.footer, img: dbContent.footer.img ?? "/media/mesa.webp" },
-    };
-    const overrides = (row.overrides as ApartmentOverrides | null) ?? {};
-    // Sempre passa pelo overlay: com prédio ele traz o conteúdo ao vivo (modelo +
-    // ajustes do apartamento); com ou sem prédio ele resolve mapa e portaria.
-    const content = overlayBuildingLiveContent(
-      rawContent,
+    const content = guideContentFromStored(
+      row.content as unknown as Apartment,
       row.building ? toBuildingTemplate(row.building) : null,
-      overrides,
+      (row.overrides as ApartmentOverrides | null) ?? {},
     );
     return {
       id: row.id,

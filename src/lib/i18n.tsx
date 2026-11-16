@@ -40,6 +40,7 @@ export function LanguageProvider({
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- o servidor não lê localStorage: ler no efeito, depois da hidratação, é o padrão que a referência do useEffect recomenda
       if (saved === "pt" || saved === "en" || saved === "es") setLangState(saved);
     } catch {
       /* localStorage indisponível */

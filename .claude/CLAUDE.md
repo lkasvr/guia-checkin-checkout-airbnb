@@ -38,3 +38,17 @@ Ao dividir um arquivo modificado por duas mudanças não relacionadas entre comm
 ## Quando algo dá errado
 
 Se um erro aparecer em produção, a primeira opção não é corrigir, é **voltar pra última versão que funcionava** (rollback), se a plataforma de hospedagem usada nesse projeto tiver esse recurso disponível. Isso resolve o problema pros usuários na hora, sem pressa, e dá tempo de corrigir com calma depois. Só depois do rollback, ou se não houver essa opção, a correção segue o fluxo normal: branch nova, testar local, aprovar, então subir. Corrigir com calma seguindo o processo é mais seguro do que corrigir rápido sem ele.
+
+## Agent skills
+
+### Issue tracker
+
+Issues e specs ficam no GitHub Issues de `lkasvr/guia-checkin-checkout-airbnb`, operadas pela CLI `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Os cinco papéis canônicos com os nomes padrão: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix` (esta já existe no repo). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: um `CONTEXT.md` e `docs/adr/` na raiz, criados sob demanda pela skill `domain-modeling`. See `docs/agents/domain.md`.

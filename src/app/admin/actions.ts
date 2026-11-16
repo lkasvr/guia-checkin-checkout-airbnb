@@ -4,16 +4,17 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { starterContent } from "@/data/starter";
+import { newBuildingTemplate, starterContent } from "@/data/starter";
+import { findBuilding } from "@/data/buildingModel";
 import {
-  buildApartmentContent,
-  buildOverrides,
+  buildApartmentRecord,
   toBuildingTemplate,
   type ApartmentFormInput,
   type ApartmentOverrides,
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
 import { slugify } from "@/lib/slug";
+import { cleanUnit } from "@/lib/unit";
 import type { Apartment } from "@/data/types";
 import { apartmentSource, collectEquipment, type EquipmentModel } from "@/data/equipmentLibrary";
 
@@ -37,8 +38,10 @@ export async function requireAdmin(): Promise<void> {
 }
 
 /**
- * Acha o prédio pelo nome (sem diferenciar maiúsculas/espaço nas pontas) ou
- * cria um novo em branco. Nome vazio = apartamento sem prédio (`null`),
+ * Acha o prédio pelo nome, sem diferenciar maiúsculas nem espaços nas pontas,
+ * ou cria um novo com o modelo de prédio novo (`newBuildingTemplate`). É a
+ * mesma escolha da prévia do cadastro (`apartmentPreview`), para o guia gravado
+ * ser o que a prévia mostrou. Nome vazio = apartamento sem prédio (`null`),
  * comportamento igual ao de antes desse recurso existir.
  */
 async function resolveBuilding(
@@ -47,19 +50,28 @@ async function resolveBuilding(
   const trimmed = name.trim();
   if (!trimmed) return null;
 
-  const blank = starterContent("_", "_", "_");
+  // A busca da prévia, na ordem da lista que o cadastro recebe: com dois nomes
+  // que só diferem em maiúsculas, os dois escolhem o mesmo prédio.
+  const known = findBuilding(
+    trimmed,
+    await prisma.building.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+  );
+  const row = known && (await prisma.building.findUnique({ where: { id: known.id } }));
+  if (row) return { id: row.id, ...toBuildingTemplate(row) };
+
+  const template = newBuildingTemplate();
   const building = await prisma.building.upsert({
     where: { name: trimmed },
     update: {},
     create: {
       name: trimmed,
-      rules: blank.rules as object,
-      home: blank.home as object,
-      amenities: blank.amenities as object,
-      tourism: blank.tourism as object,
-      dining: blank.dining as object,
-      checkinTemplate: blank.checkin as object,
-      checkoutTemplate: blank.checkout as object,
+      rules: template.rules as object,
+      home: template.home as object,
+      amenities: template.amenities as object,
+      tourism: template.tourism as object,
+      dining: template.dining as object,
+      checkinTemplate: template.checkinTemplate as object,
+      checkoutTemplate: template.checkoutTemplate as object,
     },
   });
   return { id: building.id, ...toBuildingTemplate(building) };
@@ -187,13 +199,18 @@ export async function createApartmentDetailed(
 
   const slug = slugify(payload.slug);
   if (!slug) return { ok: false, error: "Informe o link do apartamento." };
-  const label = payload.label.trim() || `Ap ${payload.unit.toUpperCase()}`;
+  const label = payload.label.trim() || `Ap ${cleanUnit(payload.unit).toUpperCase()}`;
 
   const taken = await prisma.apartment.findUnique({ where: { slug }, select: { id: true } });
   if (taken) return slugInUse(slug);
 
   const building = await resolveBuilding(payload.building);
-  const content = buildApartmentContent(payload, host.name ?? host.email, undefined, building);
+  const { content, overrides } = buildApartmentRecord(
+    payload,
+    host.name ?? host.email,
+    undefined,
+    building,
+  );
 
   try {
     await prisma.apartment.create({
@@ -205,7 +222,7 @@ export async function createApartmentDetailed(
         content: content as object,
         internalNotes: payload.internalNotes || null,
         buildingId: building?.id ?? null,
-        overrides: buildOverrides(payload, building) as object,
+        overrides: overrides as object,
       },
     });
   } catch (e) {
@@ -253,7 +270,7 @@ export async function updateApartmentDetailed(
 
   const slug = slugify(payload.slug);
   if (!slug) return { ok: false, error: "Informe o link do apartamento." };
-  const label = payload.label.trim() || `Ap ${payload.unit.toUpperCase()}`;
+  const label = payload.label.trim() || `Ap ${cleanUnit(payload.unit).toUpperCase()}`;
 
   const taken = await prisma.apartment.findFirst({
     where: { slug, NOT: { id: apartmentId } },
@@ -262,7 +279,7 @@ export async function updateApartmentDetailed(
   if (taken) return slugInUse(slug);
 
   const building = await resolveBuilding(payload.building);
-  const content = buildApartmentContent(
+  const { content, overrides } = buildApartmentRecord(
     payload,
     apt.host.name ?? apt.host.email,
     apt.content as unknown as Apartment,
@@ -278,7 +295,7 @@ export async function updateApartmentDetailed(
         content: content as object,
         internalNotes: payload.internalNotes || null,
         buildingId: building?.id ?? null,
-        overrides: buildOverrides(payload, building) as object,
+        overrides: overrides as object,
       },
     });
   } catch (e) {

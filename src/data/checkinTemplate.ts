@@ -1,8 +1,10 @@
-import type { Alert, Apartment, ApartmentVars, CheckinCard, L, Step } from "@/data/types";
+import type { Alert, Apartment, ApartmentVars, CheckinCard, CleanVars, L, Step } from "@/data/types";
 import type { BuildingTemplate } from "@/data/buildingModel";
 import { withPrerequisiteCard } from "@/data/prerequisiteCard";
 import { translateEs } from "@/data/es";
 import { portariaRefToken } from "@/data/towers";
+import { cleanCheckoutTime } from "@/lib/checkoutTime";
+import { cleanUnit } from "@/lib/unit";
 
 type DoorCode = Apartment["checkin"]["doorCode"];
 /** Valor de um marcador: igual em qualquer idioma (torre, vaga…) ou um por idioma (frases prontas). */
@@ -60,6 +62,8 @@ export const varsToTokens = (v: ApartmentVars): Record<string, TokenValue> => ({
   ANDAR: withTranslation(v.ANDAR, v.ANDAR_L),
   UNIDADE: v.UNIDADE,
   VAGA: withTranslation(v.VAGA, v.VAGA_L),
+  // Único lugar do padrão de quem deixou "Check-out (horário)" vazio: vale para o
+  // guia, os editores e a conversão do modo antigo, que não passa por `cleanVars`.
   CHECKOUT_HORA: v.CHECKOUT_HORA || "11h",
 });
 
@@ -154,7 +158,12 @@ export function parseHeroFacts(facts: Apartment["hero"]["facts"]): {
   };
 }
 
-/** Marcadores deste apartamento: os gravados ou, em conteúdo antigo, lidos dos quadradinhos da capa. */
+/**
+ * Marcadores deste apartamento: os gravados ou, em conteúdo antigo, lidos dos
+ * quadradinhos da capa. Saem como estão gravados; o guia os recebe limpos por
+ * `cleanVars`, e a conversão do modo antigo (`legacyToPatches`) precisa deles
+ * como foram digitados.
+ */
 export function deriveVars(content: Apartment): ApartmentVars {
   if (content.vars) return content.vars;
   const f = parseHeroFacts(content.hero.facts);
@@ -165,4 +174,21 @@ export function deriveVars(content: Apartment): ApartmentVars {
     VAGA: f.parking,
     CHECKOUT_HORA: f.checkoutTime,
   };
+}
+
+/**
+ * Marcadores como o guia os mostra: a unidade sem o "Ap" (`cleanUnit`) e o
+ * horário de saída sem o "Até às" (`cleanCheckoutTime`). Vale nos dois pontos
+ * de onde os marcadores saem para o guia, o conteúdo gravado
+ * (`guideContentFromStored`) e o formulário (`varsFromInput`), para que o
+ * guia, os editores e o cálculo dos ajustes concordem. Nunca na conversão do
+ * modo antigo (ver `deriveVars`). Devolve `CleanVars`, o tipo que os editores e
+ * o cálculo dos ajustes exigem.
+ */
+export function cleanVars(vars: ApartmentVars): CleanVars {
+  return {
+    ...vars,
+    UNIDADE: cleanUnit(vars.UNIDADE),
+    CHECKOUT_HORA: cleanCheckoutTime(vars.CHECKOUT_HORA),
+  } as CleanVars;
 }
