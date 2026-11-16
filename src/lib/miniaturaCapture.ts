@@ -10,8 +10,8 @@ import { MINIATURA_FRAME_S, MINIATURA_MAX_SIDE, MINIATURA_TYPE } from "@/lib/min
 /** Qualidade do JPEG (0 a 1). */
 const QUALITY = 0.8;
 /**
- * Quanto a captura inteira pode esperar o navegador (abrir o vídeo e saltar até o quadro) antes
- * de desistir: o envio do vídeo só começa depois dela.
+ * Quanto a captura inteira pode esperar o navegador (abrir o vídeo, saltar até o quadro e gerar o
+ * JPEG) antes de desistir: o envio do vídeo só começa depois dela.
  */
 const TIMEOUT_MS = 15_000;
 
@@ -30,24 +30,31 @@ export function frameSize(width: number, height: number): { width: number; heigh
   return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
 }
 
-/** Espera o evento do vídeo; rejeita se o navegador der erro ou não responder até `deadline`. */
-function waitFor(video: HTMLVideoElement, event: "loadeddata" | "seeked", deadline: number): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const onEvent = () => done();
-    const onError = () => done(new Error(`o navegador não abriu o vídeo (${video.error?.message || `erro ${video.error?.code}`})`));
-    const timer = setTimeout(
-      () => done(new Error(`o navegador não respondeu em ${TIMEOUT_MS / 1000} s`)),
+/** O resultado de `promise`, ou a recusa se o navegador não responder até `deadline`. */
+function beforeDeadline<T>(promise: Promise<T>, deadline: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`o navegador não respondeu em ${TIMEOUT_MS / 1000} s`)),
       Math.max(0, deadline - Date.now()),
     );
-    function done(error?: Error) {
-      clearTimeout(timer);
-      video.removeEventListener(event, onEvent);
-      video.removeEventListener("error", onError);
-      if (error) reject(error);
-      else resolve();
-    }
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+/** Espera o evento do vídeo; rejeita se o navegador der erro ou não responder até `deadline`. */
+function waitFor(video: HTMLVideoElement, event: "loadeddata" | "seeked", deadline: number): Promise<void> {
+  let onEvent = () => {};
+  let onError = () => {};
+  const happened = new Promise<void>((resolve, reject) => {
+    onEvent = () => resolve();
+    onError = () => reject(new Error(`o navegador não abriu o vídeo (${video.error?.message || `erro ${video.error?.code}`})`));
     video.addEventListener(event, onEvent);
     video.addEventListener("error", onError);
+  });
+  return beforeDeadline(happened, deadline).finally(() => {
+    video.removeEventListener(event, onEvent);
+    video.removeEventListener("error", onError);
   });
 }
 
@@ -82,7 +89,10 @@ export async function captureMiniatura(file: File): Promise<Blob> {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("o navegador não desenha em canvas");
     ctx.drawImage(video, 0, 0, width, height);
-    const jpeg = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, MINIATURA_TYPE, QUALITY));
+    const jpeg = await beforeDeadline(
+      new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, MINIATURA_TYPE, QUALITY)),
+      deadline,
+    );
     if (!jpeg || jpeg.type !== MINIATURA_TYPE) throw new Error("o navegador não gerou o JPEG");
     return jpeg;
   } finally {
