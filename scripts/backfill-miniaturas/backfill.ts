@@ -1,7 +1,5 @@
+import type { BlobFile } from "../../src/lib/blobFile";
 import { miniaturaPathname, videosMissingMiniatura } from "../../src/lib/miniatura";
-
-/** Um arquivo listado no Blob: o caminho dentro do armazenamento e o endereço público. */
-export type BlobFile = { pathname: string; url: string };
 
 /** Um vídeo sem Miniatura e o caminho da Miniatura que ele vai ganhar. */
 export type PendingVideo = { video: BlobFile; miniatura: string };

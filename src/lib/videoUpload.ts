@@ -1,3 +1,4 @@
+import type { BlobFile } from "@/lib/blobFile";
 import { miniaturaPathname } from "@/lib/miniatura";
 
 /**
@@ -11,7 +12,7 @@ export type VideoUploadDeps = {
   /** Tira a Miniatura (JPEG) do arquivo local. */
   captureMiniatura: (video: File) => Promise<Blob>;
   /** Sobe o vídeo e devolve o endereço público e o caminho final no Blob. */
-  putVideo: (video: File) => Promise<{ url: string; pathname: string }>;
+  putVideo: (video: File) => Promise<BlobFile>;
   /** Grava o JPEG da Miniatura no caminho pedido. */
   putMiniatura: (pathname: string, jpeg: Blob) => Promise<void>;
 };

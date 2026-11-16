@@ -23,9 +23,10 @@ import { createInterface } from "node:readline";
 import { parseArgs } from "node:util";
 import { list, put } from "@vercel/blob";
 import { parse as parseEnv } from "dotenv";
+import type { BlobFile } from "../../src/lib/blobFile";
 import { blobToken } from "../../src/lib/blobToken";
 import { MINIATURA_TYPE } from "../../src/lib/miniatura";
-import { backlogOf, createMiniaturas, type Backlog, type BlobFile, type Save } from "./backfill";
+import { backlogOf, createMiniaturas, type Backlog, type Save } from "./backfill";
 import { extractMiniatura } from "./extractMiniatura";
 import { formatPending, formatReport } from "./report";
 
