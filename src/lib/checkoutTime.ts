@@ -1,3 +1,5 @@
+import { withoutPrefix } from "@/lib/prefix";
+
 /**
  * Horário de saída sem o "Até às" na frente, para o marcador {{CHECKOUT_HORA}}.
  * O modelo do prédio já escreve "O horário limite de saída é {{CHECKOUT_HORA}}"
@@ -8,7 +10,5 @@
  * mostra o campo como foi digitado.
  */
 export function cleanCheckoutTime(time: string): string {
-  const trimmed = time.trim();
-  const stripped = trimmed.replace(/^(até\s+às|até\s+as|ate\s+as|até|às|as)(\s+|$)/i, "");
-  return stripped || trimmed;
+  return withoutPrefix(time, /^(até\s+às|até\s+as|ate\s+as|até|às|as)(\s+|$)/i);
 }
