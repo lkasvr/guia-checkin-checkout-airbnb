@@ -45,17 +45,22 @@ export function formularioNoPredio(campos: Partial<ApartmentFormInput>): Apartme
 }
 
 /**
- * O clique em "Personalizar para este apartamento" no check-in ou no
- * check-out: o editor abre com o modelo do prédio preenchido pelos marcadores
- * do formulário, como o painel faz.
+ * O clique em "Personalizar para este apartamento" nas regras, ou em "Ajustar
+ * check-in/check-out manualmente": o editor abre com o modelo do prédio
+ * preenchido pelos marcadores do formulário, como o painel faz.
  */
 export function abrirEditor(
   form: ApartmentFormInput,
   predio: BuildingTemplate,
-  secao: "checkin" | "checkout",
+  secao: "rules" | "checkin" | "checkout",
 ): ApartmentFormInput {
   const valores = editorValues(predio, undefined, varsFromInput(form), doorCodeFromInput(form));
-  return secao === "checkin"
-    ? { ...form, checkinOverride: valores.checkin }
-    : { ...form, checkoutOverride: valores.checkout };
+  switch (secao) {
+    case "rules":
+      return { ...form, overrides: { ...form.overrides, rules: true }, overrideRules: valores.rules };
+    case "checkin":
+      return { ...form, checkinOverride: valores.checkin };
+    case "checkout":
+      return { ...form, checkoutOverride: valores.checkout };
+  }
 }

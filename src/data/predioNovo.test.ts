@@ -5,21 +5,18 @@ import {
   buildApartmentContent,
   buildOverrides,
   guideContentFromStored,
-  varsFromInput,
   type ApartmentFormInput,
-  type BuildingTemplate,
 } from "@/data/buildApartmentContent";
-import { editorValues } from "@/data/patches";
 import { BLANK_HOME, newBuildingTemplate } from "@/data/buildingModel";
-import { apartmentPreview } from "@/data/apartmentPreview";
+import { apartmentPreview, type NamedBuilding } from "@/data/apartmentPreview";
 import { ruleId } from "@/data/itemMerge";
 import { emptyL } from "@/data/sectionContent";
-import { formularioNoPredio } from "@/data/testFixtures";
+import { abrirEditor, formularioNoPredio } from "@/data/testFixtures";
 
 const vazio = emptyL();
 
 /** Um prédio já cadastrado, com duas regras próprias, como a lista do cadastro de apartamento o traz. */
-const residencialDfPlaza: BuildingTemplate & { name: string } = {
+const residencialDfPlaza: NamedBuilding = {
   name: "Residencial DF Plaza",
   rules: {
     sub: { pt: "Combinações do condomínio.", en: "Building agreements." },
@@ -122,8 +119,7 @@ describe("Prévia do cadastro: \"Personalizar para este apartamento\" nas regras
   function abrirEditorDeRegras(form: ApartmentFormInput): ApartmentFormInput {
     const { building } = apartmentPreview(form, "Anfitriã", undefined, cadastrados);
     assert.ok(building, "a prévia ficou sem prédio");
-    const valores = editorValues(building, undefined, varsFromInput(form));
-    return { ...form, overrides: { ...form.overrides, rules: true }, overrideRules: valores.rules };
+    return abrirEditor(form, building, "rules");
   }
 
   it("o editor abre com as 6 regras padrão", () => {
