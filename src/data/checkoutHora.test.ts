@@ -149,6 +149,12 @@ describe("Gravação do cadastro: ajustes no check-out", () => {
     const form = abrirEditorDoCheckout(formularioNoPredio({ checkoutTime: "Até às 11h" }));
     assert.equal(buildOverrides(form, predio).patches?.checkout, undefined);
   });
+
+  it("campo vazio: o editor mostra o padrão \"11h\", e salvar não gera ajuste", () => {
+    const form = abrirEditorDoCheckout(formularioNoPredio({ checkoutTime: "" }));
+    assert.equal(form.checkoutOverride?.steps[0].body.pt, saidaAs("11h"));
+    assert.equal(buildOverrides(form, predio).patches?.checkout, undefined);
+  });
 });
 
 /**

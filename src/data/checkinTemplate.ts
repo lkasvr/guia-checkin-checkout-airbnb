@@ -62,6 +62,8 @@ export const varsToTokens = (v: ApartmentVars): Record<string, TokenValue> => ({
   ANDAR: withTranslation(v.ANDAR, v.ANDAR_L),
   UNIDADE: v.UNIDADE,
   VAGA: withTranslation(v.VAGA, v.VAGA_L),
+  // Único lugar do padrão de quem deixou "Check-out (horário)" vazio: vale para o
+  // guia, os editores e a conversão do modo antigo, que não passa por `cleanVars`.
   CHECKOUT_HORA: v.CHECKOUT_HORA || "11h",
 });
 
