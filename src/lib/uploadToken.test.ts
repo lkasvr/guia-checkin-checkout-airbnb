@@ -1,8 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { MB } from "@/lib/mediaAccept";
 import { miniaturaRequest, uploadTokenOptions } from "@/lib/uploadToken";
-
-const MB = 1024 * 1024;
 
 describe("Token de envio de foto ou vídeo", () => {
   it("sem pedido de Miniatura, aceita foto e vídeo de até 50 MB, com sufixo aleatório", () => {
