@@ -3,22 +3,15 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Guide from "@/components/Guide";
-import {
-  buildApartmentContent,
-  buildOverrides,
-  doorCodeFromInput,
-  overlayBuildingLiveContent,
-  varsFromInput,
-  type ApartmentFormInput,
-  type BuildingTemplate,
-} from "@/data/buildApartmentContent";
+import type { ApartmentFormInput, BuildingTemplate } from "@/data/buildApartmentContent";
+import { apartmentPreview, openEditor, type OverridableSection } from "@/data/apartmentPreview";
+import { findBuilding } from "@/data/buildingModel";
 import { slugify } from "@/lib/slug";
 import { isVideoUrl } from "@/lib/miniatura";
 import { cleanUnit } from "@/lib/unit";
 import { formatPhoneBR } from "@/lib/phone";
 import { useEquipmentLibrary } from "@/app/admin/use-equipment-library";
 import { lookupIntercom, towerKey, type ReusableContacts } from "@/data/contacts";
-import { editorValues } from "@/data/patches";
 import {
   createApartmentDetailed,
   listHostCheckinVideos,
@@ -27,15 +20,7 @@ import {
   type ReusableVideo,
 } from "@/app/admin/actions";
 import type { Apartment } from "@/data/types";
-import {
-  amenitiesFromContent,
-  checkinFromContent,
-  checkoutFromContent,
-  emptyL,
-  homeFromContent,
-  placesFromContent,
-  rulesFromContent,
-} from "@/data/sectionContent";
+import { emptyL } from "@/data/sectionContent";
 import {
   AmenityListEditor,
   CheckinCardsEditor,
@@ -154,8 +139,6 @@ function BuildingCombobox({
   );
 }
 
-type OverridableSection = "rules" | "home" | "amenities" | "tourism" | "dining";
-
 const sectionLabel: Record<OverridableSection, string> = {
   rules: "Regras",
   home: "A Casa",
@@ -258,18 +241,14 @@ export function ApartmentWizard({
       }
       // Torre digitada (ou prédio trocado): puxa o código do interfone dela.
       if ((key === "tower" || key === "building") && !intercomTouched) {
-        const b = buildings.find(
-          (x) => x.name.trim().toLowerCase() === next.building.trim().toLowerCase(),
-        );
+        const b = findBuilding(next.building, buildings);
         next.intercomCode = lookupIntercom(b?.location?.intercom, next.tower);
       }
       if (key === "unit" && !f.label) next.label = value ? `Ap ${cleanUnit(String(value)).toUpperCase()}` : "";
       // Prédio escolhido pela primeira vez: sugere a capa/despedida padrão
       // dele, só quando a pessoa ainda não escolheu foto própria.
       if (key === "building") {
-        const b = buildings.find(
-          (x) => x.name.trim().toLowerCase() === String(value).trim().toLowerCase(),
-        );
+        const b = findBuilding(String(value), buildings);
         // A Capa é sempre foto: uma capa padrão antiga em vídeo não passa para o apartamento.
         if (b?.defaultHeroImg && !isVideoUrl(b.defaultHeroImg) && !f.heroImg) {
           next.heroImg = b.defaultHeroImg;
@@ -280,10 +259,22 @@ export function ApartmentWizard({
     });
   }
 
+  // Só prédio já cadastrado: os vídeos reaproveitáveis e a portaria herdada
+  // precisam do prédio gravado (o id, a portaria dele).
   const matchedBuilding = useMemo(
-    () => buildings.find((b) => b.name.trim().toLowerCase() === form.building.trim().toLowerCase()),
+    () => findBuilding(form.building, buildings),
     [buildings, form.building],
   );
+
+  // A prévia e os editores que ela abre usam o prédio da prévia: o cadastrado
+  // ou, com nome novo, o modelo de prédio novo que vai ser gravado.
+  const { building: previewBuilding, guide: preview } = useMemo(
+    () => apartmentPreview(form, hostName, existingContent, buildings),
+    [form, hostName, existingContent, buildings],
+  );
+  // Com prédio da prévia (o cadastrado ou o modelo de prédio novo), o texto de
+  // apoio de cada seção vem dele: os editores o escondem.
+  const hasPreviewBuilding = previewBuilding !== null;
 
   // Vídeos de check-in já enviados por este anfitrião (do modelo do prédio ou
   // de outro apartamento dele) — pra reaproveitar sem subir arquivo de novo.
@@ -302,44 +293,10 @@ export function ApartmentWizard({
     };
   }, [hostId, matchedBuilding?.id, apartmentId]);
 
-  const preview = useMemo<Apartment>(() => {
-    const building = matchedBuilding ?? null;
-    const content = buildApartmentContent(form, hostName, existingContent, building);
-    return overlayBuildingLiveContent(content, building, buildOverrides(form, building));
-  }, [form, hostName, existingContent, matchedBuilding]);
-
   const inheritedPortariaPhone = matchedBuilding?.location?.portariaPhone ?? "";
 
   function enableOverride(section: OverridableSection) {
-    setForm((f) => {
-      const overrides = { ...f.overrides, [section]: true };
-      // Com prédio: o editor abre com a lista do modelo; só o que a pessoa mudar vira ajuste.
-      const ev = matchedBuilding ? editorValues(matchedBuilding, undefined, varsFromInput(f)) : null;
-      switch (section) {
-        case "rules":
-          return { ...f, overrides, overrideRules: ev?.rules ?? rulesFromContent(preview.rules) };
-        case "home":
-          return { ...f, overrides, overrideHome: ev?.home ?? homeFromContent(preview.home) };
-        case "amenities":
-          return {
-            ...f,
-            overrides,
-            overrideAmenities: ev?.amenities ?? amenitiesFromContent(preview.amenities),
-          };
-        case "tourism":
-          return {
-            ...f,
-            overrides,
-            overrideTourism: ev?.tourism ?? placesFromContent(preview.tourism),
-          };
-        case "dining":
-          return {
-            ...f,
-            overrides,
-            overrideDining: ev?.dining ?? placesFromContent(preview.dining),
-          };
-      }
-    });
+    setForm((f) => openEditor(f, section, { building: previewBuilding, guide: preview }));
   }
   function disableOverride(section: OverridableSection) {
     setForm((f) => {
@@ -360,25 +317,18 @@ export function ApartmentWizard({
   }
 
   function toggleCheckinEdit() {
-    setForm((f) => {
-      if (f.checkinOverride) return { ...f, checkinOverride: undefined };
-      const value = matchedBuilding
-        ? editorValues(matchedBuilding, undefined, varsFromInput(f), doorCodeFromInput(f)).checkin
-        : checkinFromContent(preview.checkin);
-      return { ...f, checkinOverride: value };
-    });
+    setForm((f) =>
+      f.checkinOverride
+        ? { ...f, checkinOverride: undefined }
+        : openEditor(f, "checkin", { building: previewBuilding, guide: preview }),
+    );
   }
   function toggleCheckoutEdit() {
-    setForm((f) => {
-      if (f.checkoutOverride) return { ...f, checkoutOverride: undefined };
-      if (matchedBuilding) {
-        return {
-          ...f,
-          checkoutOverride: editorValues(matchedBuilding, undefined, varsFromInput(f)).checkout,
-        };
-      }
-      return preview.checkout ? { ...f, checkoutOverride: checkoutFromContent(preview.checkout) } : f;
-    });
+    setForm((f) =>
+      f.checkoutOverride
+        ? { ...f, checkoutOverride: undefined }
+        : openEditor(f, "checkout", { building: previewBuilding, guide: preview }),
+    );
   }
 
   function confirm() {
@@ -633,7 +583,7 @@ export function ApartmentWizard({
       {form.checkinOverride && (
         <div className="mt-3">
           <CheckinCardsEditor
-            lockShared={!!matchedBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.checkinOverride}
             onChange={(v) => set("checkinOverride", v)}
             reuseOptions={reuseVideos}
@@ -657,7 +607,7 @@ export function ApartmentWizard({
       {form.checkoutOverride && (
         <div className="mt-3">
           <CheckoutStepsEditor
-            lockShared={!!matchedBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.checkoutOverride}
             onChange={(v) => set("checkoutOverride", v)}
           />
@@ -736,7 +686,7 @@ export function ApartmentWizard({
       >
         {form.overrideRules && (
           <RulesListEditor
-            lockShared={!!matchedBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.overrideRules}
             onChange={(v) => set("overrideRules", v)}
           />
@@ -753,7 +703,7 @@ export function ApartmentWizard({
         {form.overrideHome && (
           <HomeEditor
             equipmentLibrary={equipmentLibrary}
-            lockShared={!!matchedBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.overrideHome}
             onChange={(v) => set("overrideHome", v)}
           />
@@ -798,7 +748,7 @@ export function ApartmentWizard({
       >
         {form.overrideAmenities && (
           <AmenityListEditor
-            lockShared={!!matchedBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.overrideAmenities}
             onChange={(v) => set("overrideAmenities", v)}
           />
@@ -814,7 +764,7 @@ export function ApartmentWizard({
       >
         {form.overrideTourism && (
           <PlaceListEditor
-            lockShared={!!matchedBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.overrideTourism}
             onChange={(v) => set("overrideTourism", v)}
           />
@@ -830,7 +780,7 @@ export function ApartmentWizard({
       >
         {form.overrideDining && (
           <PlaceListEditor
-            lockShared={!!matchedBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.overrideDining}
             onChange={(v) => set("overrideDining", v)}
           />

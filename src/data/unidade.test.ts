@@ -5,9 +5,9 @@ import {
   buildApartmentContent,
   buildOverrides,
   guideContentFromStored,
-  overlayBuildingLiveContent,
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
+import { apartmentPreview } from "@/data/apartmentPreview";
 import { BLANK_HOME, BLANK_RULES } from "@/data/buildingModel";
 import { filledCheckin, filledCheckout } from "@/data/checkinTemplate";
 import { emptyL } from "@/data/sectionContent";
@@ -148,11 +148,9 @@ describe("Gravação do cadastro: unidade digitada com \"Ap\"", () => {
 
   it("a prévia do cadastro mostra o passo do check-in sem o \"Ap\"", () => {
     const form = formularioNoPredio({ unit: "Ap 2202" });
-    const previa = overlayBuildingLiveContent(
-      buildApartmentContent(form, "Anfitriã", undefined, predio),
-      predio,
-      buildOverrides(form, predio),
-    );
+    const { guide: previa } = apartmentPreview(form, "Anfitriã", undefined, [
+      { ...predio, name: form.building },
+    ]);
     assert.equal(passoEntrando(previa).pt, subaAoApartamento("2202"));
   });
 });
