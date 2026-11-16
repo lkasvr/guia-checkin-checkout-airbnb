@@ -16,6 +16,11 @@ import {
 import { slugify } from "@/lib/slug";
 import type { Apartment } from "@/data/types";
 import { apartmentSource, collectEquipment, type EquipmentModel } from "@/data/equipmentLibrary";
+import {
+  apartmentLibrarySource,
+  collectSectionLibrary,
+  type SectionLibrary,
+} from "@/data/sectionLibrary";
 
 function str(v: FormDataEntryValue | null): string {
   return typeof v === "string" ? v.trim() : "";
@@ -456,5 +461,31 @@ export async function listEquipmentLibrary(): Promise<EquipmentModel[]> {
       accordions: (b.home as unknown as Apartment["home"] | null)?.accordions ?? [],
     })),
     ...apartments.map(apartmentSource),
+  ]);
+}
+
+/**
+ * Itens de Lazer e de Onde Comer (foto, título, texto, horário, traduções,
+ * site, mapa) que já foram cadastrados em qualquer prédio ou apartamento, para
+ * reaproveitar com um toque. Ver `src/data/sectionLibrary.ts`.
+ */
+export async function listSectionLibrary(): Promise<SectionLibrary> {
+  await requireAdmin();
+  const [buildings, apartments] = await Promise.all([
+    prisma.building.findMany({
+      select: { name: true, updatedAt: true, amenities: true, dining: true },
+    }),
+    prisma.apartment.findMany({
+      select: { label: true, updatedAt: true, content: true, overrides: true },
+    }),
+  ]);
+  return collectSectionLibrary([
+    ...buildings.map((b) => ({
+      label: b.name,
+      updatedAt: b.updatedAt,
+      amenities: (b.amenities as unknown as Apartment["amenities"] | null)?.items ?? [],
+      dining: (b.dining as unknown as Apartment["dining"] | null)?.items ?? [],
+    })),
+    ...apartments.map(apartmentLibrarySource),
   ]);
 }
