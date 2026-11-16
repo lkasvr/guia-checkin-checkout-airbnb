@@ -4,8 +4,7 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { starterContent } from "@/data/starter";
-import { newBuildingTemplate } from "@/data/buildingModel";
+import { newBuildingTemplate, starterContent } from "@/data/starter";
 import {
   buildApartmentContent,
   buildOverrides,

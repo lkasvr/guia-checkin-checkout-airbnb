@@ -1,4 +1,6 @@
 import type { Apartment, L } from "@/data/types";
+import type { BuildingTemplate } from "@/data/buildingModel";
+import { DEFAULT_CONDO_RULES } from "@/data/defaultRules";
 import { PREREQUISITE_CARD } from "@/data/prerequisiteCard";
 
 const t = (pt: string, en?: string): L => ({ pt, en: en ?? pt });
@@ -13,7 +15,7 @@ type StarterSections = Pick<
  * o inglês, e o check-in com o cartão "Antes de chegar". O apartamento novo
  * (`starterContent`) e o prédio novo (`newBuildingTemplate`) nascem com elas.
  */
-export function starterSections(): StarterSections {
+function starterSections(): StarterSections {
   return {
     checkin: { sub: t("Instruções de chegada.", "Arrival instructions."), cards: [PREREQUISITE_CARD] },
     checkout: { sub: t("Antes de sair.", "Before you leave."), steps: [] },
@@ -23,6 +25,29 @@ export function starterSections(): StarterSections {
     amenities: { sub: t(""), items: [] },
     tourism: { sub: t(""), items: [] },
     dining: { sub: t(""), items: [] },
+  };
+}
+
+/**
+ * O conteúdo com que um prédio nasce pelo cadastro de apartamento, quando o
+ * "Edifício" digitado ainda não existe: as regras de convivência padrão, os
+ * subtítulos do conteúdo inicial, o check-in com o cartão "Antes de chegar", o
+ * check-out vazio e as outras seções vazias. `resolveBuilding` grava este
+ * conteúdo, e a prévia do cadastro o usa para mostrar o guia que vai ser gravado.
+ *
+ * A tela "Novo prédio" tem os próprios valores iniciais.
+ */
+export function newBuildingTemplate(): BuildingTemplate {
+  const s = starterSections();
+  return {
+    rules: { sub: s.rules.sub, items: [...DEFAULT_CONDO_RULES] },
+    home: s.home,
+    amenities: s.amenities,
+    tourism: s.tourism,
+    dining: s.dining,
+    checkinTemplate: s.checkin,
+    checkoutTemplate: s.checkout,
+    location: null,
   };
 }
 

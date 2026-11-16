@@ -5,7 +5,8 @@ import {
   guideContentFromStored,
   type ApartmentFormInput,
 } from "@/data/buildApartmentContent";
-import { newBuildingTemplate, type BuildingTemplate } from "@/data/buildingModel";
+import type { BuildingTemplate } from "@/data/buildingModel";
+import { newBuildingTemplate } from "@/data/starter";
 
 /** Um prédio da lista do cadastro de apartamento: o modelo com o nome dele. */
 export type NamedBuilding = BuildingTemplate & { name: string };

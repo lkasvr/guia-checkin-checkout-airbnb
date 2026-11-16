@@ -7,7 +7,8 @@ import {
   guideContentFromStored,
   type ApartmentFormInput,
 } from "@/data/buildApartmentContent";
-import { BLANK_HOME, newBuildingTemplate } from "@/data/buildingModel";
+import { BLANK_HOME } from "@/data/buildingModel";
+import { newBuildingTemplate } from "@/data/starter";
 import { apartmentPreview, type NamedBuilding } from "@/data/apartmentPreview";
 import { ruleId } from "@/data/itemMerge";
 import { emptyL } from "@/data/sectionContent";
