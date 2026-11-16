@@ -20,6 +20,12 @@ describe("Lote de Miniaturas", () => {
     assert.deepEqual(videos, [pending("tour-A1.mp4", "tour-A1.jpg"), pending("IMG_0042-D4.MOV", "IMG_0042-D4.jpg")]);
   });
 
+  it("lê # e ? do caminho como parte do nome do arquivo", () => {
+    const backlog = backlogOf(["tour#1-A1.mp4", "sala?2-B2.MOV", "casa/fogao #3-C3.webm", "casa/fogao #3-C3.jpg"].map(file));
+    assert.equal(backlog.found, 3);
+    assert.deepEqual(backlog.pending, [pending("tour#1-A1.mp4", "tour#1-A1.jpg"), pending("sala?2-B2.MOV", "sala?2-B2.jpg")]);
+  });
+
   it("grava, no caminho da Miniatura, o quadro tirado do endereço público do vídeo", async () => {
     const extracted: string[] = [];
     const saved: [string, string][] = [];

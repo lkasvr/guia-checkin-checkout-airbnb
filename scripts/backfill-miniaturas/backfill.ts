@@ -22,14 +22,24 @@ export type Outcome = {
   failures: { video: string; reason: string }[];
 };
 
+/**
+ * O caminho no Blob é nome de arquivo, não endereço: pode ter `#` ou `?`, que as funções da
+ * Miniatura leriam como começo do fragmento ou da query (`tour#1.mp4` viraria `tour`). Por isso
+ * elas recebem o caminho codificado, trecho a trecho entre as barras, e a Miniatura volta
+ * decodificada para o caminho de verdade.
+ */
+const toUrlPath = (pathname: string) => pathname.split("/").map(encodeURIComponent).join("/");
+const fromUrlPath = (path: string) => path.split("/").map(decodeURIComponent).join("/");
+
 /** Os vídeos do Blob e, entre eles, os que ainda não têm Miniatura. */
 export function backlogOf(files: BlobFile[]): Backlog {
-  const missing = new Set(videosMissingMiniatura(files.map((file) => file.pathname)));
+  const paths = files.map((file) => toUrlPath(file.pathname));
+  const missing = new Set(videosMissingMiniatura(paths));
   return {
-    found: files.filter((file) => isVideoUrl(file.pathname)).length,
-    pending: files.flatMap((video) => {
-      const miniatura = miniaturaUrl(video.pathname);
-      return miniatura && missing.has(video.pathname) ? [{ video, miniatura }] : [];
+    found: paths.filter(isVideoUrl).length,
+    pending: files.flatMap((video, i) => {
+      const miniatura = miniaturaUrl(paths[i]);
+      return miniatura && missing.has(paths[i]) ? [{ video, miniatura: fromUrlPath(miniatura) }] : [];
     }),
   };
 }
