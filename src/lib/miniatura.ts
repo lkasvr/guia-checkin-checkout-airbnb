@@ -34,6 +34,23 @@ export function miniaturaUrl(url: string): string | undefined {
 }
 
 /**
+ * O caminho no Blob é nome de arquivo, não endereço: pode ter `#` ou `?`, que as funções acima
+ * leriam como começo do fragmento ou da query (`tour#1.mp4` viraria `tour`). Por isso elas
+ * recebem o caminho codificado, trecho a trecho entre as barras, e a resposta volta decodificada.
+ */
+const toUrlPath = (pathname: string) => pathname.split("/").map(encodeURIComponent).join("/");
+const fromUrlPath = (path: string) => path.split("/").map(decodeURIComponent).join("/");
+
+/**
+ * Caminho no Blob (`pathname`) da Miniatura de um vídeo, a partir do caminho do vídeo no Blob;
+ * `undefined` se não for vídeo. É por ele que o envio e o backfill gravam a Miniatura.
+ */
+export function miniaturaPathname(pathname: string): string | undefined {
+  const miniatura = miniaturaUrl(toUrlPath(pathname));
+  return miniatura === undefined ? undefined : fromUrlPath(miniatura);
+}
+
+/**
  * A Miniatura explícita nos dados (o campo `poster` dos vídeos estáticos em
  * `/media`) vence a deduzida. Uma explícita vazia conta como ausente.
  */
