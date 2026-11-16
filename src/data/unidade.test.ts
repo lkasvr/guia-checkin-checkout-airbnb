@@ -4,19 +4,16 @@ import type { Apartment, ApartmentVars, L } from "@/data/types";
 import {
   buildApartmentContent,
   buildOverrides,
-  doorCodeFromInput,
   guideContentFromStored,
   overlayBuildingLiveContent,
-  varsFromInput,
-  type ApartmentFormInput,
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
 import { BLANK_HOME, BLANK_RULES } from "@/data/buildingModel";
 import { filledCheckin, filledCheckout } from "@/data/checkinTemplate";
 import { emptyL } from "@/data/sectionContent";
 import { starterContent } from "@/data/starter";
-import { formularioNoPredio } from "@/data/testFixtures";
-import { editorValues, legacyToPatches } from "@/data/patches";
+import { abrirEditor, formularioNoPredio } from "@/data/testFixtures";
+import { legacyToPatches } from "@/data/patches";
 
 const l = (pt: string, en: string, es: string): L => ({ pt, en, es });
 const vazio = emptyL();
@@ -160,26 +157,20 @@ describe("Gravação do cadastro: unidade digitada com \"Ap\"", () => {
   });
 });
 
-/** O clique em "Personalizar para este apartamento" no Cartão de check-in: o editor abre com o modelo preenchido. */
-function abrirEditorDoCheckin(form: ApartmentFormInput): ApartmentFormInput {
-  const checkinOverride = editorValues(predio, undefined, varsFromInput(form), doorCodeFromInput(form)).checkin;
-  return { ...form, checkinOverride };
-}
-
 describe("Gravação do cadastro: ajustes no Cartão de check-in", () => {
   it("o editor aberto mostra a unidade como o guia mostra", () => {
-    const form = abrirEditorDoCheckin(formularioNoPredio({ unit: "Ap 2202" }));
+    const form = abrirEditor(formularioNoPredio({ unit: "Ap 2202" }), predio, "checkin");
     const cartao = cartaoEntrando(form.checkinOverride!.cards);
     assert.equal(cartao.steps[0].body.pt, subaAoApartamento("2202"));
   });
 
   it("editor aberto e sem edição: salvar não gera ajuste no cartão", () => {
-    const form = abrirEditorDoCheckin(formularioNoPredio({ unit: "Ap 2202" }));
+    const form = abrirEditor(formularioNoPredio({ unit: "Ap 2202" }), predio, "checkin");
     assert.equal(buildOverrides(form, predio).patches?.checkin, undefined);
   });
 
   it("cartão editado de propósito: o ajuste continua", () => {
-    const form = abrirEditorDoCheckin(formularioNoPredio({ unit: "Ap 2202" }));
+    const form = abrirEditor(formularioNoPredio({ unit: "Ap 2202" }), predio, "checkin");
     const cards = form.checkinOverride!.cards.map((c) =>
       c.id === "entrando"
         ? { ...c, steps: [{ ...c.steps[0], body: { ...c.steps[0].body, pt: "Suba pelo elevador social." } }] }

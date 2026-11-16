@@ -5,16 +5,14 @@ import {
   buildApartmentContent,
   buildOverrides,
   guideContentFromStored,
-  varsFromInput,
-  type ApartmentFormInput,
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
-import { editorValues, legacyToPatches } from "@/data/patches";
+import { legacyToPatches } from "@/data/patches";
 import { filledCheckin, filledCheckout } from "@/data/checkinTemplate";
 import { BLANK_HOME, BLANK_RULES } from "@/data/buildingModel";
 import { emptyL } from "@/data/sectionContent";
 import { starterContent } from "@/data/starter";
-import { formularioNoPredio } from "@/data/testFixtures";
+import { abrirEditor, formularioNoPredio } from "@/data/testFixtures";
 
 const vazio = emptyL();
 
@@ -134,24 +132,19 @@ describe("Gravação do cadastro: horário de saída digitado com \"Até às\"",
   });
 });
 
-/** O clique em "Personalizar para este apartamento" no check-out: o editor abre com o modelo preenchido. */
-function abrirEditorDoCheckout(form: ApartmentFormInput): ApartmentFormInput {
-  return { ...form, checkoutOverride: editorValues(predio, undefined, varsFromInput(form)).checkout };
-}
-
 describe("Gravação do cadastro: ajustes no check-out", () => {
   it("o editor aberto mostra o horário como o guia mostra", () => {
-    const form = abrirEditorDoCheckout(formularioNoPredio({ checkoutTime: "Até às 11h" }));
+    const form = abrirEditor(formularioNoPredio({ checkoutTime: "Até às 11h" }), predio, "checkout");
     assert.equal(form.checkoutOverride?.steps[0].body.pt, saidaAs("11h"));
   });
 
   it("editor aberto e sem edição: salvar não gera ajuste no check-out", () => {
-    const form = abrirEditorDoCheckout(formularioNoPredio({ checkoutTime: "Até às 11h" }));
+    const form = abrirEditor(formularioNoPredio({ checkoutTime: "Até às 11h" }), predio, "checkout");
     assert.equal(buildOverrides(form, predio).patches?.checkout, undefined);
   });
 
   it("campo vazio: o editor mostra o padrão \"11h\", e salvar não gera ajuste", () => {
-    const form = abrirEditorDoCheckout(formularioNoPredio({ checkoutTime: "" }));
+    const form = abrirEditor(formularioNoPredio({ checkoutTime: "" }), predio, "checkout");
     assert.equal(form.checkoutOverride?.steps[0].body.pt, saidaAs("11h"));
     assert.equal(buildOverrides(form, predio).patches?.checkout, undefined);
   });
