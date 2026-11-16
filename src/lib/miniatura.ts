@@ -28,29 +28,22 @@ export function isVideoUrl(url: string): boolean {
 }
 
 /**
- * Endereço (ou caminho do Blob) da Miniatura de um vídeo; `undefined` se não for
- * vídeo. Só a extensão muda: domínio, query e fragmento seguem como estavam.
+ * Caminho da Miniatura de um vídeo: o mesmo caminho com a extensão trocada; `undefined` se não for
+ * vídeo. Recebe caminho puro, como o `pathname` do Blob, que é nome de arquivo e pode ter `#` ou
+ * `?`. É por ele que o envio e o backfill gravam a Miniatura.
  */
-export function miniaturaUrl(url: string): string | undefined {
-  const { origin, path, rest } = splitUrl(url);
-  return VIDEO_EXT.test(path) ? origin + path.replace(VIDEO_EXT, MINIATURA_EXT) + rest : undefined;
+export function miniaturaPathname(path: string): string | undefined {
+  return VIDEO_EXT.test(path) ? path.replace(VIDEO_EXT, MINIATURA_EXT) : undefined;
 }
 
 /**
- * O caminho no Blob é nome de arquivo, não endereço: pode ter `#` ou `?`, que as funções acima
- * leriam como começo do fragmento ou da query (`tour#1.mp4` viraria `tour`). Por isso elas
- * recebem o caminho codificado, trecho a trecho entre as barras, e a resposta volta decodificada.
+ * Endereço da Miniatura de um vídeo; `undefined` se não for vídeo. Só a extensão
+ * muda: domínio, query e fragmento seguem como estavam.
  */
-const toUrlPath = (pathname: string) => pathname.split("/").map(encodeURIComponent).join("/");
-const fromUrlPath = (path: string) => path.split("/").map(decodeURIComponent).join("/");
-
-/**
- * Caminho no Blob (`pathname`) da Miniatura de um vídeo, a partir do caminho do vídeo no Blob;
- * `undefined` se não for vídeo. É por ele que o envio e o backfill gravam a Miniatura.
- */
-export function miniaturaPathname(pathname: string): string | undefined {
-  const miniatura = miniaturaUrl(toUrlPath(pathname));
-  return miniatura === undefined ? undefined : fromUrlPath(miniatura);
+export function miniaturaUrl(url: string): string | undefined {
+  const { origin, path, rest } = splitUrl(url);
+  const miniatura = miniaturaPathname(path);
+  return miniatura === undefined ? undefined : origin + miniatura + rest;
 }
 
 /**
