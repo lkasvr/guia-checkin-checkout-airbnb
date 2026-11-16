@@ -6,6 +6,7 @@ paths:
   - src/auth.ts
   - vercel.json
   - .env*
+  - scripts/backfill-miniaturas/**
 ---
 
 # Ambientes e bancos
