@@ -9,7 +9,8 @@ import {
   type ApartmentFormInput,
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
-import { apartmentPreview, findBuilding } from "@/data/apartmentPreview";
+import { apartmentPreview } from "@/data/apartmentPreview";
+import { findBuilding } from "@/data/buildingModel";
 import { slugify } from "@/lib/slug";
 import { isVideoUrl } from "@/lib/miniatura";
 import { cleanUnit } from "@/lib/unit";

@@ -17,7 +17,7 @@ import {
 } from "@/data/sectionContent";
 import type { Apartment, ItemPatches } from "@/data/types";
 import { isEmptyPatch } from "@/data/itemMerge";
-import { findBuilding } from "@/data/apartmentPreview";
+import { findBuilding } from "@/data/buildingModel";
 import { editorValues, legacyToPatches } from "@/data/patches";
 import { contactInfoFromContent, lookupIntercom, reusableContacts } from "@/data/contacts";
 

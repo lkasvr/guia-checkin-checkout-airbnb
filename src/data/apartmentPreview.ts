@@ -5,21 +5,11 @@ import {
   guideContentFromStored,
   type ApartmentFormInput,
 } from "@/data/buildApartmentContent";
-import type { BuildingTemplate } from "@/data/buildingModel";
+import { findBuilding, type BuildingTemplate } from "@/data/buildingModel";
 import { newBuildingTemplate } from "@/data/starter";
 
 /** Um prédio da lista do cadastro de apartamento: o modelo com o nome dele. */
 export type NamedBuilding = BuildingTemplate & { name: string };
-
-/**
- * O prédio cadastrado com o nome digitado em "Edifício", sem diferenciar
- * maiúsculas nem espaços nas pontas. Nome vazio ou fora da lista: nenhum.
- */
-export function findBuilding<B extends { name: string }>(name: string, buildings: B[]): B | undefined {
-  const key = name.trim().toLowerCase();
-  if (!key) return undefined;
-  return buildings.find((b) => b.name.trim().toLowerCase() === key);
-}
 
 /**
  * O guia que a prévia do cadastro de apartamento mostra ("Ver prévia →"), igual
