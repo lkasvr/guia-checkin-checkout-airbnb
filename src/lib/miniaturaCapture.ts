@@ -1,10 +1,11 @@
 /**
  * Tira a Miniatura de um vídeo no navegador de quem envia, a partir do arquivo local, antes de
- * ele subir: o quadro de 1 s, em JPEG, com o lado maior limitado a `MINIATURA_MAX_SIDE` (o mesmo
- * quadro e o mesmo teto do backfill, em `scripts/backfill-miniaturas/extractMiniatura.ts`).
+ * ele subir: o quadro de `MINIATURA_FRAME_S`, em JPEG, com o lado maior limitado a
+ * `MINIATURA_MAX_SIDE` (o mesmo quadro e o mesmo teto do backfill, em
+ * `scripts/backfill-miniaturas/extractMiniatura.ts`).
  */
 
-import { MINIATURA_MAX_SIDE, MINIATURA_TYPE } from "@/lib/miniatura";
+import { MINIATURA_FRAME_S, MINIATURA_MAX_SIDE, MINIATURA_TYPE } from "@/lib/miniatura";
 
 /** Qualidade do JPEG (0 a 1). */
 const QUALITY = 0.8;
@@ -15,12 +16,12 @@ const QUALITY = 0.8;
 const TIMEOUT_MS = 15_000;
 
 /**
- * Em que segundo tirar o quadro: 1 s, para fugir da tela preta ou do fade de abertura; num vídeo
- * de menos de 1 s, o primeiro quadro. Sem duração conhecida (WebM sem duração no cabeçalho),
- * tenta 1 s: o navegador para no fim de um vídeo mais curto.
+ * Em que segundo tirar o quadro: `MINIATURA_FRAME_S`; num vídeo mais curto que isso, o primeiro
+ * quadro. Sem duração conhecida (WebM sem duração no cabeçalho), tenta `MINIATURA_FRAME_S`: o
+ * navegador para no fim de um vídeo mais curto.
  */
 export function frameTime(duration: number): number {
-  return Number.isFinite(duration) && duration < 1 ? 0 : 1;
+  return Number.isFinite(duration) && duration < MINIATURA_FRAME_S ? 0 : MINIATURA_FRAME_S;
 }
 
 /** Tamanho da Miniatura: o do vídeo, reduzido até o lado maior caber em `MINIATURA_MAX_SIDE`. */

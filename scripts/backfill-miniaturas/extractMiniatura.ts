@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { MINIATURA_MAX_SIDE } from "../../src/lib/miniatura";
+import { MINIATURA_FRAME_S, MINIATURA_MAX_SIDE } from "../../src/lib/miniatura";
 
 /** Qualidade do JPEG na escala do ffmpeg (2 é a melhor, 31 a pior). */
 const JPEG_QSCALE = 5;
@@ -22,31 +22,32 @@ function isImage({ ok, stdout }: ProcessResult): boolean {
 }
 
 /**
- * Tira a Miniatura de um vídeo: o quadro de 1 s, em JPEG, com o lado maior limitado a 1280 px.
- * O vídeo pode ser um endereço público (`https://...`) ou um arquivo local.
+ * Tira a Miniatura de um vídeo: o quadro de `MINIATURA_FRAME_S`, em JPEG, com o lado maior
+ * limitado a `MINIATURA_MAX_SIDE`. O vídeo pode ser um endereço público (`https://...`) ou um
+ * arquivo local.
  *
- * O salto para 1 s vem antes da entrada (`-ss` antes de `-i`): o ffmpeg lê o índice do vídeo,
- * pula para o quadro-chave anterior a 1 s e, num endereço HTTP, pede por requisições de faixa só
- * esses bytes, sem baixar o vídeo inteiro.
+ * O salto até esse segundo vem antes da entrada (`-ss` antes de `-i`): o ffmpeg lê o índice do
+ * vídeo, pula para o quadro-chave anterior a ele e, num endereço HTTP, pede por requisições de
+ * faixa só esses bytes, sem baixar o vídeo inteiro.
  *
- * Quando o salto para 1 s não dá imagem, quem decide é o vídeo. Se o último quadro começa antes
- * de 1 s, não existe quadro em 1 s, e a Miniatura é o primeiro quadro. Senão, a extração falha
+ * Quando o salto não dá imagem, quem decide é o vídeo. Se o último quadro começa antes desse
+ * segundo, não existe quadro nele, e a Miniatura é o primeiro quadro. Senão, a extração falha
  * com o motivo (decodificador, rede, arquivo cortado), sem cair no primeiro quadro: ele seria a
- * tela preta ou o fade de abertura que o quadro de 1 s existe para evitar, e o vídeo segue sem
+ * tela preta ou o fade de abertura que o salto existe para evitar, e o vídeo segue sem
  * Miniatura para a próxima rodada.
  */
 export async function extractMiniatura(video: string): Promise<Buffer> {
-  const atOneSecond = await runFfmpeg(video, { seekToOneSecond: true });
-  if (isImage(atOneSecond)) return atOneSecond.stdout;
-  if (atOneSecond.timedOut) throw new Error(failureReason(atOneSecond));
+  const atFrame = await runFfmpeg(video, { seekToFrame: true });
+  if (isImage(atFrame)) return atFrame.stdout;
+  if (atFrame.timedOut) throw new Error(failureReason(atFrame));
 
   const timing = await videoTiming(video);
-  if (timing === undefined || !endsBeforeOneSecond(timing)) {
-    if (atOneSecond.stderr.trim()) throw new Error(failureReason(atOneSecond));
+  if (timing === undefined || !endsBeforeFrame(timing)) {
+    if (atFrame.stderr.trim()) throw new Error(failureReason(atFrame));
     const lasts = timing === undefined ? "a duração do vídeo é desconhecida" : `o vídeo dura ${timing.duration} s`;
-    throw new Error(`nenhum quadro em 1 s, e ${lasts}`);
+    throw new Error(`nenhum quadro em ${MINIATURA_FRAME_S} s, e ${lasts}`);
   }
-  const firstFrame = await runFfmpeg(video, { seekToOneSecond: false });
+  const firstFrame = await runFfmpeg(video, { seekToFrame: false });
   if (isImage(firstFrame)) return firstFrame.stdout;
   throw new Error(failureReason(firstFrame));
 }
@@ -58,22 +59,23 @@ type VideoTiming = { duration: number; frameDuration: number };
 const ROUNDING_S = 0.001;
 
 /**
- * Se o último quadro começa antes de 1 s: aí o salto para 1 s não acha quadro nenhum. Não basta
- * comparar a duração com 1 s, porque ela conta até o fim do último quadro: 30 quadros a 29,97 fps
- * duram 1,001 s, e o último começa em 0,968 s. Sem a taxa de quadros, vale a duração de até 1 s.
+ * Se o último quadro começa antes de `MINIATURA_FRAME_S`: aí o salto não acha quadro nenhum. Não
+ * basta comparar a duração com esse segundo, porque ela conta até o fim do último quadro: 30
+ * quadros a 29,97 fps duram 1,001 s, e o último começa em 0,968 s. Sem a taxa de quadros, vale a
+ * duração de até `MINIATURA_FRAME_S`.
  */
-function endsBeforeOneSecond({ duration, frameDuration }: VideoTiming): boolean {
-  if (frameDuration === 0) return duration <= 1;
-  return duration - frameDuration < 1 - ROUNDING_S;
+function endsBeforeFrame({ duration, frameDuration }: VideoTiming): boolean {
+  if (frameDuration === 0) return duration <= MINIATURA_FRAME_S;
+  return duration - frameDuration < MINIATURA_FRAME_S - ROUNDING_S;
 }
 
-function runFfmpeg(video: string, { seekToOneSecond }: { seekToOneSecond: boolean }): Promise<ProcessResult> {
+function runFfmpeg(video: string, { seekToFrame }: { seekToFrame: boolean }): Promise<ProcessResult> {
   return run("ffmpeg", [
     "-hide_banner",
     "-nostdin",
     "-v", "error",
     ...NETWORK_TIMEOUT,
-    ...(seekToOneSecond ? ["-ss", "1"] : []),
+    ...(seekToFrame ? ["-ss", String(MINIATURA_FRAME_S)] : []),
     "-i", video,
     "-frames:v", "1",
     "-an", "-sn", "-dn",

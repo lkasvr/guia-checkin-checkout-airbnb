@@ -1,15 +1,21 @@
 /**
  * Miniatura: a imagem parada no lugar do vídeo até o play. Mora no mesmo
  * endereço do vídeo, trocando a extensão por `.jpg` (ADR 0001). Este módulo é o
- * único lugar que conhece essa convenção e o que conta como vídeo: o guia, o
- * envio e o backfill devem usar estas funções em vez de repetir a regra. Sem
- * dependências, pra rodar igual no navegador, no servidor e no script.
+ * único lugar que define a Miniatura: onde ela mora, o que conta como vídeo e
+ * como é a imagem (JPEG, o quadro de qual segundo, o lado maior). O guia, o
+ * envio e o backfill devem usar estas funções e constantes em vez de repetir a
+ * regra. Sem dependências, pra rodar igual no navegador, no servidor e no script.
  */
 
 const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
 /** Extensão e tipo do arquivo da Miniatura: um JPEG com o nome do vídeo. */
 export const MINIATURA_EXT = ".jpg";
 export const MINIATURA_TYPE = "image/jpeg";
+/**
+ * Segundo do vídeo de onde sai a Miniatura, para fugir da tela preta ou do fade de abertura;
+ * num vídeo mais curto, o envio e o backfill tiram o primeiro quadro.
+ */
+export const MINIATURA_FRAME_S = 1;
 /** Lado maior da Miniatura, em px: o envio e o backfill reduzem o quadro até caber nele. */
 export const MINIATURA_MAX_SIDE = 1280;
 // origem (`https://host`, opcional) · caminho · query e fragmento
