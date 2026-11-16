@@ -4,18 +4,16 @@ import type { Apartment, ApartmentVars, L } from "@/data/types";
 import {
   buildApartmentContent,
   buildOverrides,
-  doorCodeFromInput,
   guideContentFromStored,
   overlayBuildingLiveContent,
-  varsFromInput,
-  type ApartmentFormInput,
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
 import { BLANK_HOME, BLANK_RULES } from "@/data/buildingModel";
 import { filledCheckin, filledCheckout } from "@/data/checkinTemplate";
 import { emptyL } from "@/data/sectionContent";
 import { starterContent } from "@/data/starter";
-import { editorValues, legacyToPatches } from "@/data/patches";
+import { abrirEditor, formularioNoPredio } from "@/data/testFixtures";
+import { legacyToPatches } from "@/data/patches";
 
 const l = (pt: string, en: string, es: string): L => ({ pt, en, es });
 const vazio = emptyL();
@@ -142,47 +140,14 @@ describe("Montagem do guia: marcador {{UNIDADE}}", () => {
   });
 });
 
-/** Formulário do cadastro de um apartamento no prédio, com a unidade digitada. */
-function formulario(unidade: string): ApartmentFormInput {
-  return {
-    building: "Residencial DF Plaza",
-    unit: unidade,
-    heroImg: "",
-    footerImg: "",
-    tower: "Torre A",
-    floor: "22º andar",
-    parking: "",
-    maxGuests: "4",
-    checkinTime: "15h",
-    checkoutTime: "11h",
-    doorCodeMode: "per_stay",
-    doorCode: "",
-    wifiNetwork: "",
-    wifiPassword: "",
-    ownRules: [],
-    smoking: "no",
-    pets: "no",
-    hostWhatsapp: "",
-    coHostName: "",
-    coHostWhatsapp: "",
-    portariaPhone: "",
-    intercomCode: "",
-    internalNotes: "",
-    locationAddress: "",
-    locationMapsUrl: "",
-    homeVideo: "",
-    overrides: {},
-  };
-}
-
 describe("Gravação do cadastro: unidade digitada com \"Ap\"", () => {
   it("\"Ap 2202\" grava a variável UNIDADE como \"2202\"", () => {
-    const gravado = buildApartmentContent(formulario("Ap 2202"), "Anfitriã", undefined, predio);
+    const gravado = buildApartmentContent(formularioNoPredio({ unit: "Ap 2202" }), "Anfitriã", undefined, predio);
     assert.equal(gravado.vars?.UNIDADE, "2202");
   });
 
   it("a prévia do cadastro mostra o passo do check-in sem o \"Ap\"", () => {
-    const form = formulario("Ap 2202");
+    const form = formularioNoPredio({ unit: "Ap 2202" });
     const previa = overlayBuildingLiveContent(
       buildApartmentContent(form, "Anfitriã", undefined, predio),
       predio,
@@ -192,26 +157,20 @@ describe("Gravação do cadastro: unidade digitada com \"Ap\"", () => {
   });
 });
 
-/** O clique em "Personalizar para este apartamento" no Cartão de check-in: o editor abre com o modelo preenchido. */
-function abrirEditorDoCheckin(form: ApartmentFormInput): ApartmentFormInput {
-  const checkinOverride = editorValues(predio, undefined, varsFromInput(form), doorCodeFromInput(form)).checkin;
-  return { ...form, checkinOverride };
-}
-
 describe("Gravação do cadastro: ajustes no Cartão de check-in", () => {
   it("o editor aberto mostra a unidade como o guia mostra", () => {
-    const form = abrirEditorDoCheckin(formulario("Ap 2202"));
+    const form = abrirEditor(formularioNoPredio({ unit: "Ap 2202" }), predio, "checkin");
     const cartao = cartaoEntrando(form.checkinOverride!.cards);
     assert.equal(cartao.steps[0].body.pt, subaAoApartamento("2202"));
   });
 
   it("editor aberto e sem edição: salvar não gera ajuste no cartão", () => {
-    const form = abrirEditorDoCheckin(formulario("Ap 2202"));
+    const form = abrirEditor(formularioNoPredio({ unit: "Ap 2202" }), predio, "checkin");
     assert.equal(buildOverrides(form, predio).patches?.checkin, undefined);
   });
 
   it("cartão editado de propósito: o ajuste continua", () => {
-    const form = abrirEditorDoCheckin(formulario("Ap 2202"));
+    const form = abrirEditor(formularioNoPredio({ unit: "Ap 2202" }), predio, "checkin");
     const cards = form.checkinOverride!.cards.map((c) =>
       c.id === "entrando"
         ? { ...c, steps: [{ ...c.steps[0], body: { ...c.steps[0].body, pt: "Suba pelo elevador social." } }] }

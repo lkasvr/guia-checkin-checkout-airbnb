@@ -113,6 +113,16 @@ export type ApartmentVars = {
   VAGA_L?: L;
 };
 
+declare const limpos: unique symbol;
+
+/**
+ * Marcadores já limpos por `cleanVars`, como o guia os mostra. Só `cleanVars`
+ * produz este tipo, e os editores (`editorValues`) e o cálculo dos ajustes
+ * (`buildItemPatches`) o exigem: o compilador recusa entregar a eles os
+ * marcadores crus de `deriveVars`, que só a conversão do modo antigo usa.
+ */
+export type CleanVars = ApartmentVars & { readonly [limpos]: true };
+
 /** Contatos digitados no formulário — guardados pra poder reaproveitar em outro apartamento do anfitrião. */
 export type ContactInfo = {
   hostWhatsapp: string;
