@@ -19,11 +19,11 @@ describe("Envio de vídeo com Miniatura", () => {
         saved.push([pathname, file]);
       },
     });
-    assert.deepEqual(result, { url: `${BLOB}/tour-Xy8QzR2b.mp4`, miniaturaSaved: true });
+    assert.deepEqual(result, { url: `${BLOB}/tour-Xy8QzR2b.mp4` });
     assert.deepEqual(saved, [["tour-Xy8QzR2b.jpg", jpeg]]);
   });
 
-  it("se o navegador não gera a Miniatura, o vídeo sobe mesmo assim e o resultado diz que ela faltou", async () => {
+  it("se o navegador não gera a Miniatura, o vídeo sobe mesmo assim e o resultado traz o motivo", async () => {
     const uploaded: string[] = [];
     const result = await uploadVideo(video, {
       captureMiniatura: async () => {
@@ -38,10 +38,11 @@ describe("Envio de vídeo com Miniatura", () => {
       },
     });
     assert.deepEqual(uploaded, ["tour.mp4"]);
-    assert.deepEqual(result, { url: `${BLOB}/tour-Xy8QzR2b.mov`, miniaturaSaved: false });
+    assert.equal(result.url, `${BLOB}/tour-Xy8QzR2b.mov`);
+    assert.match(result.miniaturaError?.message ?? "", /não decodifica HEVC/);
   });
 
-  it("se gravar a Miniatura falha depois que o vídeo subiu, o vídeo fica e o resultado diz que ela faltou", async () => {
+  it("se gravar a Miniatura falha depois que o vídeo subiu, o vídeo fica e o resultado traz o motivo", async () => {
     const result = await uploadVideo(video, {
       captureMiniatura: async () => jpeg,
       putVideo: putVideoAs("tour-Xy8QzR2b.mp4"),
@@ -49,7 +50,8 @@ describe("Envio de vídeo com Miniatura", () => {
         throw new Error("This blob already exists");
       },
     });
-    assert.deepEqual(result, { url: `${BLOB}/tour-Xy8QzR2b.mp4`, miniaturaSaved: false });
+    assert.equal(result.url, `${BLOB}/tour-Xy8QzR2b.mp4`);
+    assert.match(result.miniaturaError?.message ?? "", /already exists/);
   });
 
   it("vídeo cujo nome não tem extensão de vídeo fica sem Miniatura, porque a convenção não dá caminho para ela", async () => {
@@ -63,7 +65,8 @@ describe("Envio de vídeo com Miniatura", () => {
       },
     });
     assert.deepEqual(saved, []);
-    assert.deepEqual(result, { url: `${BLOB}/clip-Xy8QzR2b.m4v`, miniaturaSaved: false });
+    assert.equal(result.url, `${BLOB}/clip-Xy8QzR2b.m4v`);
+    assert.match(result.miniaturaError?.message ?? "", /extensão de vídeo/);
   });
 
   it("se o vídeo não sobe, o envio falha com o motivo", async () => {

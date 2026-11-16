@@ -3,7 +3,7 @@ import { compressImage } from "@/lib/imageCompress";
 import { MB, isImageType, refusal, type MediaAccept } from "@/lib/mediaAccept";
 import { captureMiniatura } from "@/lib/miniaturaCapture";
 import { miniaturaRequest } from "@/lib/uploadToken";
-import { uploadVideo } from "@/lib/videoUpload";
+import { uploadVideo, type Uploaded } from "@/lib/videoUpload";
 
 // Teto da foto já reduzida (o da foto escolhida fica em `mediaAccept`); costuma sobrar folga.
 const MAX_IMAGE_AFTER_COMPRESSION = 8 * MB;
@@ -12,24 +12,17 @@ const MULTIPART_FROM_BYTES = 20 * MB;
 /** A rota que emite o token de envio. */
 const HANDLE_UPLOAD_URL = "/api/upload";
 
-/** O que o envio gravou: o endereço do arquivo e, só num vídeo, se a Miniatura foi gravada junto. */
-export type Uploaded = { url: string; miniaturaSaved?: boolean };
-
 /**
  * Envia direto do navegador pro Blob (não passa pelo servidor do Next). Recusa, antes de qualquer
  * requisição, o arquivo que o campo não aceita pelo tipo ou pelo tamanho (`accepts`, ver
  * `refusal`). A foto sobe reduzida; o vídeo sobe com a Miniatura (ver `uploadVideo`), e a falha
- * dela nunca derruba o envio do vídeo.
+ * dela nunca derruba o envio do vídeo: volta como `miniaturaError`.
  */
 export async function uploadMedia(original: File, accepts: MediaAccept = "any"): Promise<Uploaded> {
   const reason = refusal(original, accepts);
   if (reason) throw new Error(reason);
   if (!isImageType(original.type)) {
-    return uploadVideo(original, {
-      captureMiniatura: warnOnFailure("não gerada", captureMiniatura),
-      putVideo: putFile,
-      putMiniatura: warnOnFailure("não gravada", putMiniatura),
-    });
+    return uploadVideo(original, { captureMiniatura, putVideo: putFile, putMiniatura });
   }
   const file = await compressImage(original);
   if (file.size > MAX_IMAGE_AFTER_COMPRESSION) {
@@ -55,13 +48,4 @@ async function putMiniatura(pathname: string, jpeg: Blob) {
     contentType: jpeg.type,
     clientPayload: miniaturaRequest(jpeg.type),
   });
-}
-
-/** Deixa no console o motivo da falha da Miniatura, que o painel resume num aviso só. */
-function warnOnFailure<A extends unknown[], R>(what: string, step: (...args: A) => Promise<R>) {
-  return (...args: A) =>
-    step(...args).catch((error: unknown) => {
-      console.warn(`Miniatura ${what}:`, error);
-      throw error;
-    });
 }

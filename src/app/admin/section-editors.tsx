@@ -102,19 +102,22 @@ export function MediaField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [warning, setWarning] = useState<string | null>(null);
+  const [miniaturaMissing, setMiniaturaMissing] = useState(false);
   const video = value && isVideoUrl(value);
   const field = MEDIA_ACCEPT[accepts];
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
     setError(null);
-    setWarning(null);
+    setMiniaturaMissing(false);
     setPending(true);
     try {
-      const { url, miniaturaSaved } = await uploadMedia(file, accepts);
+      const { url, miniaturaError } = await uploadMedia(file, accepts);
       onChange(url);
-      if (miniaturaSaved === false) setWarning(MINIATURA_WARNING);
+      if (miniaturaError) {
+        console.warn("Miniatura não gravada:", miniaturaError);
+        setMiniaturaMissing(true);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha no upload.");
     } finally {
@@ -150,13 +153,13 @@ export function MediaField({
         </label>
         {field.hint && <p className="mt-1 text-[12px] text-soft">{field.hint}</p>}
         {error && <p className="mt-1 text-[12px] text-terra">{error}</p>}
-        {warning && <p className="mt-1 text-[12px] text-terra">{warning}</p>}
+        {miniaturaMissing && <p className="mt-1 text-[12px] text-terra">{MINIATURA_WARNING}</p>}
         {reuseOptions && reuseOptions.length > 0 && (
           <div>
             <ReuseVideoSelect
               options={reuseOptions}
               onPick={(v) => {
-                setWarning(null);
+                setMiniaturaMissing(false);
                 if (onReuse) onReuse(v);
                 else onChange(v.src);
               }}

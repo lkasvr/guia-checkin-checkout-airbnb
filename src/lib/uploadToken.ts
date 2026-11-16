@@ -8,7 +8,7 @@ import { MAX_UPLOAD_BYTES, MB, UPLOAD_TYPES } from "@/lib/mediaAccept";
 import { MINIATURA_EXT, MINIATURA_TYPE } from "@/lib/miniatura";
 
 /** Opções do token que o Blob confere na hora de gravar (as de `handleUpload`). */
-export type UploadTokenOptions = {
+type UploadTokenOptions = {
   allowedContentTypes: string[];
   addRandomSuffix: boolean;
   maximumSizeInBytes: number;
