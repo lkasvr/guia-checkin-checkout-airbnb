@@ -84,7 +84,7 @@ describe("Miniatura de um caminho no Blob", () => {
   });
 
   it("um nome com a extensão de vídeo só depois do # não é vídeo", () => {
-    assert.equal(miniaturaPathname("tour.mp4#capa-Xy8QzR2b.jpg"), undefined);
+    assert.equal(miniaturaPathname("tour.mp4#foto-Xy8QzR2b.jpg"), undefined);
   });
 
   it("foto não tem Miniatura", () => {
