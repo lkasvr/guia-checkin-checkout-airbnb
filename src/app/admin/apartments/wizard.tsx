@@ -272,8 +272,9 @@ export function ApartmentWizard({
     () => apartmentPreview(form, hostName, existingContent, buildings),
     [form, hostName, existingContent, buildings],
   );
-  // Com prédio, o texto de apoio de cada seção vem dele: os editores o escondem.
-  const hasBuilding = previewBuilding !== null;
+  // Com prédio da prévia (o cadastrado ou o modelo de prédio novo), o texto de
+  // apoio de cada seção vem dele: os editores o escondem.
+  const hasPreviewBuilding = previewBuilding !== null;
 
   // Vídeos de check-in já enviados por este anfitrião (do modelo do prédio ou
   // de outro apartamento dele) — pra reaproveitar sem subir arquivo de novo.
@@ -582,7 +583,7 @@ export function ApartmentWizard({
       {form.checkinOverride && (
         <div className="mt-3">
           <CheckinCardsEditor
-            lockShared={hasBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.checkinOverride}
             onChange={(v) => set("checkinOverride", v)}
             reuseOptions={reuseVideos}
@@ -606,7 +607,7 @@ export function ApartmentWizard({
       {form.checkoutOverride && (
         <div className="mt-3">
           <CheckoutStepsEditor
-            lockShared={hasBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.checkoutOverride}
             onChange={(v) => set("checkoutOverride", v)}
           />
@@ -685,7 +686,7 @@ export function ApartmentWizard({
       >
         {form.overrideRules && (
           <RulesListEditor
-            lockShared={hasBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.overrideRules}
             onChange={(v) => set("overrideRules", v)}
           />
@@ -702,7 +703,7 @@ export function ApartmentWizard({
         {form.overrideHome && (
           <HomeEditor
             equipmentLibrary={equipmentLibrary}
-            lockShared={hasBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.overrideHome}
             onChange={(v) => set("overrideHome", v)}
           />
@@ -747,7 +748,7 @@ export function ApartmentWizard({
       >
         {form.overrideAmenities && (
           <AmenityListEditor
-            lockShared={hasBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.overrideAmenities}
             onChange={(v) => set("overrideAmenities", v)}
           />
@@ -763,7 +764,7 @@ export function ApartmentWizard({
       >
         {form.overrideTourism && (
           <PlaceListEditor
-            lockShared={hasBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.overrideTourism}
             onChange={(v) => set("overrideTourism", v)}
           />
@@ -779,7 +780,7 @@ export function ApartmentWizard({
       >
         {form.overrideDining && (
           <PlaceListEditor
-            lockShared={hasBuilding}
+            lockShared={hasPreviewBuilding}
             value={form.overrideDining}
             onChange={(v) => set("overrideDining", v)}
           />
