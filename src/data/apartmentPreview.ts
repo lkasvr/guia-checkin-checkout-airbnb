@@ -15,7 +15,7 @@ export type NamedBuilding = BuildingTemplate & { name: string };
  * O prédio cadastrado com o nome digitado em "Edifício", sem diferenciar
  * maiúsculas nem espaços nas pontas. Nome vazio ou fora da lista: nenhum.
  */
-export function findBuilding<B extends NamedBuilding>(name: string, buildings: B[]): B | undefined {
+export function findBuilding<B extends { name: string }>(name: string, buildings: B[]): B | undefined {
   const key = name.trim().toLowerCase();
   if (!key) return undefined;
   return buildings.find((b) => b.name.trim().toLowerCase() === key);
