@@ -372,7 +372,11 @@ export function legacyToPatches(
       true,
     );
   }
-  // Check-in/check-out sempre foram cópias do modelo (nunca ao vivo).
+  // Check-in/check-out sempre foram cópias do modelo (nunca ao vivo), gravadas
+  // já preenchidas com a unidade como foi digitada ("apartamento Ap 2202"). Por
+  // isso o modelo é preenchido com os marcadores gravados, sem a limpeza que o
+  // guia aplica: a diferença "Ap 2202" × "2202" viraria ajuste, e o ajuste
+  // congelaria o texto sujo no cartão.
   const ciModel = filledCheckin(building, vars).cards;
   patches.checkin = toPatch(
     ciModel,

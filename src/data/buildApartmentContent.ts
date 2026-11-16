@@ -99,7 +99,11 @@ export function overlayBuildingLiveContent(
  * e sobrepõe o prédio.
  *
  * - A unidade sai sem o "Ap" na frente: o guia já escreve "Apartamento …" e
- *   "Ap …" antes dela, e quem digitou "Ap 2202" gerava "Ap Ap 2202".
+ *   "Ap …" antes dela, e quem digitou "Ap 2202" gerava "Ap Ap 2202". Vale para
+ *   a unidade principal (título, rodapé) e para a do marcador {{UNIDADE}} (o
+ *   modelo escreve "apartamento {{UNIDADE}}"), então um apartamento gravado
+ *   com "Ap 2202" aparece limpo sem ninguém salvar de novo. Na gravação, quem
+ *   limpa é `buildApartmentContent` e `varsFromInput`.
  * - `footer.img` não existia antes de uma versão: conteúdo gravado antes dela
  *   não tem a chave, e o guia quebraria ao mostrar a foto de despedida.
  */
@@ -111,6 +115,7 @@ export function guideContentFromStored(
   const content: Apartment = {
     ...stored,
     unit: cleanUnit(stored.unit),
+    ...(stored.vars ? { vars: { ...stored.vars, UNIDADE: cleanUnit(stored.vars.UNIDADE) } } : {}),
     footer: { ...stored.footer, img: stored.footer.img ?? "/media/mesa.webp" },
   };
   // Sempre passa pelo overlay: com prédio ele traz o conteúdo ao vivo (modelo +
@@ -169,7 +174,12 @@ export type ApartmentFormInput = {
   previousPatches?: ItemPatches;
 };
 
-/** Valores que preenchem os marcadores {{TORRE}}, {{ANDAR}}… do check-in/check-out do prédio. */
+/**
+ * Valores que preenchem os marcadores {{TORRE}}, {{ANDAR}}… do check-in/check-out
+ * do prédio. A unidade sai sem o "Ap", como o guia a mostra
+ * (`guideContentFromStored`): o editor do Cartão de check-in mostra o mesmo
+ * texto que o guia, e o que se grava já sai limpo.
+ */
 export const varsFromInput = (
   input: Pick<ApartmentFormInput, "tower" | "floor" | "unit" | "parking" | "checkoutTime"> &
     Partial<Pick<ApartmentFormInput, "floorEn" | "floorEs" | "parkingEn" | "parkingEs">>,
@@ -183,7 +193,7 @@ export const varsFromInput = (
   return {
     TORRE: input.tower,
     ANDAR: input.floor,
-    UNIDADE: input.unit,
+    UNIDADE: cleanUnit(input.unit),
     VAGA: input.parking,
     CHECKOUT_HORA: input.checkoutTime || "11h",
     ...(andarL ? { ANDAR_L: andarL } : {}),
