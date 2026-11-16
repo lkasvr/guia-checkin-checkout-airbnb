@@ -1,5 +1,6 @@
 import { upload } from "@vercel/blob/client";
 import { compressImage } from "@/lib/imageCompress";
+import { MEDIA_ACCEPT, isImageType, isVideoType, type MediaAccept } from "@/lib/mediaAccept";
 
 // Limite da foto original; depois de reduzida ela costuma ficar bem abaixo disso.
 export const MAX_IMAGE_BYTES = 30 * 1024 * 1024;
@@ -8,15 +9,15 @@ export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 // Arquivos grandes sobem em partes (paralelas e com nova tentativa por parte).
 const MULTIPART_FROM_BYTES = 20 * 1024 * 1024;
 
-const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
-
-/** Envia direto do navegador pro Blob (não passa pelo servidor do Next) e devolve a URL pública. */
-export async function uploadMedia(original: File): Promise<string> {
-  const isVideo = VIDEO_TYPES.includes(original.type);
-  const isImage = original.type.startsWith("image/");
-  if (!isImage && !isVideo) {
-    throw new Error("Envie uma foto (JPG, PNG, WebP) ou um vídeo (MP4, WebM, MOV).");
-  }
+/**
+ * Envia direto do navegador pro Blob (não passa pelo servidor do Next) e devolve a URL pública.
+ * Recusa o arquivo que o campo não aceita (`accepts`, ver `MEDIA_ACCEPT`).
+ */
+export async function uploadMedia(original: File, accepts: MediaAccept = "any"): Promise<string> {
+  const { allows, formats } = MEDIA_ACCEPT[accepts];
+  if (!allows(original.type)) throw new Error(`Envie ${formats}.`);
+  const isVideo = isVideoType(original.type);
+  const isImage = isImageType(original.type);
   const limit = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
   if (original.size > limit) {
     throw new Error(`Arquivo muito grande — o limite é ${limit / (1024 * 1024)} MB.`);

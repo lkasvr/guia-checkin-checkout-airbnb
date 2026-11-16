@@ -104,7 +104,7 @@ export function MediaField({
     setError(null);
     setPending(true);
     try {
-      onChange(await uploadMedia(file));
+      onChange(await uploadMedia(file, accepts));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha no upload.");
     } finally {
