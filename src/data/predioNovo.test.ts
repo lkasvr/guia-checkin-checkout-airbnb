@@ -9,10 +9,10 @@ import {
 } from "@/data/buildApartmentContent";
 import { BLANK_HOME } from "@/data/buildingModel";
 import { newBuildingTemplate } from "@/data/starter";
-import { apartmentPreview, type NamedBuilding } from "@/data/apartmentPreview";
+import { apartmentPreview, openEditor, type NamedBuilding } from "@/data/apartmentPreview";
 import { ruleId } from "@/data/itemMerge";
 import { emptyL } from "@/data/sectionContent";
-import { abrirEditor, formularioNoPredio } from "@/data/testFixtures";
+import { formularioNoPredio } from "@/data/testFixtures";
 
 const vazio = emptyL();
 
@@ -116,11 +116,9 @@ describe("Prévia do cadastro: prédio da prévia", () => {
 });
 
 describe("Prévia do cadastro: \"Personalizar para este apartamento\" nas regras, com prédio novo", () => {
-  /** O clique no botão: o editor de regras abre com o prédio da prévia, como o cadastro faz. */
+  /** O clique no botão, pelo mesmo caminho do cadastro: o editor de regras abre com o prédio da prévia. */
   function abrirEditorDeRegras(form: ApartmentFormInput): ApartmentFormInput {
-    const { building } = apartmentPreview(form, "Anfitriã", undefined, cadastrados);
-    assert.ok(building, "a prévia ficou sem prédio");
-    return abrirEditor(form, building, "rules");
+    return openEditor(form, "rules", apartmentPreview(form, "Anfitriã", undefined, cadastrados));
   }
 
   it("o editor abre com as 6 regras padrão", () => {

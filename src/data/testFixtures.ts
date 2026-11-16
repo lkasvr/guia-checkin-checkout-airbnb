@@ -1,10 +1,5 @@
-import {
-  doorCodeFromInput,
-  varsFromInput,
-  type ApartmentFormInput,
-  type BuildingTemplate,
-} from "@/data/buildApartmentContent";
-import { editorValues } from "@/data/patches";
+import type { ApartmentFormInput, BuildingTemplate } from "@/data/buildApartmentContent";
+import { apartmentPreview, openEditor } from "@/data/apartmentPreview";
 
 /**
  * Só para os testes: o formulário do cadastro de um apartamento no prédio
@@ -46,21 +41,15 @@ export function formularioNoPredio(campos: Partial<ApartmentFormInput>): Apartme
 
 /**
  * O clique em "Personalizar para este apartamento" nas regras, ou em "Ajustar
- * check-in/check-out manualmente": o editor abre com o modelo do prédio
- * preenchido pelos marcadores do formulário, como o painel faz.
+ * check-in/check-out manualmente", num formulário cujo "Edifício" é o prédio
+ * dado. O editor abre pelo mesmo caminho do cadastro: o prédio da prévia
+ * (`apartmentPreview`) e `openEditor`.
  */
 export function abrirEditor(
   form: ApartmentFormInput,
   predio: BuildingTemplate,
   secao: "rules" | "checkin" | "checkout",
 ): ApartmentFormInput {
-  const valores = editorValues(predio, undefined, varsFromInput(form), doorCodeFromInput(form));
-  switch (secao) {
-    case "rules":
-      return { ...form, overrides: { ...form.overrides, rules: true }, overrideRules: valores.rules };
-    case "checkin":
-      return { ...form, checkinOverride: valores.checkin };
-    case "checkout":
-      return { ...form, checkoutOverride: valores.checkout };
-  }
+  const previa = apartmentPreview(form, "Anfitriã", undefined, [{ ...predio, name: form.building }]);
+  return openEditor(form, secao, previa);
 }
