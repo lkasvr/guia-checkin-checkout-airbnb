@@ -10,7 +10,13 @@ const NETWORK_TIMEOUT_S = 30;
 /** Quanto uma chamada ao ffmpeg ou ao ffprobe pode levar, ao todo, antes de ser interrompida. */
 const PROCESS_TIMEOUT_S = 120;
 
-type ProcessResult = { stdout: Buffer; stderr: string; timedOut: boolean };
+/** A saída de uma chamada; `ok` diz se ela terminou com código 0, sem ser interrompida. */
+type ProcessResult = { stdout: Buffer; stderr: string; ok: boolean; timedOut: boolean };
+
+/** Se a chamada entregou uma imagem inteira: a saída de uma chamada que falhou pode vir cortada. */
+function isImage({ ok, stdout }: ProcessResult): boolean {
+  return ok && stdout.length > 0;
+}
 
 /**
  * Tira a Miniatura de um vídeo: o quadro de 1 s, em JPEG, com o lado maior limitado a 1280 px.
@@ -28,7 +34,7 @@ type ProcessResult = { stdout: Buffer; stderr: string; timedOut: boolean };
  */
 export async function extractMiniatura(video: string): Promise<Buffer> {
   const atOneSecond = await runFfmpeg(video, { seekToOneSecond: true });
-  if (atOneSecond.stdout.length > 0) return atOneSecond.stdout;
+  if (isImage(atOneSecond)) return atOneSecond.stdout;
   if (atOneSecond.timedOut) throw new Error(failureReason(atOneSecond));
 
   const timing = await videoTiming(video);
@@ -38,7 +44,7 @@ export async function extractMiniatura(video: string): Promise<Buffer> {
     throw new Error(`nenhum quadro em 1 s, e ${lasts}`);
   }
   const firstFrame = await runFfmpeg(video, { seekToOneSecond: false });
-  if (firstFrame.stdout.length > 0) return firstFrame.stdout;
+  if (isImage(firstFrame)) return firstFrame.stdout;
   throw new Error(failureReason(firstFrame));
 }
 
@@ -116,7 +122,7 @@ function run(command: string, args: string[]): Promise<ProcessResult> {
       (error, stdout, stderr) => {
         // Código em texto (ENOENT, saída grande demais) é falha do processo; número é só o código de saída.
         if (typeof error?.code === "string") return reject(error);
-        resolve({ stdout, stderr: stderr.toString(), timedOut: error?.killed === true });
+        resolve({ stdout, stderr: stderr.toString(), ok: !error, timedOut: error?.killed === true });
       },
     );
   });
