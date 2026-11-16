@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import type { Apartment } from "@/data/types";
 import { useLang } from "@/lib/i18n";
 import { CARD, LangToggle, Reveal, Rich, SectionHead, Steps, useCopy } from "@/components/ui";
-import { Media } from "@/components/media";
+import { GuideVideo, Media } from "@/components/media";
 import { isVideoUrl } from "@/lib/miniatura";
 import { mapsEmbedUrl, mapsSearchUrl, normalizeMapsUrl, whatsappDigits } from "@/lib/maps";
 
@@ -297,12 +297,9 @@ export function CheckIn({ ap }: { ap: Apartment }) {
                 <p className="mb-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-coffee">
                   {t(card.video.label)}
                 </p>
-                <video
+                <GuideVideo
                   src={card.video.src}
-                  controls
-                  playsInline
-                  preload="none"
-                  poster={card.video.poster}
+                  miniatura={card.video.poster}
                   className="block w-full rounded-2xl border border-line bg-black"
                 />
               </div>
@@ -630,11 +627,8 @@ export function Home({ ap }: { ap: Apartment }) {
             <p className="mb-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-coffee">
               🎬 {t({ pt: "Tour pelo apartamento", en: "Apartment tour", es: "Recorrido por el apartamento" })}
             </p>
-            <video
-              src={`${tour}#t=0.1`}
-              controls
-              playsInline
-              preload="metadata"
+            <GuideVideo
+              src={tour}
               className="block max-h-[72svh] w-full rounded-[20px] border border-line bg-black"
             />
           </div>
@@ -697,11 +691,8 @@ export function Home({ ap }: { ap: Apartment }) {
             <div className="px-[18px] pb-4">
               {acc.media &&
                 (isVideoUrl(acc.media) ? (
-                  <video
-                    src={`${acc.media}#t=0.1`}
-                    controls
-                    playsInline
-                    preload="metadata"
+                  <GuideVideo
+                    src={acc.media}
                     className="mb-3.5 block max-h-[60svh] w-full rounded-xl border border-line bg-black"
                   />
                 ) : (
