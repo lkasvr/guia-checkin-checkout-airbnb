@@ -3,56 +3,60 @@ import { isVideoUrl, miniaturaUrl, videosMissingMiniatura } from "../../src/lib/
 /** Um arquivo listado no Blob: o caminho dentro do armazenamento e o endereço público. */
 export type BlobFile = { pathname: string; url: string };
 
-export type Report = {
-  /** Vídeos no Blob. */
+/** O que o lote encontrou no Blob. */
+export type Plan = {
+  /** Quantos vídeos há no Blob. */
   found: number;
-  /** Vídeos que já tinham Miniatura. */
-  skipped: number;
-  /** Vídeos sem Miniatura: o que o lote tenta criar (no ensaio, o que criaria). */
-  pending: string[];
+  /** Os vídeos sem Miniatura: o que o lote cria. */
+  pending: BlobFile[];
+};
+
+/** O que o lote fez. */
+export type Outcome = {
   /** Caminhos das Miniaturas gravadas. */
   created: string[];
   /** Vídeos cuja Miniatura não saiu, com o motivo. */
   failures: { video: string; reason: string }[];
 };
 
-type Options =
-  | { dryRun: true }
-  | {
-      dryRun?: false;
-      /** Tira o JPEG do quadro de 1 s a partir do endereço público do vídeo. */
-      extract: (videoUrl: string) => Promise<Buffer>;
-      /** Grava o JPEG no caminho da Miniatura. */
-      save: (miniaturaPath: string, jpeg: Buffer) => Promise<void>;
-      /** Recebe uma linha por vídeo processado, para acompanhar um lote demorado. */
-      onProgress?: (line: string) => void;
-    };
+/** Os vídeos do Blob e, entre eles, os que ainda não têm Miniatura. */
+export function plan(files: BlobFile[]): Plan {
+  const byPath = new Map(files.map((file) => [file.pathname, file]));
+  const paths = [...byPath.keys()];
+  return {
+    found: paths.filter(isVideoUrl).length,
+    pending: videosMissingMiniatura(paths).map((path) => byPath.get(path)!),
+  };
+}
 
-/** Cria a Miniatura de cada vídeo do Blob que ainda não tem uma. */
-export async function backfill(files: BlobFile[], options: Options): Promise<Report> {
-  const paths = files.map((f) => f.pathname);
-  const urls = new Map(files.map((f) => [f.pathname, f.url]));
-  const found = paths.filter(isVideoUrl).length;
-  const pending = videosMissingMiniatura(paths);
-  const report: Report = { found, skipped: found - pending.length, pending, created: [], failures: [] };
-  if (options.dryRun) return report;
-
-  // Um vídeo de cada vez, e a falha de um não derruba o lote.
+/**
+ * Cria a Miniatura de cada vídeo, um de cada vez; a falha de um não derruba o lote.
+ * `extract` tira o JPEG do endereço público do vídeo, `save` o guarda no caminho da Miniatura
+ * e `onProgress` recebe uma linha por vídeo, para acompanhar um lote demorado.
+ */
+export async function createMiniaturas(
+  pending: BlobFile[],
+  { extract, save, onProgress }: {
+    extract: (videoUrl: string) => Promise<Buffer>;
+    save: (miniaturaPath: string, jpeg: Buffer) => Promise<void>;
+    onProgress: (line: string) => void;
+  },
+): Promise<Outcome> {
+  const outcome: Outcome = { created: [], failures: [] };
   for (const [i, video] of pending.entries()) {
-    const miniatura = miniaturaUrl(video)!;
-    const step = `[${i + 1}/${pending.length}] ${video}`;
+    const miniatura = miniaturaUrl(video.pathname)!;
+    const step = `[${i + 1}/${pending.length}] ${video.pathname}`;
     try {
-      const jpeg = await options.extract(urls.get(video)!);
-      await options.save(miniatura, jpeg);
-      report.created.push(miniatura);
-      options.onProgress?.(`${step} → ${miniatura}`);
+      await save(miniatura, await extract(video.url));
+      outcome.created.push(miniatura);
+      onProgress(`${step} → ${miniatura}`);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      report.failures.push({ video, reason });
-      options.onProgress?.(`${step}: falhou (${reason})`);
+      outcome.failures.push({ video: video.pathname, reason });
+      onProgress(`${step}: falhou (${reason})`);
     }
   }
-  return report;
+  return outcome;
 }
 
 /**
@@ -63,28 +67,26 @@ export async function backfill(files: BlobFile[], options: Options): Promise<Rep
 export type Destination = { kind: "gravar" } | { kind: "pasta"; dir: string } | { kind: "ensaio" };
 
 /** Os vídeos sem Miniatura, cada um com o caminho da Miniatura que vai ganhar. */
-export function formatPending(report: Report): string {
-  const lines = report.pending.map((video) => `  ${video} → ${miniaturaUrl(video)}`);
-  return [`Vídeos sem Miniatura (${report.pending.length}):`, ...lines].join("\n");
+export function formatPending({ pending }: Plan): string {
+  const lines = pending.map(({ pathname }) => `  ${pathname} → ${miniaturaUrl(pathname)}`);
+  return [`Vídeos sem Miniatura (${pending.length}):`, ...lines].join("\n");
 }
 
 /** O relatório que o script imprime no fim: as quatro contagens e o motivo de cada falha. */
-export function formatReport(report: Report, destination: Destination): string {
+export function formatReport(
+  plan: Plan,
+  destination: Destination,
+  { created, failures }: Outcome = { created: [], failures: [] },
+): string {
   const out: string[] = [];
-  if (destination.kind === "ensaio") {
-    out.push("Ensaio: nada foi gravado.", formatPending(report), "");
-  }
-  if (destination.kind === "pasta") {
-    out.push(`Miniaturas salvas em ${destination.dir}: nada foi gravado no Blob.`, "");
-  }
-
-  const wouldCreate = destination.kind === "ensaio" ? ` (o ensaio criaria ${report.pending.length})` : "";
+  if (destination.kind === "ensaio") out.push("Ensaio: nada foi gravado.", formatPending(plan), "");
+  if (destination.kind === "pasta") out.push(`Miniaturas salvas em ${destination.dir}: nada foi gravado no Blob.`, "");
   out.push(
-    `Vídeos encontrados: ${report.found}`,
-    `Miniaturas criadas: ${report.created.length}${wouldCreate}`,
-    `Pulados (já tinham Miniatura): ${report.skipped}`,
-    `Falhas: ${report.failures.length}`,
+    `Vídeos encontrados: ${plan.found}`,
+    `Miniaturas criadas: ${created.length}`,
+    `Pulados (já tinham Miniatura): ${plan.found - plan.pending.length}`,
+    `Falhas: ${failures.length}`,
+    ...failures.map(({ video, reason }) => `  ${video}: ${reason}`),
   );
-  for (const { video, reason } of report.failures) out.push(`  ${video}: ${reason}`);
   return out.join("\n");
 }

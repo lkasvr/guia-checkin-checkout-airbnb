@@ -1,6 +1,7 @@
-import { spawn } from "node:child_process";
+import { execFile } from "node:child_process";
+import { MB } from "../../src/lib/mediaAccept";
 
-/** Lado maior da Miniatura, em px: o mesmo teto da Miniatura gerada no navegador do painel. */
+/** Lado maior da Miniatura, em px: o teto que a spec #33 sugere para a Miniatura gerada no painel. */
 const MAX_SIDE = 1280;
 /** Qualidade do JPEG na escala do ffmpeg (2 é a melhor, 31 a pior). */
 const JPEG_QSCALE = 5;
@@ -9,7 +10,7 @@ const NETWORK_TIMEOUT_S = 30;
 /** Quanto uma chamada ao ffmpeg ou ao ffprobe pode levar, ao todo, antes de ser interrompida. */
 const PROCESS_TIMEOUT_S = 120;
 
-type ProcessResult = { stdout: Buffer; stderr: string; code: number | null; timedOut: boolean };
+type ProcessResult = { stdout: Buffer; stderr: string; timedOut: boolean };
 
 /**
  * Tira a Miniatura de um vídeo: o quadro de 1 s, em JPEG, com o lado maior limitado a 1280 px.
@@ -19,24 +20,24 @@ type ProcessResult = { stdout: Buffer; stderr: string; code: number | null; time
  * pula para o quadro-chave anterior a 1 s e, num endereço HTTP, pede por requisições de faixa só
  * esses bytes, sem baixar o vídeo inteiro.
  *
- * Se não sair quadro em 1 s, a duração decide. Num vídeo de até 1 s, o salto passou do fim, e a
- * Miniatura é o primeiro quadro. Num vídeo mais longo, algo falhou (a rede, um arquivo cortado),
- * e o primeiro quadro seria a tela preta ou o fade de abertura que o quadro de 1 s existe para
- * evitar; aí a extração falha com o motivo, e o vídeo segue sem Miniatura para a próxima rodada.
+ * Se o ffmpeg acusar erro (decodificador, rede, arquivo cortado), a extração falha com o motivo,
+ * sem cair no primeiro quadro: ele seria a tela preta ou o fade de abertura que o quadro de 1 s
+ * existe para evitar, e o vídeo segue sem Miniatura para a próxima rodada. Se não sair imagem nem
+ * erro, o salto passou do fim do vídeo: num vídeo de até 1 s, a Miniatura é o primeiro quadro.
  */
 export async function extractMiniatura(video: string): Promise<Buffer> {
   const atOneSecond = await runFfmpeg(video, { seekToOneSecond: true });
   if (atOneSecond.stdout.length > 0) return atOneSecond.stdout;
+  if (atOneSecond.stderr.trim() || atOneSecond.timedOut) throw new Error(failureReason(atOneSecond));
 
   const duration = await videoDuration(video);
   if (duration === undefined || duration > 1) {
     const lasts = duration === undefined ? "a duração do vídeo é desconhecida" : `o vídeo dura ${duration} s`;
-    throw new Error(failureReason(atOneSecond, `nenhum quadro em 1 s, e ${lasts}`));
+    throw new Error(`nenhum quadro em 1 s, e ${lasts}`);
   }
-
   const firstFrame = await runFfmpeg(video, { seekToOneSecond: false });
   if (firstFrame.stdout.length > 0) return firstFrame.stdout;
-  throw new Error(failureReason(firstFrame, "nenhum quadro no vídeo"));
+  throw new Error(failureReason(firstFrame));
 }
 
 function runFfmpeg(video: string, { seekToOneSecond }: { seekToOneSecond: boolean }): Promise<ProcessResult> {
@@ -59,45 +60,35 @@ function runFfmpeg(video: string, { seekToOneSecond }: { seekToOneSecond: boolea
   ]);
 }
 
-/** Duração do vídeo em segundos, pelo ffprobe (só o cabeçalho e o índice), ou `undefined`. */
+/**
+ * Duração do vídeo em segundos, pelo ffprobe (só o cabeçalho e o índice), ou `undefined`. O
+ * ffprobe imprime a duração da trilha de vídeo e depois a do arquivo; vale a primeira que for
+ * número (alguns WebM não informam a da trilha, só a do arquivo).
+ */
 async function videoDuration(video: string): Promise<number | undefined> {
   const { stdout } = await run("ffprobe", [
     "-v", "error",
     "-rw_timeout", String(NETWORK_TIMEOUT_S * 1_000_000),
     "-select_streams", "v:0",
     "-show_entries", "stream=duration:format=duration",
-    "-of", "json",
+    "-of", "default=noprint_wrappers=1:nokey=1",
     video,
   ]);
-  let info: { streams?: { duration?: string }[]; format?: { duration?: string } };
-  try {
-    info = JSON.parse(stdout.toString());
-  } catch {
-    return undefined;
-  }
-  // A duração da trilha de vídeo; sem ela (alguns WebM), a do arquivo.
-  for (const value of [info.streams?.[0]?.duration, info.format?.duration]) {
-    const seconds = Number.parseFloat(value ?? "");
-    if (Number.isFinite(seconds)) return seconds;
-  }
-  return undefined;
+  return stdout.toString().split("\n").map((line) => Number.parseFloat(line)).find(Number.isFinite);
 }
 
+/** Roda o programa e devolve a saída mesmo quando ele termina com erro. */
 function run(command: string, args: string[]): Promise<ProcessResult> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { timeout: PROCESS_TIMEOUT_S * 1000 });
-    const stdout: Buffer[] = [];
-    const stderr: Buffer[] = [];
-    child.stdout.on("data", (chunk: Buffer) => stdout.push(chunk));
-    child.stderr.on("data", (chunk: Buffer) => stderr.push(chunk));
-    child.on("error", reject);
-    child.on("close", (code, signal) =>
-      resolve({
-        stdout: Buffer.concat(stdout),
-        stderr: Buffer.concat(stderr).toString(),
-        code,
-        timedOut: signal !== null && code === null,
-      }),
+    execFile(
+      command,
+      args,
+      { encoding: "buffer", timeout: PROCESS_TIMEOUT_S * 1000, maxBuffer: 32 * MB },
+      (error, stdout, stderr) => {
+        // Código em texto (ENOENT, saída grande demais) é falha do processo; número é só o código de saída.
+        if (typeof error?.code === "string") return reject(error);
+        resolve({ stdout, stderr: stderr.toString(), timedOut: error?.killed === true });
+      },
     );
   });
 }
@@ -105,13 +96,13 @@ function run(command: string, args: string[]): Promise<ProcessResult> {
 /**
  * O motivo da falha em uma linha: as duas primeiras mensagens de erro do ffmpeg, que costumam
  * trazer a causa ("moov atom not found", "HTTP error 403 Forbidden"), sem o prefixo
- * `[componente @ 0x...]` de cada uma. Sem mensagem, vale o `fallback`.
+ * `[componente @ 0x...]` de cada uma.
  */
-function failureReason({ stderr, timedOut }: ProcessResult, fallback: string): string {
+function failureReason({ stderr, timedOut }: ProcessResult): string {
   if (timedOut) return `o ffmpeg não terminou em ${PROCESS_TIMEOUT_S} s`;
   const messages = stderr
     .split("\n")
     .map((line) => line.replace(/^(\[[^\]]*\]\s*)+/, "").trim())
     .filter(Boolean);
-  return messages.slice(0, 2).join(" · ") || fallback;
+  return messages.slice(0, 2).join(" · ") || "o ffmpeg não gerou imagem";
 }

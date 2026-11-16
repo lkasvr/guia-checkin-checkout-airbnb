@@ -22,8 +22,8 @@ import { createInterface } from "node:readline";
 import { parseArgs } from "node:util";
 import { list, put } from "@vercel/blob";
 import { config as loadEnv } from "dotenv";
-import { BLOB_TOKEN_VARS, blobToken } from "../../src/lib/blobToken";
-import { backfill, formatPending, formatReport, type BlobFile, type Destination } from "./backfill";
+import { blobToken } from "../../src/lib/blobToken";
+import { createMiniaturas, formatPending, formatReport, plan, type BlobFile, type Destination } from "./backfill";
 import { extractMiniatura } from "./extractMiniatura";
 
 const USAGE = `Uso (da raiz do projeto):
@@ -58,18 +58,16 @@ function destinationFromArgs(): Destination {
 
 /**
  * A chave do Blob, lida dos arquivos de ambiente locais na mesma ordem do Next em
- * desenvolvimento (o primeiro arquivo vence) ou do próprio ambiente do terminal. Os arquivos
- * são lidos num objeto à parte, sem entrar no `process.env`: assim o `VERCEL_OIDC_TOKEN` do
- * `.env.local` não chega ao SDK do Blob, que o preferiria à chave em certas configurações.
+ * desenvolvimento (o primeiro arquivo vence; o ambiente do terminal vence os arquivos). Ela vai
+ * explícita em cada chamada ao SDK do Blob, que assim a usa antes de qualquer token OIDC.
  */
 function requireBlobToken(): string {
-  const fromFiles: Record<string, string> = {};
-  loadEnv({ path: [".env.development.local", ".env.local", ".env"], processEnv: fromFiles, quiet: true });
-  const token = blobToken({ ...fromFiles, ...process.env });
+  loadEnv({ path: [".env.development.local", ".env.local", ".env"], quiet: true });
+  const token = blobToken(process.env);
   if (!token) {
-    const [preferred, fallback] = BLOB_TOKEN_VARS;
     exitWithError(
-      `Falta a chave do Blob: defina ${preferred} (ou ${fallback}) no .env.development.local da raiz do projeto.\n` +
+      "Falta a chave do Blob: defina BLOB_VERCEL_STORAGE_READ_WRITE_TOKEN (ou BLOB_READ_WRITE_TOKEN) " +
+        "no .env.development.local da raiz do projeto.\n" +
         "Copie o valor do painel da Vercel → Storage → o armazenamento → aba .env.local.",
     );
   }
@@ -139,26 +137,26 @@ async function main() {
   const files = await listBlob(token);
   console.log(`${files.length} arquivos no Blob.`);
 
-  const plan = await backfill(files, { dryRun: true });
+  const backlog = plan(files);
   if (destination.kind === "ensaio") {
-    console.log(`\n${formatReport(plan, destination)}`);
+    console.log(`\n${formatReport(backlog, destination)}`);
     return;
   }
 
-  if (destination.kind === "gravar" && plan.pending.length > 0) {
-    console.log(`\n${formatPending(plan)}\n`);
-    const answer = await ask(`Gravar ${plan.pending.length} Miniaturas no Blob de PRODUÇÃO? Digite "s" para seguir: `);
+  if (destination.kind === "gravar" && backlog.pending.length > 0) {
+    console.log(`\n${formatPending(backlog)}\n`);
+    const answer = await ask(`Gravar ${backlog.pending.length} Miniaturas no Blob de PRODUÇÃO? Digite "s" para seguir: `);
     if (answer.toLowerCase() !== "s") exitWithError("\nCancelado: nada foi gravado.");
   }
 
   console.log("");
-  const report = await backfill(files, {
+  const outcome = await createMiniaturas(backlog.pending, {
     extract: extractMiniatura,
     save: saverFor(destination, token),
     onProgress: (line) => console.log(line),
   });
-  console.log(`\n${formatReport(report, destination)}`);
-  if (report.failures.length > 0) process.exitCode = 1;
+  console.log(`\n${formatReport(backlog, destination, outcome)}`);
+  if (outcome.failures.length > 0) process.exitCode = 1;
 }
 
 main().catch((error) => exitWithError(`O script parou: ${error instanceof Error ? error.message : error}`));
