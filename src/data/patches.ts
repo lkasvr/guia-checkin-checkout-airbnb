@@ -2,6 +2,7 @@ import type {
   Apartment,
   ApartmentVars,
   Accordion,
+  CleanVars,
   Amenity,
   CheckinCard,
   ItemPatch,
@@ -124,7 +125,7 @@ export function overlayWithPatches(
 export function editorValues(
   building: BuildingTemplate,
   patches: ItemPatches | undefined,
-  vars: ApartmentVars,
+  vars: CleanVars,
   doorCode?: Apartment["checkin"]["doorCode"],
 ) {
   const p = patches ?? {};
@@ -174,7 +175,7 @@ const compact = (p: ItemPatches): ItemPatches =>
 export function buildItemPatches(
   src: PatchSource,
   building: BuildingTemplate,
-  vars: ApartmentVars,
+  vars: CleanVars,
 ): ItemPatches {
   const o = src.overrides;
   const patches: ItemPatches = {};
@@ -372,7 +373,11 @@ export function legacyToPatches(
       true,
     );
   }
-  // Check-in/check-out sempre foram cópias do modelo (nunca ao vivo).
+  // Check-in/check-out sempre foram cópias do modelo (nunca ao vivo), gravadas
+  // já preenchidas com os marcadores como foram digitados. Por isso o modelo é
+  // preenchido com `deriveVars`, sem o `cleanVars` do guia: a diferença
+  // "Ap 2202" × "2202" ou "Até às 11h" × "11h" viraria ajuste, e o ajuste
+  // congelaria o texto sujo no cartão ou no passo.
   const ciModel = filledCheckin(building, vars).cards;
   patches.checkin = toPatch(
     ciModel,

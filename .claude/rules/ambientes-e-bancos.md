@@ -6,6 +6,7 @@ paths:
   - src/auth.ts
   - vercel.json
   - .env*
+  - scripts/backfill-miniaturas/**
 ---
 
 # Ambientes e bancos
@@ -35,7 +36,12 @@ duas senhas são diferentes. Trocar o host numa URL de dev não alcança produç
 | arquivo | conteúdo | quem escreve |
 |---|---|---|
 | `.env.local` | as 15 chaves de banco, apontando para a `dev` | `vercel env pull` **reescreve o arquivo inteiro** |
-| `.env.development.local` | `AUTH_SECRET`, `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD_HASH` | só você; o `vercel env pull` não toca |
+| `.env.development.local` | `AUTH_SECRET`, `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD_HASH`, `BLOB_VERCEL_STORAGE_STORE_ID`, `BLOB_VERCEL_STORAGE_READ_WRITE_TOKEN` | só você; o `vercel env pull` não toca |
+
+O Vercel Blob, ao contrário do banco, é **um só**: a chave do Blob no
+`.env.development.local` é a do armazenamento de produção. Um envio pelo painel
+em `localhost` grava no Blob de produção, e o mesmo vale para
+`npm run backfill:miniaturas -- --gravar`.
 
 O `prisma.config.ts` carrega os dois, nessa ordem de precedência — a mesma do
 Next. Se um override de banco for para o `.env.development.local`, ele vale

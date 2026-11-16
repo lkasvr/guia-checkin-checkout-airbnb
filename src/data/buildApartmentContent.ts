@@ -1,12 +1,13 @@
 import type {
   Apartment,
-  ApartmentVars,
+  CleanVars,
   ItemPatches,
   L,
   PortariaOverride,
   Rule,
 } from "@/data/types";
 import { starterContent } from "@/data/starter";
+import { cleanUnit } from "@/lib/unit";
 import { withPrerequisiteCard } from "@/data/prerequisiteCard";
 import {
   checkinToContent,
@@ -27,6 +28,7 @@ import {
 } from "@/data/sectionContent";
 import type { ApartmentOverrides, BuildingTemplate } from "@/data/buildingModel";
 import { buildItemPatches, overlayWithPatches } from "@/data/patches";
+import { cleanVars, deriveVars } from "@/data/checkinTemplate";
 import { lookupIntercom, portariaContact, toTel, withPortaria } from "@/data/contacts";
 
 // Quem já importava daqui continua importando daqui.
@@ -37,10 +39,9 @@ export { parseHeroFacts } from "@/data/checkinTemplate";
 const t = (pt: string, en?: string): L => ({ pt, en: en ?? pt });
 
 /**
- * Sobrepõe o conteúdo compartilhado do prédio no conteúdo do apartamento —
- * usado tanto no carregamento do guia público (`src/lib/apartments.ts`)
- * quanto na prévia do formulário, pra garantir que os dois mostrem a mesma
- * coisa.
+ * Sobrepõe o conteúdo compartilhado do prédio no conteúdo do apartamento. Só
+ * `guideContentFromStored` a chama, e por ela passam o guia público e a prévia
+ * do cadastro (`apartmentPreview`): os dois mostram a mesma coisa.
  *
  * Com `overrides.patches` (modo atual) cada seção é a lista do prédio, ao vivo,
  * com só os itens que este apartamento editou/removeu/acrescentou trocados —
@@ -49,7 +50,7 @@ const t = (pt: string, en?: string): L => ({ pt, en: en ?? pt });
  * apartamento; senão herda do prédio. Regras do prédio somam com as do
  * apartamento em vez de substituí-las.
  */
-export function overlayBuildingLiveContent(
+function overlayBuildingLiveContent(
   content: Apartment,
   building: BuildingTemplate | null,
   overrides: ApartmentOverrides = {},
@@ -90,6 +91,37 @@ export function overlayBuildingLiveContent(
     items: withPortaria(overlaid.contacts.items, portariaContact(content, info)),
   };
   return overlaid;
+}
+
+/**
+ * O conteúdo que o guia público mostra (`src/lib/apartments.ts`), a partir do
+ * que está gravado no banco: conserta o que foi gravado antes das regras atuais
+ * e sobrepõe o prédio.
+ *
+ * - A unidade principal (título, rodapé) sai sem o "Ap" na frente: o guia já
+ *   escreve "Apartamento …" e "Ap …" antes dela, e quem digitou "Ap 2202"
+ *   gerava "Ap Ap 2202".
+ * - Os marcadores saem sempre preenchidos, os gravados ou, em conteúdo antigo,
+ *   os lidos da Capa, e limpos por `cleanVars`: um apartamento gravado com
+ *   "Ap 2202" ou "Até às 11h" aparece limpo sem ninguém salvar de novo. Na
+ *   gravação, quem limpa é `buildApartmentContent` e `varsFromInput`.
+ * - `footer.img` não existia antes de uma versão: conteúdo gravado antes dela
+ *   não tem a chave, e o guia quebraria ao mostrar a foto de despedida.
+ */
+export function guideContentFromStored(
+  stored: Apartment,
+  building: BuildingTemplate | null,
+  overrides: ApartmentOverrides,
+): Apartment {
+  const content: Apartment = {
+    ...stored,
+    unit: cleanUnit(stored.unit),
+    vars: cleanVars(deriveVars(stored)),
+    footer: { ...stored.footer, img: stored.footer.img ?? "/media/mesa.webp" },
+  };
+  // Sempre passa pelo overlay: com prédio ele traz o conteúdo ao vivo (modelo +
+  // ajustes do apartamento); com ou sem prédio ele resolve mapa e portaria.
+  return overlayBuildingLiveContent(content, building, overrides);
 }
 
 export type ApartmentFormInput = {
@@ -143,26 +175,31 @@ export type ApartmentFormInput = {
   previousPatches?: ItemPatches;
 };
 
-/** Valores que preenchem os marcadores {{TORRE}}, {{ANDAR}}… do check-in/check-out do prédio. */
+/**
+ * Valores que preenchem os marcadores {{TORRE}}, {{ANDAR}}… do check-in/check-out
+ * do prédio, limpos por `cleanVars` como o guia os mostra: os editores do
+ * check-in e do check-out mostram o mesmo texto que o guia, o cálculo dos
+ * ajustes compara com esse texto, e o que se grava já sai limpo.
+ */
 export const varsFromInput = (
   input: Pick<ApartmentFormInput, "tower" | "floor" | "unit" | "parking" | "checkoutTime"> &
     Partial<Pick<ApartmentFormInput, "floorEn" | "floorEs" | "parkingEn" | "parkingEs">>,
-): ApartmentVars => {
+): CleanVars => {
   const tr = (pt: string, en?: string, es?: string): L | undefined =>
     en?.trim() || es?.trim()
       ? { pt, en: en?.trim() || pt, ...(es?.trim() ? { es: es.trim() } : {}) }
       : undefined;
   const andarL = tr(input.floor, input.floorEn, input.floorEs);
   const vagaL = tr(input.parking, input.parkingEn, input.parkingEs);
-  return {
+  return cleanVars({
     TORRE: input.tower,
     ANDAR: input.floor,
     UNIDADE: input.unit,
     VAGA: input.parking,
-    CHECKOUT_HORA: input.checkoutTime || "11h",
+    CHECKOUT_HORA: input.checkoutTime,
     ...(andarL ? { ANDAR_L: andarL } : {}),
     ...(vagaL ? { VAGA_L: vagaL } : {}),
-  };
+  });
 };
 
 /** Título de regra gerado automaticamente (fumo/animais) — não entra na lista de "regras específicas". */
@@ -358,7 +395,7 @@ export function buildApartmentContent(
 
   const content: Apartment = {
     ...base,
-    unit: input.unit,
+    unit: cleanUnit(input.unit),
     building: input.building,
     vars: varsFromInput(input),
     contactInfo: {
@@ -420,4 +457,22 @@ export function buildApartmentContent(
   if (portaria.phone || portaria.code) content.portaria = portaria;
   else delete content.portaria;
   return content;
+}
+
+/**
+ * O que o cadastro de apartamento grava a partir do formulário: o conteúdo e os
+ * ajustes. `createApartmentDetailed` e `updateApartmentDetailed` gravam isto, e
+ * a prévia do cadastro (`apartmentPreview`) mostra o guia montado a partir
+ * disto, pelo mesmo `guideContentFromStored` do guia público.
+ */
+export function buildApartmentRecord(
+  input: ApartmentFormInput,
+  hostName: string,
+  base: Apartment | undefined,
+  building: BuildingTemplate | null,
+): { content: Apartment; overrides: ApartmentOverrides } {
+  return {
+    content: buildApartmentContent(input, hostName, base, building),
+    overrides: buildOverrides(input, building),
+  };
 }

@@ -1,11 +1,14 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { blobToken } from "@/lib/blobToken";
+import { uploadTokenOptions } from "@/lib/uploadToken";
 
 /**
- * Emite o token de upload direto-pro-Blob (o arquivo nunca passa pelo corpo
+ * Emite o token de envio direto pro Blob (o arquivo nunca passa pelo corpo
  * desta rota, só o pedido de token e a confirmação) — só pro superadmin,
- * mesma checagem de `requireAdmin` em `src/app/admin/actions.ts`.
+ * mesma checagem de `requireAdmin` em `src/app/admin/actions.ts`. O que o
+ * token deixa gravar, inclusive a Miniatura de um vídeo, está em `uploadTokenOptions`.
  */
 export async function POST(request: Request): Promise<NextResponse> {
   const session = await auth();
@@ -14,30 +17,14 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   const body = (await request.json()) as HandleUploadBody;
-
-  // O prefixo que a Vercel deu à variável ao conectar o Blob Store veio
-  // diferente do padrão esperado pelo SDK (`BLOB_READ_WRITE_TOKEN`) — aceita
-  // os dois nomes pra não depender de qual prefixo foi usado.
-  const token =
-    process.env.BLOB_VERCEL_STORAGE_READ_WRITE_TOKEN ?? process.env.BLOB_READ_WRITE_TOKEN;
+  const token = blobToken(process.env);
 
   try {
     const jsonResponse = await handleUpload({
       body,
       request,
       token,
-      onBeforeGenerateToken: async () => ({
-        allowedContentTypes: [
-          "image/jpeg",
-          "image/png",
-          "image/webp",
-          "video/mp4",
-          "video/webm",
-          "video/quicktime",
-        ],
-        addRandomSuffix: true,
-        maximumSizeInBytes: 100 * 1024 * 1024,
-      }),
+      onBeforeGenerateToken: async (pathname, clientPayload) => uploadTokenOptions(pathname, clientPayload),
     });
     return NextResponse.json(jsonResponse);
   } catch (error) {

@@ -18,6 +18,7 @@ import {
 } from "@/app/admin/section-editors";
 import type { BuildingTemplate } from "@/data/buildApartmentContent";
 import { formatPhoneBR } from "@/lib/phone";
+import { isVideoUrl } from "@/lib/miniatura";
 import { useEquipmentLibrary } from "@/app/admin/use-equipment-library";
 import { useSectionLibrary } from "@/app/admin/use-section-library";
 import {
@@ -153,7 +154,9 @@ export function BuildingEditor({
     if (!src) return;
     setForm((f) => ({
       ...f,
-      defaultHeroImg: src.defaultHeroImg ?? f.defaultHeroImg,
+      // A Capa é sempre foto: uma capa padrão antiga em vídeo não é copiada.
+      defaultHeroImg:
+        src.defaultHeroImg && !isVideoUrl(src.defaultHeroImg) ? src.defaultHeroImg : f.defaultHeroImg,
       defaultFooterImg: src.defaultFooterImg ?? f.defaultFooterImg,
     }));
   }
@@ -323,6 +326,7 @@ export function BuildingEditor({
             <span className="text-[12.5px] font-semibold text-soft">Capa</span>
             <div className="mt-1">
               <MediaField
+                accepts="image"
                 value={form.defaultHeroImg}
                 onChange={(defaultHeroImg) => setForm((f) => ({ ...f, defaultHeroImg }))}
               />
@@ -342,8 +346,8 @@ export function BuildingEditor({
 
       <h2 className={sectionTitle}>Regras da Casa</h2>
       <p className="mt-1 text-[13px] text-soft">
-        Regras gerais do condomínio (silêncio, lixo, garagem...). Cada apartamento ainda soma
-        suas próprias regras específicas a estas.
+        Regras gerais do condomínio (silêncio, garagem, elevadores...). Cada apartamento ainda
+        soma suas próprias regras específicas a estas.
       </p>
       <div className="mt-3">
         <CopyFromSelector buildings={buildings} onApply={(id) => copyFrom("rules", id)} />

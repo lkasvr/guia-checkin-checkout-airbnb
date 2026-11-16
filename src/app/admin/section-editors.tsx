@@ -2,7 +2,9 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import { isVideoUrl, uploadMedia } from "@/lib/upload";
+import { uploadMedia } from "@/lib/upload";
+import { MEDIA_ACCEPT, type MediaAccept } from "@/lib/mediaAccept";
+import { isVideoUrl } from "@/lib/miniatura";
 import type { ReusableVideo } from "@/app/admin/actions";
 import { equipmentKey, type EquipmentModel } from "@/data/equipmentLibrary";
 import { legacyId, newId } from "@/data/itemMerge";
@@ -84,18 +86,24 @@ function ReuseVideoSelect({
   );
 }
 
+/** Aviso do vídeo que subiu sem Miniatura: no guia, ele aparece sem imagem até o play. */
+const MINIATURA_WARNING = "Não deu para gerar a miniatura deste vídeo.";
+
 /** Miniatura + botão de upload — usado em todo campo de foto/vídeo dos editores abaixo. */
 export function MediaField({
   value,
   onChange,
   reuseOptions,
   onReuse,
-  videoOnly,
+  accepts = "any",
 }: {
   value: string;
   onChange: (url: string) => void;
-  /** Campo só de vídeo (ex.: tour de A Casa): não oferece foto. */
-  videoOnly?: boolean;
+  /**
+   * O que o campo aceita: "video" (ex.: Tour de A Casa) não oferece foto, "image" (ex.: a Capa,
+   * que nunca é vídeo) não oferece vídeo. Sem ele, aceita os dois.
+   */
+  accepts?: MediaAccept;
   /** Vídeos já enviados (do modelo do prédio ou de outro apartamento) que dá pra reaproveitar sem duplicar espaço. */
   reuseOptions?: ReusableVideo[];
   /** Reaproveitar copia mais do que a URL (ex.: a legenda do botão) — sem isso cai no `onChange(url)` padrão. */
@@ -104,14 +112,22 @@ export function MediaField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [miniaturaMissing, setMiniaturaMissing] = useState(false);
   const video = value && isVideoUrl(value);
+  const field = MEDIA_ACCEPT[accepts];
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
     setError(null);
+    setMiniaturaMissing(false);
     setPending(true);
     try {
-      onChange(await uploadMedia(file));
+      const { url, miniaturaError } = await uploadMedia(file, accepts);
+      onChange(url);
+      if (miniaturaError) {
+        console.warn("Miniatura não gravada:", miniaturaError);
+        setMiniaturaMissing(true);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha no upload.");
     } finally {
@@ -135,30 +151,28 @@ export function MediaField({
       </div>
       <div className="min-w-0">
         <label className="inline-block cursor-pointer rounded-full border border-line bg-card px-3 py-1.5 text-[13px] font-semibold text-soft">
-          {pending
-            ? "Enviando…"
-            : videoOnly
-              ? value
-                ? "Trocar vídeo"
-                : "Enviar vídeo"
-              : value
-                ? "Trocar foto/vídeo"
-                : "Enviar foto ou vídeo"}
+          {pending ? "Enviando…" : value ? field.swap : field.send}
           <input
             ref={inputRef}
             type="file"
-            accept={videoOnly ? "video/*" : "image/*,video/*"}
+            accept={field.picker}
             className="hidden"
             disabled={pending}
             onChange={(e) => handleFile(e.target.files?.[0])}
           />
         </label>
+        {field.hint && <p className="mt-1 text-[12px] text-soft">{field.hint}</p>}
         {error && <p className="mt-1 text-[12px] text-terra">{error}</p>}
+        {miniaturaMissing && <p className="mt-1 text-[12px] text-terra">{MINIATURA_WARNING}</p>}
         {reuseOptions && reuseOptions.length > 0 && (
           <div>
             <ReuseVideoSelect
               options={reuseOptions}
-              onPick={(v) => (onReuse ? onReuse(v) : onChange(v.src))}
+              onPick={(v) => {
+                setMiniaturaMissing(false);
+                if (onReuse) onReuse(v);
+                else onChange(v.src);
+              }}
             />
           </div>
         )}
@@ -793,7 +807,7 @@ export function HomeEditor({
       </p>
       <div className="mt-2">
         <MediaField
-          videoOnly
+          accepts="video"
           value={value.video ?? ""}
           onChange={(video) => onChange({ ...value, video })}
         />
