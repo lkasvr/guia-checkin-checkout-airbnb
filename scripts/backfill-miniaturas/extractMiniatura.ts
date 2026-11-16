@@ -1,14 +1,18 @@
 import { execFile } from "node:child_process";
-import { MB } from "../../src/lib/mediaAccept";
 
 /** Lado maior da Miniatura, em px: o teto que a spec #33 sugere para a Miniatura gerada no painel. */
 const MAX_SIDE = 1280;
 /** Qualidade do JPEG na escala do ffmpeg (2 é a melhor, 31 a pior). */
 const JPEG_QSCALE = 5;
-/** Quanto o ffmpeg espera a rede responder antes de desistir de uma leitura. */
-const NETWORK_TIMEOUT_S = 30;
+/**
+ * Quanto o ffmpeg e o ffprobe esperam a rede responder antes de desistir de uma leitura: 30 s,
+ * na unidade da opção, que é o microssegundo.
+ */
+const NETWORK_TIMEOUT = ["-rw_timeout", String(30 * 1_000_000)];
 /** Quanto uma chamada ao ffmpeg ou ao ffprobe pode levar, ao todo, antes de ser interrompida. */
 const PROCESS_TIMEOUT_S = 120;
+/** Teto da saída de uma chamada: o JPEG de uma Miniatura de 1280 px fica muito abaixo disso. */
+const MAX_OUTPUT_BYTES = 32 * 1024 * 1024;
 
 /** A saída de uma chamada; `ok` diz se ela terminou com código 0, sem ser interrompida. */
 type ProcessResult = { stdout: Buffer; stderr: string; ok: boolean; timedOut: boolean };
@@ -69,7 +73,7 @@ function runFfmpeg(video: string, { seekToOneSecond }: { seekToOneSecond: boolea
     "-hide_banner",
     "-nostdin",
     "-v", "error",
-    "-rw_timeout", String(NETWORK_TIMEOUT_S * 1_000_000),
+    ...NETWORK_TIMEOUT,
     ...(seekToOneSecond ? ["-ss", "1"] : []),
     "-i", video,
     "-frames:v", "1",
@@ -93,7 +97,7 @@ function runFfmpeg(video: string, { seekToOneSecond }: { seekToOneSecond: boolea
 async function videoTiming(video: string): Promise<VideoTiming | undefined> {
   const { stdout } = await run("ffprobe", [
     "-v", "error",
-    "-rw_timeout", String(NETWORK_TIMEOUT_S * 1_000_000),
+    ...NETWORK_TIMEOUT,
     "-select_streams", "v:0",
     "-show_entries", "stream=duration,avg_frame_rate:format=duration",
     "-of", "json",
@@ -118,7 +122,7 @@ function run(command: string, args: string[]): Promise<ProcessResult> {
     execFile(
       command,
       args,
-      { encoding: "buffer", timeout: PROCESS_TIMEOUT_S * 1000, maxBuffer: 32 * MB },
+      { encoding: "buffer", timeout: PROCESS_TIMEOUT_S * 1000, maxBuffer: MAX_OUTPUT_BYTES },
       (error, stdout, stderr) => {
         // Código em texto (ENOENT, saída grande demais) é falha do processo; número é só o código de saída.
         if (typeof error?.code === "string") return reject(error);
