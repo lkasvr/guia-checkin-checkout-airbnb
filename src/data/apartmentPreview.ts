@@ -1,7 +1,6 @@
 import type { Apartment } from "@/data/types";
 import {
-  buildApartmentContent,
-  buildOverrides,
+  buildApartmentRecord,
   doorCodeFromInput,
   guideContentFromStored,
   varsFromInput,
@@ -49,8 +48,8 @@ export function apartmentPreview(
   const building = form.building.trim()
     ? (findBuilding(form.building, buildings) ?? newBuildingTemplate())
     : null;
-  const content = buildApartmentContent(form, hostName, existingContent, building);
-  return { building, guide: guideContentFromStored(content, building, buildOverrides(form, building)) };
+  const { content, overrides } = buildApartmentRecord(form, hostName, existingContent, building);
+  return { building, guide: guideContentFromStored(content, building, overrides) };
 }
 
 /**

@@ -458,3 +458,21 @@ export function buildApartmentContent(
   else delete content.portaria;
   return content;
 }
+
+/**
+ * O que o cadastro de apartamento grava a partir do formulário: o conteúdo e os
+ * ajustes. `createApartmentDetailed` e `updateApartmentDetailed` gravam isto, e
+ * a prévia do cadastro (`apartmentPreview`) mostra o guia montado a partir
+ * disto, pelo mesmo `guideContentFromStored` do guia público.
+ */
+export function buildApartmentRecord(
+  input: ApartmentFormInput,
+  hostName: string,
+  base: Apartment | undefined,
+  building: BuildingTemplate | null,
+): { content: Apartment; overrides: ApartmentOverrides } {
+  return {
+    content: buildApartmentContent(input, hostName, base, building),
+    overrides: buildOverrides(input, building),
+  };
+}

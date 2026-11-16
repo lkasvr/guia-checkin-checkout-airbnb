@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { Apartment, Rule } from "@/data/types";
 import {
-  buildApartmentContent,
+  buildApartmentRecord,
   buildOverrides,
   guideContentFromStored,
   type ApartmentFormInput,
@@ -74,13 +74,14 @@ const REGRAS_PADRAO = [
 /**
  * O guia que o servidor grava e o guia público mostra para um apartamento
  * cadastrado num prédio que ainda não existia: `resolveBuilding` cria o prédio
- * com o modelo de prédio novo, `createApartmentDetailed` grava o conteúdo e os
- * ajustes, e `getGuide` monta o guia.
+ * com o modelo de prédio novo, `createApartmentDetailed` grava o que
+ * `buildApartmentRecord` devolve, e o guia público o monta por
+ * `guideContentFromStored`.
  */
 function guiaNoPredioNovo(form: ApartmentFormInput): Apartment {
   const predio = newBuildingTemplate();
-  const gravado = buildApartmentContent(form, "Anfitriã", undefined, predio);
-  return guideContentFromStored(gravado, predio, buildOverrides(form, predio));
+  const { content, overrides } = buildApartmentRecord(form, "Anfitriã", undefined, predio);
+  return guideContentFromStored(content, predio, overrides);
 }
 
 describe("Prévia do cadastro: prédio da prévia", () => {

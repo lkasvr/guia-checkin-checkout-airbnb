@@ -7,8 +7,7 @@ import { prisma } from "@/lib/db";
 import { newBuildingTemplate, starterContent } from "@/data/starter";
 import { findBuilding } from "@/data/buildingModel";
 import {
-  buildApartmentContent,
-  buildOverrides,
+  buildApartmentRecord,
   toBuildingTemplate,
   type ApartmentFormInput,
   type ApartmentOverrides,
@@ -206,7 +205,12 @@ export async function createApartmentDetailed(
   if (taken) return slugInUse(slug);
 
   const building = await resolveBuilding(payload.building);
-  const content = buildApartmentContent(payload, host.name ?? host.email, undefined, building);
+  const { content, overrides } = buildApartmentRecord(
+    payload,
+    host.name ?? host.email,
+    undefined,
+    building,
+  );
 
   try {
     await prisma.apartment.create({
@@ -218,7 +222,7 @@ export async function createApartmentDetailed(
         content: content as object,
         internalNotes: payload.internalNotes || null,
         buildingId: building?.id ?? null,
-        overrides: buildOverrides(payload, building) as object,
+        overrides: overrides as object,
       },
     });
   } catch (e) {
@@ -275,7 +279,7 @@ export async function updateApartmentDetailed(
   if (taken) return slugInUse(slug);
 
   const building = await resolveBuilding(payload.building);
-  const content = buildApartmentContent(
+  const { content, overrides } = buildApartmentRecord(
     payload,
     apt.host.name ?? apt.host.email,
     apt.content as unknown as Apartment,
@@ -291,7 +295,7 @@ export async function updateApartmentDetailed(
         content: content as object,
         internalNotes: payload.internalNotes || null,
         buildingId: building?.id ?? null,
-        overrides: buildOverrides(payload, building) as object,
+        overrides: overrides as object,
       },
     });
   } catch (e) {
