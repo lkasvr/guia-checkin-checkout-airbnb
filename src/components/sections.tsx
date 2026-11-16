@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion, type Variants } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Apartment } from "@/data/types";
 import { useLang } from "@/lib/i18n";
 import { CARD, LangToggle, Reveal, Rich, SectionHead, Steps, useCopy } from "@/components/ui";
@@ -25,30 +25,6 @@ const heroItem: Variants = {
   },
 };
 
-/**
- * Proporção (largura/altura) da foto da capa, lida depois de carregar.
- * A capa usa isso pra acompanhar o formato de cada foto em vez de uma altura
- * fixa — foto de celular (em pé) não perde metade do topo e do rodapé.
- */
-function useCoverRatio(boxRef: React.RefObject<HTMLElement | null>, src: string) {
-  const [ratio, setRatio] = useState<number | null>(null);
-  useEffect(() => {
-    const el = boxRef.current?.querySelector("img");
-    if (!el) return;
-    const read = () => {
-      if (el.naturalWidth && el.naturalHeight) setRatio(el.naturalWidth / el.naturalHeight);
-    };
-    el.addEventListener("load", read);
-    // Imagem que já carregou antes da hidratação não dispara "load" de novo.
-    const frame = requestAnimationFrame(read);
-    return () => {
-      el.removeEventListener("load", read);
-      cancelAnimationFrame(frame);
-    };
-  }, [boxRef, src]);
-  return ratio;
-}
-
 /** Ícone de cada quadradinho da capa, pela legenda (em português) que o formulário gera. */
 const FACT_ICON: Record<string, string> = {
   Garagem: "🚗",
@@ -59,8 +35,11 @@ const FACT_ICON: Record<string, string> = {
 
 export function Hero({ ap }: { ap: Apartment }) {
   const { t } = useLang();
-  const coverRef = useRef<HTMLDivElement>(null);
-  const ratio = useCoverRatio(coverRef, ap.hero.img);
+  // Proporção (largura/altura) da foto da capa, lida quando ela carrega: a capa acompanha o
+  // formato de cada foto em vez de uma altura fixa — foto de celular (em pé) não perde metade do
+  // topo e do rodapé. O `onLoad` do next/image também dispara para a foto que carregou antes da
+  // hidratação.
+  const [ratio, setRatio] = useState<number | null>(null);
   // Grade de duas colunas: quadradinhos curtos lado a lado (o último, se sobrar sozinho, ocupa a
   // linha toda); texto comprido (ex.: "Vaga rotativa (sinalizada na cor verde)") ganha a linha
   // inteira, no fim.
@@ -73,7 +52,6 @@ export function Hero({ ap }: { ap: Apartment }) {
   return (
     <header className="relative -mx-[18px] px-6 pb-2.5 text-left">
       <div
-        ref={coverRef}
         className="relative -mx-6"
         // Altura = largura ÷ proporção da foto, entre 300px e ~450px (520px em tela larga).
         // Sem `aspect-ratio`: junto de min-height ele alarga a caixa além da tela.
@@ -89,6 +67,10 @@ export function Hero({ ap }: { ap: Apartment }) {
           priority
           sizes="100vw"
           className="object-cover object-[center_24%]"
+          onLoad={(e) => {
+            const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+            if (w && h) setRatio(w / h);
+          }}
         />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(59_45_36/0.22)_0%,rgb(250_245_238/0)_28%,rgb(250_245_238/0)_56%,rgb(250_245_238/0.32)_76%,rgb(250_245_238/0.8)_91%,var(--color-bg)_100%)]" />
       </div>
