@@ -465,7 +465,7 @@ export async function listEquipmentLibrary(): Promise<EquipmentModel[]> {
 }
 
 /**
- * Itens de Lazer e de Onde Comer (foto, título, texto, horário, traduções,
+ * Itens de Lazer, Onde Comer e Guia de Brasília (foto, título, texto, horário, traduções,
  * site, mapa) que já foram cadastrados em qualquer prédio ou apartamento, para
  * reaproveitar com um toque. Ver `src/data/sectionLibrary.ts`.
  */
@@ -473,7 +473,7 @@ export async function listSectionLibrary(): Promise<SectionLibrary> {
   await requireAdmin();
   const [buildings, apartments] = await Promise.all([
     prisma.building.findMany({
-      select: { name: true, updatedAt: true, amenities: true, dining: true },
+      select: { name: true, updatedAt: true, amenities: true, dining: true, tourism: true },
     }),
     prisma.apartment.findMany({
       select: { label: true, updatedAt: true, content: true, overrides: true },
@@ -485,6 +485,7 @@ export async function listSectionLibrary(): Promise<SectionLibrary> {
       updatedAt: b.updatedAt,
       amenities: (b.amenities as unknown as Apartment["amenities"] | null)?.items ?? [],
       dining: (b.dining as unknown as Apartment["dining"] | null)?.items ?? [],
+      tourism: (b.tourism as unknown as Apartment["tourism"] | null)?.items ?? [],
     })),
     ...apartments.map(apartmentLibrarySource),
   ]);

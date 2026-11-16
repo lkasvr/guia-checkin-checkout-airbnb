@@ -2,7 +2,7 @@ import type { Amenity, Apartment, ItemPatches, Place } from "@/data/types";
 import { legacyId, sameContent } from "@/data/itemMerge";
 
 /**
- * Biblioteca de itens de Lazer e de Onde Comer: tudo o que já foi escrito em
+ * Biblioteca de itens de Lazer, Onde Comer e Guia de Brasília: tudo o que já foi escrito em
  * qualquer prédio ou apartamento (foto, título, texto, horário, traduções,
  * site, mapa), para reaproveitar ao montar outro. Não tem tabela própria: é
  * lida do que já está salvo. Itens com o mesmo título e o mesmo conteúdo viram
@@ -20,13 +20,18 @@ export type LibraryModel<T> = {
 
 export type AmenityModel = LibraryModel<Amenity>;
 export type PlaceModel = LibraryModel<Place>;
-export type SectionLibrary = { amenities: AmenityModel[]; dining: PlaceModel[] };
+export type SectionLibrary = {
+  amenities: AmenityModel[];
+  dining: PlaceModel[];
+  tourism: PlaceModel[];
+};
 
 export type LibrarySource = {
   label: string;
   updatedAt: Date;
   amenities?: Amenity[];
   dining?: Place[];
+  tourism?: Place[];
   /** Ajustes deste apartamento sobre o modelo (item editado ou acrescentado). */
   patches?: ItemPatches;
 };
@@ -68,6 +73,7 @@ function collect<T extends { id?: string }>(
 export function collectSectionLibrary(sources: LibrarySource[]): SectionLibrary {
   const amenities: { raw: Amenity; src: LibrarySource }[] = [];
   const dining: { raw: Place; src: LibrarySource }[] = [];
+  const tourism: { raw: Place; src: LibrarySource }[] = [];
   for (const src of sources) {
     for (const raw of [
       ...(src.amenities ?? []),
@@ -81,10 +87,17 @@ export function collectSectionLibrary(sources: LibrarySource[]): SectionLibrary 
       ...(src.patches?.dining?.added ?? []),
     ])
       dining.push({ raw, src });
+    for (const raw of [
+      ...(src.tourism ?? []),
+      ...Object.values(src.patches?.tourism?.edited ?? {}),
+      ...(src.patches?.tourism?.added ?? []),
+    ])
+      tourism.push({ raw, src });
   }
   return {
     amenities: collect(amenities, amenityKey, (a) => a.title.pt),
     dining: collect(dining, placeKey, (p) => p.title),
+    tourism: collect(tourism, placeKey, (p) => p.title),
   };
 }
 
@@ -102,6 +115,7 @@ export function apartmentLibrarySource(apt: {
     updatedAt: apt.updatedAt,
     amenities: content?.amenities?.items ?? [],
     dining: content?.dining?.items ?? [],
+    tourism: content?.tourism?.items ?? [],
     patches,
   };
 }

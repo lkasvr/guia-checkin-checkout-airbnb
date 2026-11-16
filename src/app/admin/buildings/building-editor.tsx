@@ -397,6 +397,7 @@ export function BuildingEditor({
         <PlaceListEditor
           value={form.tourism}
           onChange={(tourism) => setForm((f) => ({ ...f, tourism }))}
+          library={sectionLibrary.tourism}
         />
       </div>
 

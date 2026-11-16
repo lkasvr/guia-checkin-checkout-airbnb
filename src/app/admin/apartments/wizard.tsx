@@ -815,6 +815,7 @@ export function ApartmentWizard({
             lockShared={!!matchedBuilding}
             value={form.overrideTourism}
             onChange={(v) => set("overrideTourism", v)}
+            library={sectionLibrary.tourism}
           />
         )}
       </SectionOverrideBlock>

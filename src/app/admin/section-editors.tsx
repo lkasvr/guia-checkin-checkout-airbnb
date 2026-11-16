@@ -613,7 +613,7 @@ export function PlaceListEditor({
   lockShared?: boolean;
   value: PlacesValue;
   onChange: (v: PlacesValue) => void;
-  /** Lugares já cadastrados em outros prédios/apartamentos (ver `useSectionLibrary`); só Onde Comer usa. */
+  /** Lugares já cadastrados em outros prédios/apartamentos (ver `useSectionLibrary`). */
   library?: PlaceModel[];
 }) {
   return (
