@@ -11,6 +11,8 @@ const MAX_IMAGE_AFTER_COMPRESSION = 8 * MB;
 const MULTIPART_FROM_BYTES = 20 * MB;
 /** A rota que emite o token de envio. */
 const HANDLE_UPLOAD_URL = "/api/upload";
+/** Quanto a gravação da Miniatura (o token e o JPEG, de até 2 MB) pode levar antes de desistir. */
+const MINIATURA_UPLOAD_TIMEOUT_MS = 30_000;
 
 /**
  * Envia direto do navegador pro Blob (não passa pelo servidor do Next). Recusa, antes de qualquer
@@ -40,12 +42,29 @@ function putFile(file: File) {
   });
 }
 
-/** Grava a Miniatura no caminho exato pedido, com o token próprio dela (ver `uploadTokenOptions`). */
+/**
+ * Grava a Miniatura no caminho exato pedido, com o token próprio dela (ver `uploadTokenOptions`).
+ * Com prazo: um pedido que trava vira falha da Miniatura, e o vídeo, que já subiu, entra no campo.
+ */
 async function putMiniatura(pathname: string, jpeg: Blob) {
-  await upload(pathname, jpeg, {
-    access: "public",
-    handleUploadUrl: HANDLE_UPLOAD_URL,
-    contentType: jpeg.type,
-    clientPayload: miniaturaRequest(jpeg.type),
-  });
+  // AbortController, e não AbortSignal.timeout: o SDK do Blob só desiste de vez com "AbortError";
+  // o "TimeoutError" do AbortSignal.timeout ele toma por falha passageira e tenta de novo, até 10 vezes.
+  const deadline = new AbortController();
+  const timer = setTimeout(() => deadline.abort(), MINIATURA_UPLOAD_TIMEOUT_MS);
+  try {
+    await upload(pathname, jpeg, {
+      access: "public",
+      handleUploadUrl: HANDLE_UPLOAD_URL,
+      contentType: jpeg.type,
+      clientPayload: miniaturaRequest(jpeg.type),
+      abortSignal: deadline.signal,
+    });
+  } catch (error) {
+    if (deadline.signal.aborted) {
+      throw new Error(`a gravação da Miniatura não terminou em ${MINIATURA_UPLOAD_TIMEOUT_MS / 1000} s`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
 }
