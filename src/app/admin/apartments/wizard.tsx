@@ -769,7 +769,7 @@ export function ApartmentWizard({
         </p>
         <div className="mt-2">
           <MediaField
-            videoOnly
+            accepts="video"
             value={form.homeVideo}
             onChange={(v) => set("homeVideo", v)}
           />
