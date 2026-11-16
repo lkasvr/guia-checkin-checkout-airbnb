@@ -141,6 +141,7 @@ export function MediaField({
             onChange={(e) => handleFile(e.target.files?.[0])}
           />
         </label>
+        {field.hint && <p className="mt-1 text-[12px] text-soft">{field.hint}</p>}
         {error && <p className="mt-1 text-[12px] text-terra">{error}</p>}
         {reuseOptions && reuseOptions.length > 0 && (
           <div>

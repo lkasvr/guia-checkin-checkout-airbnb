@@ -57,3 +57,16 @@ describe("O que o token de envio deixa gravar no Blob", () => {
     assert.notEqual(refusal({ type: "video/mp4", size: MAX_UPLOAD_BYTES + 1 }, "any"), null);
   });
 });
+
+describe("O que o campo de mídia orienta antes da escolha", () => {
+  it("todo campo que aceita vídeo orienta a comprimir para 720p, citando o limite", () => {
+    for (const accepts of ["video", "any"] as const) {
+      assert.match(MEDIA_ACCEPT[accepts].hint ?? "", /comprima para 720p antes de enviar/);
+      assert.match(MEDIA_ACCEPT[accepts].hint ?? "", /50 MB/);
+    }
+  });
+
+  it("o campo só de foto não orienta nada sobre vídeo", () => {
+    assert.equal(MEDIA_ACCEPT.image.hint, undefined);
+  });
+});

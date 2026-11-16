@@ -1,7 +1,7 @@
 /**
  * O que um campo de mídia do painel aceita. Este módulo é o único lugar que decide, para cada
  * caso, o que o seletor de arquivo oferece, que arquivo passa no envio (pelo tipo e pelo
- * tamanho), como a recusa se explica e o que o botão diz: o
+ * tamanho), como a recusa se explica, o que o botão diz e que orientação o campo mostra: o
  * campo e o `uploadMedia` consultam o módulo em vez de repetir a regra, e a rota que emite o
  * token de envio lê daqui os tipos e o tamanho que o token aceita. O envio testa o arquivo de
  * novo porque o filtro do seletor não basta: quem troca para "todos os arquivos" escolhe
@@ -32,6 +32,8 @@ export const UPLOAD_TYPES = ["image/jpeg", "image/png", "image/webp", ...VIDEO_T
  */
 export const MAX_UPLOAD_BYTES = MAX_VIDEO_BYTES;
 
+const VIDEO_HINT = `Vídeo de até ${MAX_VIDEO_BYTES / MB} MB: comprima para 720p antes de enviar.`;
+
 /** Só foto, só vídeo, ou os dois. */
 export type MediaAccept = "image" | "video" | "any";
 
@@ -61,6 +63,8 @@ export const MEDIA_ACCEPT: Record<
     send: string;
     /** Botão do campo já preenchido. */
     swap: string;
+    /** Orientação mostrada junto do botão, só nos campos que aceitam vídeo. */
+    hint?: string;
   }
 > = {
   image: {
@@ -76,6 +80,7 @@ export const MEDIA_ACCEPT: Record<
     formats: "um vídeo (MP4, WebM, MOV)",
     send: "Enviar vídeo",
     swap: "Trocar vídeo",
+    hint: VIDEO_HINT,
   },
   any: {
     picker: "image/*,video/*",
@@ -83,5 +88,6 @@ export const MEDIA_ACCEPT: Record<
     formats: "uma foto (JPG, PNG, WebP) ou um vídeo (MP4, WebM, MOV)",
     send: "Enviar foto ou vídeo",
     swap: "Trocar foto/vídeo",
+    hint: VIDEO_HINT,
   },
 };
