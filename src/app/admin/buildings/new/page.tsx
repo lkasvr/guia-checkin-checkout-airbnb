@@ -3,12 +3,14 @@ import { BuildingEditor, type BuildingOption } from "@/app/admin/buildings/build
 import type { BuildingEditPayload } from "@/app/admin/buildings/actions";
 import { toBuildingTemplate } from "@/data/buildApartmentContent";
 import { PREREQUISITE_CARD } from "@/data/prerequisiteCard";
-import { checkinFromContent, emptyL } from "@/data/sectionContent";
+import { DEFAULT_CONDO_RULES } from "@/data/defaultRules";
+import { checkinFromContent, emptyL, rulesFromContent } from "@/data/sectionContent";
 
 export const dynamic = "force-dynamic";
 
 const EMPTY: BuildingEditPayload = {
-  rules: { sub: emptyL(), items: [] },
+  // Todo modelo novo já nasce com as regras de convivência padrão.
+  rules: rulesFromContent({ sub: { pt: "", en: "" }, items: DEFAULT_CONDO_RULES }),
   home: { sub: emptyL(), slides: [], accordions: [] },
   // Todo modelo novo já nasce com o cartão de documento/veículo no topo.
   checkin: checkinFromContent({ sub: { pt: "", en: "" }, cards: [PREREQUISITE_CARD] }),

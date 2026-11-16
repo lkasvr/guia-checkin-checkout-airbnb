@@ -121,8 +121,8 @@ export const ap1305c: Apartment = {
           {
             icon: "💳",
             body: {
-              pt: "<strong>Não esqueça o Cartão Branco</strong> antes de descer para guardar o carro. Perda ou não devolução: taxa de <strong>R$ 300</strong>.",
-              en: "<strong>Don't forget the White Card</strong> before going down to park. Loss or non-return: <strong>R$ 300</strong> fee.",
+              pt: "<strong>Não esqueça o Cartão Branco</strong> antes de descer para guardar o carro. Perda ou não devolução: reposição de <strong>R$ 300</strong>, cobrada pelo condomínio.",
+              en: "<strong>Don't forget the White Card</strong> before going down to park. Loss or non-return: <strong>R$ 300</strong> replacement fee, charged by the building.",
             },
           },
         ],
@@ -154,19 +154,12 @@ export const ap1305c: Apartment = {
       {
         n: "2",
         body: {
-          pt: "Deixe o <strong>Cartão Branco</strong> de garagem sobre a mesa de jantar (a não devolução gera taxa de R$ 300).",
-          en: "Leave the <strong>White garage Card</strong> on the dining table (non-return incurs a R$ 300 fee).",
+          pt: "Deixe o <strong>Cartão Branco</strong> de garagem sobre a mesa de jantar (em caso de não devolução, o condomínio cobra R$ 300 pela reposição).",
+          en: "Leave the <strong>White garage Card</strong> on the dining table (if it isn't returned, the building charges R$ 300 for a replacement).",
         },
       },
       {
         n: "3",
-        body: {
-          pt: "Ensaque o lixo e deixe na lixeira comum do corredor, perto dos elevadores.",
-          en: "Bag the trash and drop it in the shared hallway bin, near the elevators.",
-        },
-      },
-      {
-        n: "4",
         body: {
           pt: "Feche as janelas, desligue o ar-condicionado e confira se não esqueceu nada. É só fechar a porta ao sair.",
           en: "Close the windows, turn off the A/C and double-check for forgotten items. Just shut the door on your way out.",
@@ -175,7 +168,7 @@ export const ap1305c: Apartment = {
     ],
   },
 
-  // As regras gerais do prédio (varanda, silêncio, lixo, garagem...) saíram
+  // As regras gerais do prédio (varanda, silêncio, garagem...) saíram
   // daqui — vêm agora do `Building` ("Residencial DF Plaza", ver
   // prisma/seed.ts), somadas na hora de montar o guia
   // (`overlayBuildingLiveContent`). Só fica a regra específica desta unidade.

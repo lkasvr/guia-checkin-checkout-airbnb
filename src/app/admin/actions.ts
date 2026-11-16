@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { starterContent } from "@/data/starter";
+import { DEFAULT_CONDO_RULES } from "@/data/defaultRules";
 import {
   buildApartmentContent,
   buildOverrides,
@@ -53,7 +54,7 @@ async function resolveBuilding(
     update: {},
     create: {
       name: trimmed,
-      rules: blank.rules as object,
+      rules: { ...blank.rules, items: DEFAULT_CONDO_RULES } as object,
       home: blank.home as object,
       amenities: blank.amenities as object,
       tourism: blank.tourism as object,
