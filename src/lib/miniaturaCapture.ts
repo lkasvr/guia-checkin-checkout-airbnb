@@ -10,7 +10,10 @@ import { MINIATURA_TYPE } from "@/lib/miniatura";
 const MAX_SIDE = 1280;
 /** Qualidade do JPEG (0 a 1). */
 const QUALITY = 0.8;
-/** Quanto esperar o navegador abrir o vídeo ou saltar até o quadro antes de desistir. */
+/**
+ * Quanto a captura inteira pode esperar o navegador (abrir o vídeo e saltar até o quadro) antes
+ * de desistir: o envio do vídeo só começa depois dela.
+ */
 const TIMEOUT_MS = 15_000;
 
 /**
@@ -28,12 +31,15 @@ export function frameSize(width: number, height: number): { width: number; heigh
   return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
 }
 
-/** Espera o evento do vídeo; rejeita se o navegador der erro ou não responder a tempo. */
-function waitFor(video: HTMLVideoElement, event: "loadeddata" | "seeked"): Promise<void> {
+/** Espera o evento do vídeo; rejeita se o navegador der erro ou não responder até `deadline`. */
+function waitFor(video: HTMLVideoElement, event: "loadeddata" | "seeked", deadline: number): Promise<void> {
   return new Promise((resolve, reject) => {
     const onEvent = () => done();
     const onError = () => done(new Error(`o navegador não abriu o vídeo (${video.error?.message || `erro ${video.error?.code}`})`));
-    const timer = setTimeout(() => done(new Error(`o navegador não respondeu em ${TIMEOUT_MS / 1000} s`)), TIMEOUT_MS);
+    const timer = setTimeout(
+      () => done(new Error(`o navegador não respondeu em ${TIMEOUT_MS / 1000} s`)),
+      Math.max(0, deadline - Date.now()),
+    );
     function done(error?: Error) {
       clearTimeout(timer);
       video.removeEventListener(event, onEvent);
@@ -56,13 +62,14 @@ export async function captureMiniatura(file: File): Promise<Blob> {
   video.playsInline = true;
   video.preload = "auto";
   const src = URL.createObjectURL(file);
+  const deadline = Date.now() + TIMEOUT_MS;
   try {
-    const loaded = waitFor(video, "loadeddata");
+    const loaded = waitFor(video, "loadeddata", deadline);
     video.src = src;
     await loaded;
     const time = frameTime(video.duration);
     if (time > 0) {
-      const seeked = waitFor(video, "seeked");
+      const seeked = waitFor(video, "seeked", deadline);
       video.currentTime = time;
       await seeked;
     }
