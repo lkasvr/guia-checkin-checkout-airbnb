@@ -16,8 +16,6 @@ export function Media({
   height,
   sizes,
   className = "",
-  priority,
-  autoPlayLoop,
 }: {
   src: string;
   alt?: string;
@@ -26,17 +24,15 @@ export function Media({
   height?: number;
   sizes?: string;
   className?: string;
-  priority?: boolean;
-  autoPlayLoop?: boolean;
 }) {
   if (isVideoUrl(src)) {
     return (
       <video
         src={src}
         className={`${fill ? "absolute inset-0 h-full w-full" : ""} ${className}`}
-        {...(autoPlayLoop
-          ? { autoPlay: true, muted: true, loop: true, playsInline: true }
-          : { controls: true, playsInline: true, preload: "none" as const })}
+        controls
+        playsInline
+        preload="none"
       />
     );
   }
@@ -48,7 +44,6 @@ export function Media({
       width={!fill ? width : undefined}
       height={!fill ? height : undefined}
       sizes={sizes}
-      priority={priority}
       className={className}
     />
   );

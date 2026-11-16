@@ -26,26 +26,23 @@ const heroItem: Variants = {
 };
 
 /**
- * Proporção (largura/altura) da foto ou vídeo da capa, lida depois de carregar.
+ * Proporção (largura/altura) da foto da capa, lida depois de carregar.
  * A capa usa isso pra acompanhar o formato de cada foto em vez de uma altura
  * fixa — foto de celular (em pé) não perde metade do topo e do rodapé.
  */
 function useCoverRatio(boxRef: React.RefObject<HTMLElement | null>, src: string) {
   const [ratio, setRatio] = useState<number | null>(null);
   useEffect(() => {
-    const el = boxRef.current?.querySelector<HTMLImageElement | HTMLVideoElement>("img, video");
+    const el = boxRef.current?.querySelector("img");
     if (!el) return;
     const read = () => {
-      const w = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth;
-      const h = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight;
-      if (w && h) setRatio(w / h);
+      if (el.naturalWidth && el.naturalHeight) setRatio(el.naturalWidth / el.naturalHeight);
     };
-    const event = el instanceof HTMLVideoElement ? "loadedmetadata" : "load";
-    el.addEventListener(event, read);
+    el.addEventListener("load", read);
     // Imagem que já carregou antes da hidratação não dispara "load" de novo.
     const frame = requestAnimationFrame(read);
     return () => {
-      el.removeEventListener(event, read);
+      el.removeEventListener("load", read);
       cancelAnimationFrame(frame);
     };
   }, [boxRef, src]);
@@ -84,13 +81,14 @@ export function Hero({ ap }: { ap: Apartment }) {
           height: `clamp(300px, calc(min(100vw, 640px) / ${ratio ?? 0.85}), min(520px, 120vw))`,
         }}
       >
-        <Media
+        {/* A Capa é sempre foto: nada toca sozinho no topo do guia. */}
+        <Image
           src={ap.hero.img}
+          alt=""
           fill
           priority
           sizes="100vw"
           className="object-cover object-[center_24%]"
-          autoPlayLoop
         />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(59_45_36/0.22)_0%,rgb(250_245_238/0)_28%,rgb(250_245_238/0)_56%,rgb(250_245_238/0.32)_76%,rgb(250_245_238/0.8)_91%,var(--color-bg)_100%)]" />
       </div>
