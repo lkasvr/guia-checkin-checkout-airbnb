@@ -530,7 +530,7 @@ export function ApartmentWizard({
         <div>
           <span className={labelCls}>Foto de capa</span>
           <div className="mt-1">
-            <MediaField value={form.heroImg} onChange={(v) => set("heroImg", v)} />
+            <MediaField accepts="image" value={form.heroImg} onChange={(v) => set("heroImg", v)} />
           </div>
         </div>
         <div>

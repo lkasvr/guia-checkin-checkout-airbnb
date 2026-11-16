@@ -14,8 +14,8 @@ export const isImageType = (mime: string) => mime.startsWith("image/");
 /** Tipo MIME de vídeo que o guia toca: MP4, WebM ou MOV. */
 export const isVideoType = (mime: string) => VIDEO_TYPES.includes(mime);
 
-/** Só vídeo, ou foto e vídeo. */
-export type MediaAccept = "video" | "any";
+/** Só foto, só vídeo, ou os dois. */
+export type MediaAccept = "image" | "video" | "any";
 
 export const MEDIA_ACCEPT: Record<
   MediaAccept,
@@ -32,6 +32,13 @@ export const MEDIA_ACCEPT: Record<
     swap: string;
   }
 > = {
+  image: {
+    picker: "image/*",
+    allows: isImageType,
+    formats: "uma foto (JPG, PNG, WebP)",
+    send: "Enviar foto",
+    swap: "Trocar foto",
+  },
   video: {
     picker: "video/*",
     allows: isVideoType,

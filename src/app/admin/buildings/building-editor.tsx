@@ -321,6 +321,7 @@ export function BuildingEditor({
             <span className="text-[12.5px] font-semibold text-soft">Capa</span>
             <div className="mt-1">
               <MediaField
+                accepts="image"
                 value={form.defaultHeroImg}
                 onChange={(defaultHeroImg) => setForm((f) => ({ ...f, defaultHeroImg }))}
               />

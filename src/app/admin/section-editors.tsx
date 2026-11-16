@@ -86,7 +86,10 @@ export function MediaField({
 }: {
   value: string;
   onChange: (url: string) => void;
-  /** O que o campo aceita: "video" (ex.: Tour de A Casa) não oferece foto. Sem ele, aceita os dois. */
+  /**
+   * O que o campo aceita: "video" (ex.: Tour de A Casa) não oferece foto, "image" (ex.: a Capa,
+   * que nunca é vídeo) não oferece vídeo. Sem ele, aceita os dois.
+   */
   accepts?: MediaAccept;
   /** Vídeos já enviados (do modelo do prédio ou de outro apartamento) que dá pra reaproveitar sem duplicar espaço. */
   reuseOptions?: ReusableVideo[];

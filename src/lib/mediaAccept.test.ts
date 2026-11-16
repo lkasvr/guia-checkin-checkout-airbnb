@@ -3,6 +3,12 @@ import assert from "node:assert/strict";
 import { MEDIA_ACCEPT } from "@/lib/mediaAccept";
 
 describe("Que arquivo o campo de mídia deixa enviar", () => {
+  it("o campo só de foto (a Capa) aceita foto e recusa vídeo", () => {
+    assert.equal(MEDIA_ACCEPT.image.allows("image/jpeg"), true);
+    assert.equal(MEDIA_ACCEPT.image.allows("image/webp"), true);
+    assert.equal(MEDIA_ACCEPT.image.allows("video/mp4"), false);
+  });
+
   it("o campo só de vídeo (o Tour) aceita vídeo e recusa foto", () => {
     assert.equal(MEDIA_ACCEPT.video.allows("video/mp4"), true);
     assert.equal(MEDIA_ACCEPT.video.allows("video/quicktime"), true);
