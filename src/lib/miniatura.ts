@@ -7,25 +7,30 @@
  */
 
 const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
+// origem (`https://host`, opcional) · caminho · query e fragmento
+const URL_PARTS = /^((?:[a-z][a-z\d+.-]*:)?\/\/[^/?#]*)?([^?#]*)([\s\S]*)$/i;
 
-/** Separa o caminho da query e do fragmento (`?v=2`, `#t=0.1`), que ficam fora da extensão. */
-function splitPath(url: string): [path: string, rest: string] {
-  const cut = url.search(/[?#]/);
-  return cut === -1 ? [url, ""] : [url.slice(0, cut), url.slice(cut)];
+/**
+ * Separa o endereço em origem, caminho e resto (`?v=2`, `#t=0.1`). Só o caminho
+ * tem extensão: nem o domínio (`https://exemplo.mov`) nem a query contam.
+ */
+function splitUrl(url: string): { origin: string; path: string; rest: string } {
+  const [, origin = "", path = "", rest = ""] = URL_PARTS.exec(url) ?? [];
+  return { origin, path, rest };
 }
 
 /** A extensão do arquivo decide a renderização: não existe um campo de "tipo" separado. */
 export function isVideoUrl(url: string): boolean {
-  return VIDEO_EXT.test(splitPath(url)[0]);
+  return VIDEO_EXT.test(splitUrl(url).path);
 }
 
 /**
  * Endereço (ou caminho do Blob) da Miniatura de um vídeo; `undefined` se não for
- * vídeo. Só a extensão muda: query e fragmento seguem como estavam.
+ * vídeo. Só a extensão muda: domínio, query e fragmento seguem como estavam.
  */
 export function miniaturaUrl(url: string): string | undefined {
-  const [path, rest] = splitPath(url);
-  return VIDEO_EXT.test(path) ? path.replace(VIDEO_EXT, ".jpg") + rest : undefined;
+  const { origin, path, rest } = splitUrl(url);
+  return VIDEO_EXT.test(path) ? origin + path.replace(VIDEO_EXT, ".jpg") + rest : undefined;
 }
 
 /**

@@ -14,6 +14,12 @@ describe("O que conta como vídeo", () => {
     assert.equal(isVideoUrl("/media/tour.mp4#t=0.1"), true);
     assert.equal(isVideoUrl("https://exemplo.com/sala.jpg?de=tour.mp4"), false);
   });
+
+  it("não confunde o domínio com a extensão (.mov também é domínio de topo)", () => {
+    assert.equal(isVideoUrl("https://exemplo.mov"), false);
+    assert.equal(isVideoUrl("//cdn.exemplo.mov"), false);
+    assert.equal(isVideoUrl("https://exemplo.mov/sala.jpg"), false);
+  });
 });
 
 describe("Miniatura de um endereço de vídeo", () => {
@@ -45,6 +51,11 @@ describe("Miniatura de um endereço de vídeo", () => {
     assert.equal(miniaturaUrl("https://exemplo.com/tour.mp4?v=2"), "https://exemplo.com/tour.jpg?v=2");
     // O guia monta o `src` do vídeo com `#t=0.1` (sections.tsx).
     assert.equal(miniaturaUrl("/media/tour.mp4#t=0.1"), "/media/tour.jpg#t=0.1");
+  });
+
+  it("nunca troca o domínio", () => {
+    assert.equal(miniaturaUrl("https://exemplo.mov/tour.mp4"), "https://exemplo.mov/tour.jpg");
+    assert.equal(miniaturaUrl("https://exemplo.mov"), undefined);
   });
 
   it("foto não tem Miniatura", () => {
