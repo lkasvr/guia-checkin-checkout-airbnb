@@ -10,6 +10,13 @@ import { Media } from "@/components/media";
 import { isVideoUrl } from "@/lib/miniatura";
 import { mapsEmbedUrl, mapsSearchUrl, normalizeMapsUrl, whatsappDigits } from "@/lib/maps";
 
+/**
+ * `sizes` da foto que ocupa a largura toda da coluna do guia: a coluna tem no máximo 640px (o
+ * `max-w-[640px]` do <main> em Guide.tsx), então o navegador pede a foto nessa largura, e não na
+ * da janela.
+ */
+const FULL_COLUMN_SIZES = "(max-width:640px) 100vw, 640px";
+
 /* ----------------------------- HERO ----------------------------- */
 
 const heroContainer: Variants = {
@@ -65,7 +72,7 @@ export function Hero({ ap }: { ap: Apartment }) {
           alt=""
           fill
           priority
-          sizes="(max-width:640px) 100vw, 640px"
+          sizes={FULL_COLUMN_SIZES}
           className="object-cover object-[center_24%]"
           onLoad={(e) => {
             const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
@@ -258,7 +265,7 @@ export function CheckIn({ ap }: { ap: Apartment }) {
                 <Media
                   src={card.banner}
                   fill
-                  sizes="(max-width:640px) 100vw, 640px"
+                  sizes={FULL_COLUMN_SIZES}
                   className="object-cover object-[center_35%]"
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgb(59_45_36/0)_40%,rgb(255_253_249/0.9)_96%)]" />
@@ -705,7 +712,7 @@ export function Home({ ap }: { ap: Apartment }) {
                         alt={t(acc.title)}
                         width={800}
                         height={600}
-                        sizes="(max-width:640px) 100vw, 640px"
+                        sizes={FULL_COLUMN_SIZES}
                         className="mx-auto block h-auto max-h-[min(340px,48svh)] w-full object-contain"
                       />
                     </Zoomable>
@@ -763,7 +770,7 @@ export function Amenities({ ap }: { ap: Apartment }) {
                 <Media
                   src={a.img}
                   fill
-                  sizes={a.wide ? "(max-width:640px) 100vw, 640px" : "(max-width:640px) 50vw, 320px"}
+                  sizes={a.wide ? FULL_COLUMN_SIZES : "(max-width:640px) 50vw, 320px"}
                   className="object-cover"
                 />
               </div>
@@ -819,7 +826,7 @@ function PlaceCards({
                 <Media
                   src={p.img}
                   fill
-                  sizes="(max-width:640px) 100vw, 640px"
+                  sizes={FULL_COLUMN_SIZES}
                   className="object-cover"
                 />
               </div>
@@ -901,7 +908,7 @@ export function Footer({ ap }: { ap: Apartment }) {
             <Media
               src={ap.footer.img}
               fill
-              sizes="(max-width:640px) 100vw, 640px"
+              sizes={FULL_COLUMN_SIZES}
               className="object-cover"
             />
           </div>
