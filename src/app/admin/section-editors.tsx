@@ -1027,10 +1027,12 @@ function CheckinCardEditor({
       <AlertListEditor alerts={card.alerts} onChange={(alerts) => onChange({ ...card, alerts })} />
       <div className="sm:col-span-2">
         <span className="text-[12.5px] font-semibold text-soft">
-          Vídeo (opcional — ex.: tutorial de como estacionar)
+          Vídeo (opcional, só arquivo de vídeo — ex.: tutorial de como estacionar). Foto vai em
+          &quot;Foto de banner&quot;, acima.
         </span>
         <div className="mt-1">
           <MediaField
+            videoOnly
             value={card.video?.src ?? ""}
             onChange={(src) =>
               onChange({ ...card, video: src ? { src, label: card.video?.label ?? emptyL() } : undefined })
@@ -1039,6 +1041,18 @@ function CheckinCardEditor({
             onReuse={(v) => onChange({ ...card, video: { src: v.src, label: fromL(v.buttonLabel) } })}
           />
         </div>
+        {card.video?.src && !isVideoUrl(card.video.src) && (
+          <div className="mt-2 rounded-xl border border-dashed border-line p-3 text-[13px] text-soft">
+            Esse arquivo é uma foto, não um vídeo.{" "}
+            <button
+              type="button"
+              className="font-semibold text-terra underline underline-offset-2"
+              onClick={() => onChange({ ...card, banner: card.banner || card.video!.src, video: undefined })}
+            >
+              Usar como foto de banner
+            </button>
+          </div>
+        )}
         {card.video?.src && (
           <LField
             className="mt-2"
