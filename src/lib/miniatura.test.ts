@@ -75,6 +75,10 @@ describe("Miniatura a exibir", () => {
       "https://k3x9qz7w.public.blob.vercel-storage.com/tour-Xy8QzR2b.jpg",
     );
   });
+
+  it("miniatura explícita vazia conta como ausente", () => {
+    assert.equal(miniaturaToShow("/media/como-estacionar.mp4", ""), "/media/como-estacionar.jpg");
+  });
 });
 
 describe("Vídeos sem Miniatura", () => {
@@ -84,6 +88,12 @@ describe("Vídeos sem Miniatura", () => {
 
   it("vídeo com .jpg ao lado sai da lista", () => {
     assert.deepEqual(videosMissingMiniatura(["tour-Xy8QzR2b.mp4", "tour-Xy8QzR2b.jpg"]), []);
+  });
+
+  it("só conta o .jpg minúsculo, que é o que a convenção grava", () => {
+    assert.deepEqual(videosMissingMiniatura(["IMG_0042-Xy8QzR2b.MOV", "IMG_0042-Xy8QzR2b.JPG"]), [
+      "IMG_0042-Xy8QzR2b.MOV",
+    ]);
   });
 
   it("numa lista mista, ignora fotos soltas e trata igual toda extensão de vídeo", () => {

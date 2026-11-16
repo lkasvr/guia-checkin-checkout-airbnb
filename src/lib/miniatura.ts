@@ -28,9 +28,12 @@ export function miniaturaUrl(url: string): string | undefined {
   return VIDEO_EXT.test(path) ? path.replace(VIDEO_EXT, ".jpg") + rest : undefined;
 }
 
-/** A Miniatura explícita nos dados (vídeos estáticos em `/media`) vence a deduzida. */
-export function miniaturaToShow(videoUrl: string, explicit?: string): string | undefined {
-  return explicit || miniaturaUrl(videoUrl);
+/**
+ * A Miniatura explícita nos dados (o campo `poster` dos vídeos estáticos em
+ * `/media`) vence a deduzida. Uma explícita vazia conta como ausente.
+ */
+export function miniaturaToShow(videoUrl: string, explicitMiniatura?: string): string | undefined {
+  return explicitMiniatura || miniaturaUrl(videoUrl);
 }
 
 /**
