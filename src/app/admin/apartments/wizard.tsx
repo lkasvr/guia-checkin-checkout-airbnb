@@ -13,6 +13,7 @@ import {
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
 import { slugify } from "@/lib/slug";
+import { isVideoUrl } from "@/lib/miniatura";
 import { cleanUnit } from "@/lib/unit";
 import { formatPhoneBR } from "@/lib/phone";
 import { useEquipmentLibrary } from "@/app/admin/use-equipment-library";
@@ -269,7 +270,10 @@ export function ApartmentWizard({
         const b = buildings.find(
           (x) => x.name.trim().toLowerCase() === String(value).trim().toLowerCase(),
         );
-        if (b?.defaultHeroImg && !f.heroImg) next.heroImg = b.defaultHeroImg;
+        // A Capa é sempre foto: uma capa padrão antiga em vídeo não passa para o apartamento.
+        if (b?.defaultHeroImg && !isVideoUrl(b.defaultHeroImg) && !f.heroImg) {
+          next.heroImg = b.defaultHeroImg;
+        }
         if (b?.defaultFooterImg && !f.footerImg) next.footerImg = b.defaultFooterImg;
       }
       return next;
