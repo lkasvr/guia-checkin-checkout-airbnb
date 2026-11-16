@@ -16,12 +16,13 @@
  * decodifica.
  */
 import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
 import { parseArgs } from "node:util";
 import { list, put } from "@vercel/blob";
-import { config as loadEnv } from "dotenv";
+import { parse as parseEnv } from "dotenv";
 import { blobToken } from "../../src/lib/blobToken";
 import { backlogOf, createMiniaturas, type Backlog, type BlobFile, type Save } from "./backfill";
 import { extractMiniatura } from "./extractMiniatura";
@@ -63,14 +64,18 @@ function modeFromArgs(): Mode {
   return { kind: "gravar" };
 }
 
+/** Os arquivos de ambiente locais, na ordem do Next em desenvolvimento: o primeiro vence. */
+const ENV_FILES = [".env.development.local", ".env.local", ".env"];
+
 /**
- * A chave do Blob, lida dos arquivos de ambiente locais na mesma ordem do Next em
- * desenvolvimento (o primeiro arquivo vence; o ambiente do terminal vence os arquivos). Ela vai
+ * A chave do Blob, camada por camada: o ambiente do terminal vence os arquivos, e cada arquivo
+ * vence os seguintes. Dentro de cada camada vale a ordem de nomes do `blobToken`; misturar as
+ * camadas antes faria o nome preferido num arquivo vencer o outro nome no terminal. A chave vai
  * explícita em cada chamada ao SDK do Blob, que assim a usa antes de qualquer token OIDC.
  */
 function requireBlobToken(): string {
-  loadEnv({ path: [".env.development.local", ".env.local", ".env"], quiet: true });
-  const token = blobToken(process.env);
+  const layers = [process.env, ...ENV_FILES.filter((file) => existsSync(file)).map((file) => parseEnv(readFileSync(file)))];
+  const token = layers.map(blobToken).find(Boolean);
   if (!token) {
     exitWithError(
       "Falta a chave do Blob: defina BLOB_VERCEL_STORAGE_READ_WRITE_TOKEN (ou BLOB_READ_WRITE_TOKEN) " +
