@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { starterContent } from "@/data/starter";
-import { DEFAULT_CONDO_RULES } from "@/data/defaultRules";
+import { newBuildingTemplate } from "@/data/buildingModel";
 import {
   buildApartmentContent,
   buildOverrides,
@@ -39,9 +39,10 @@ export async function requireAdmin(): Promise<void> {
 }
 
 /**
- * Acha o prédio pelo nome (sem diferenciar maiúsculas/espaço nas pontas) ou
- * cria um novo em branco. Nome vazio = apartamento sem prédio (`null`),
- * comportamento igual ao de antes desse recurso existir.
+ * Acha o prédio pelo nome (sem espaço nas pontas) ou cria um novo com o modelo
+ * de prédio novo (`newBuildingTemplate`), o mesmo que a prévia do cadastro
+ * mostra. Nome vazio = apartamento sem prédio (`null`), comportamento igual ao
+ * de antes desse recurso existir.
  */
 async function resolveBuilding(
   name: string,
@@ -49,19 +50,19 @@ async function resolveBuilding(
   const trimmed = name.trim();
   if (!trimmed) return null;
 
-  const blank = starterContent("_", "_", "_");
+  const modelo = newBuildingTemplate();
   const building = await prisma.building.upsert({
     where: { name: trimmed },
     update: {},
     create: {
       name: trimmed,
-      rules: { ...blank.rules, items: DEFAULT_CONDO_RULES } as object,
-      home: blank.home as object,
-      amenities: blank.amenities as object,
-      tourism: blank.tourism as object,
-      dining: blank.dining as object,
-      checkinTemplate: blank.checkin as object,
-      checkoutTemplate: blank.checkout as object,
+      rules: modelo.rules as object,
+      home: modelo.home as object,
+      amenities: modelo.amenities as object,
+      tourism: modelo.tourism as object,
+      dining: modelo.dining as object,
+      checkinTemplate: modelo.checkinTemplate as object,
+      checkoutTemplate: modelo.checkoutTemplate as object,
     },
   });
   return { id: building.id, ...toBuildingTemplate(building) };

@@ -3,6 +3,29 @@ import { PREREQUISITE_CARD } from "@/data/prerequisiteCard";
 
 const t = (pt: string, en?: string): L => ({ pt, en: en ?? pt });
 
+type StarterSections = Pick<
+  Apartment,
+  "checkin" | "rules" | "contacts" | "home" | "amenities" | "tourism" | "dining"
+> & { checkout: NonNullable<Apartment["checkout"]> };
+
+/**
+ * As seções do guia como o conteúdo inicial as preenche: os subtítulos, já com
+ * o inglês, e o check-in com o cartão "Antes de chegar". O apartamento novo
+ * (`starterContent`) e o prédio novo (`newBuildingTemplate`) nascem com elas.
+ */
+export function starterSections(): StarterSections {
+  return {
+    checkin: { sub: t("Instruções de chegada.", "Arrival instructions."), cards: [PREREQUISITE_CARD] },
+    checkout: { sub: t("Antes de sair.", "Before you leave."), steps: [] },
+    rules: { sub: t("Regras da casa.", "House rules."), items: [] },
+    contacts: { sub: t("Contatos.", "Contacts."), items: [] },
+    home: { sub: t(""), slides: [], accordions: [] },
+    amenities: { sub: t(""), items: [] },
+    tourism: { sub: t(""), items: [] },
+    dining: { sub: t(""), items: [] },
+  };
+}
+
 /**
  * Conteúdo inicial (válido, porém em branco) para um apartamento novo criado
  * pelo superadmin. O anfitrião completa depois pelo painel. Mantém todas as
@@ -39,14 +62,7 @@ export function starterContent(
       { href: "#comer", label: t("Onde Comer", "Dining") },
     ],
     wifi: { network: "", password: "", speed: t("") },
-    checkin: { sub: t("Instruções de chegada."), cards: [PREREQUISITE_CARD] },
-    checkout: { sub: t("Antes de sair."), steps: [] },
-    rules: { sub: t("Regras da casa."), items: [] },
-    contacts: { sub: t("Contatos."), items: [] },
-    home: { sub: t(""), slides: [], accordions: [] },
-    amenities: { sub: t(""), items: [] },
-    tourism: { sub: t(""), items: [] },
-    dining: { sub: t(""), items: [] },
+    ...starterSections(),
     footer: {
       img: "/media/mesa.webp",
       msg: t("Boa estadia!", "Enjoy your stay!"),

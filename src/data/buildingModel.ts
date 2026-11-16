@@ -1,4 +1,6 @@
 import type { Apartment, BuildingInfo, ItemPatches, L } from "@/data/types";
+import { DEFAULT_CONDO_RULES } from "@/data/defaultRules";
+import { starterSections } from "@/data/starter";
 
 const t = (pt: string): L => ({ pt, en: pt });
 
@@ -34,6 +36,29 @@ export type ApartmentOverrides = {
 
 export const BLANK_RULES: Apartment["rules"] = { sub: t(""), items: [] };
 export const BLANK_HOME: Apartment["home"] = { sub: t(""), slides: [], accordions: [] };
+
+/**
+ * O conteúdo com que um prédio nasce pelo cadastro de apartamento, quando o
+ * "Edifício" digitado ainda não existe: as regras de convivência padrão, os
+ * subtítulos do conteúdo inicial, o check-in com o cartão "Antes de chegar", o
+ * check-out vazio e as outras seções vazias. `resolveBuilding` grava este
+ * conteúdo, e a prévia do cadastro o usa para mostrar o guia que vai ser gravado.
+ *
+ * A tela "Novo prédio" tem os próprios valores iniciais.
+ */
+export function newBuildingTemplate(): BuildingTemplate {
+  const s = starterSections();
+  return {
+    rules: { sub: s.rules.sub, items: [...DEFAULT_CONDO_RULES] },
+    home: s.home,
+    amenities: s.amenities,
+    tourism: s.tourism,
+    dining: s.dining,
+    checkinTemplate: s.checkin,
+    checkoutTemplate: s.checkout,
+    location: null,
+  };
+}
 
 /** Converte as colunas JSON cruas do Prisma (`Building`) pro formato tipado. */
 export function toBuildingTemplate(row: {
