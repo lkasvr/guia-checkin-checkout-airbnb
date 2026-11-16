@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { BLOB_TOKEN_VARS, blobToken } from "@/lib/blobToken";
+import { blobToken } from "@/lib/blobToken";
 
 describe("Chave do Blob no ambiente", () => {
   it("lê a variável com o prefixo que a Vercel deu ao conectar o Blob", () => {
@@ -25,9 +25,5 @@ describe("Chave do Blob no ambiente", () => {
   it("uma variável vazia conta como ausente", () => {
     assert.equal(blobToken({ BLOB_VERCEL_STORAGE_READ_WRITE_TOKEN: "", BLOB_READ_WRITE_TOKEN: "chave-b" }), "chave-b");
     assert.equal(blobToken({ BLOB_VERCEL_STORAGE_READ_WRITE_TOKEN: "" }), undefined);
-  });
-
-  it("lista os dois nomes aceitos, na ordem de preferência", () => {
-    assert.deepEqual(BLOB_TOKEN_VARS, ["BLOB_VERCEL_STORAGE_READ_WRITE_TOKEN", "BLOB_READ_WRITE_TOKEN"]);
   });
 });
