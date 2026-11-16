@@ -39,10 +39,9 @@ export { parseHeroFacts } from "@/data/checkinTemplate";
 const t = (pt: string, en?: string): L => ({ pt, en: en ?? pt });
 
 /**
- * Sobrepõe o conteúdo compartilhado do prédio no conteúdo do apartamento —
- * usado tanto no carregamento do guia público (`guideContentFromStored`)
- * quanto na prévia do formulário, pra garantir que os dois mostrem a mesma
- * coisa.
+ * Sobrepõe o conteúdo compartilhado do prédio no conteúdo do apartamento. Só
+ * `guideContentFromStored` a chama, e por ela passam o guia público e a prévia
+ * do cadastro (`apartmentPreview`): os dois mostram a mesma coisa.
  *
  * Com `overrides.patches` (modo atual) cada seção é a lista do prédio, ao vivo,
  * com só os itens que este apartamento editou/removeu/acrescentou trocados —
@@ -51,7 +50,7 @@ const t = (pt: string, en?: string): L => ({ pt, en: en ?? pt });
  * apartamento; senão herda do prédio. Regras do prédio somam com as do
  * apartamento em vez de substituí-las.
  */
-export function overlayBuildingLiveContent(
+function overlayBuildingLiveContent(
   content: Apartment,
   building: BuildingTemplate | null,
   overrides: ApartmentOverrides = {},
