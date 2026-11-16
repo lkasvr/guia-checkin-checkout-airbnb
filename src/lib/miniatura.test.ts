@@ -27,11 +27,19 @@ describe("Miniatura de um endereço de vídeo", () => {
     assert.equal(miniaturaUrl("/media/como-estacionar.mp4"), "/media/como-estacionar.jpg");
   });
 
+  it("preserva query e fragmento do endereço", () => {
+    assert.equal(miniaturaUrl("https://exemplo.com/tour.mp4?v=2"), "https://exemplo.com/tour.jpg?v=2");
+    // O guia monta o `src` do vídeo com `#t=0.1` (sections.tsx).
+    assert.equal(miniaturaUrl("/media/tour.mp4#t=0.1"), "/media/tour.jpg#t=0.1");
+  });
+
   it("foto não tem Miniatura", () => {
     assert.equal(miniaturaUrl("https://exemplo.com/sala.jpg"), undefined);
     assert.equal(miniaturaUrl("https://exemplo.com/sala.webp"), undefined);
     // Quadro exportado de um vídeo: a extensão do vídeo no meio do nome não conta.
     assert.equal(miniaturaUrl("https://exemplo.com/IMG_0042.MOV.png"), undefined);
+    // Nem uma extensão de vídeo que aparece só na query.
+    assert.equal(miniaturaUrl("https://exemplo.com/sala.jpg?de=tour.mp4"), undefined);
   });
 
   it("endereço vazio não tem Miniatura", () => {

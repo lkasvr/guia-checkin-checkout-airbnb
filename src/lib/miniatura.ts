@@ -7,9 +7,19 @@
 
 const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
 
-/** Endereço (ou caminho do Blob) da Miniatura de um vídeo; `undefined` se não for vídeo. */
+/** Separa o caminho da query e do fragmento (`?v=2`, `#t=0.1`), que ficam fora da extensão. */
+function splitPath(url: string): [path: string, rest: string] {
+  const cut = url.search(/[?#]/);
+  return cut === -1 ? [url, ""] : [url.slice(0, cut), url.slice(cut)];
+}
+
+/**
+ * Endereço (ou caminho do Blob) da Miniatura de um vídeo; `undefined` se não for
+ * vídeo. Só a extensão muda: query e fragmento seguem como estavam.
+ */
 export function miniaturaUrl(url: string): string | undefined {
-  return VIDEO_EXT.test(url) ? url.replace(VIDEO_EXT, ".jpg") : undefined;
+  const [path, rest] = splitPath(url);
+  return VIDEO_EXT.test(path) ? path.replace(VIDEO_EXT, ".jpg") + rest : undefined;
 }
 
 /** A Miniatura explícita nos dados (vídeos estáticos em `/media`) vence a deduzida. */
