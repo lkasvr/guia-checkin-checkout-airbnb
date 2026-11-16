@@ -1,6 +1,6 @@
 import type {
   Apartment,
-  ApartmentVars,
+  CleanVars,
   ItemPatches,
   L,
   PortariaOverride,
@@ -185,7 +185,7 @@ export type ApartmentFormInput = {
 export const varsFromInput = (
   input: Pick<ApartmentFormInput, "tower" | "floor" | "unit" | "parking" | "checkoutTime"> &
     Partial<Pick<ApartmentFormInput, "floorEn" | "floorEs" | "parkingEn" | "parkingEs">>,
-): ApartmentVars => {
+): CleanVars => {
   const tr = (pt: string, en?: string, es?: string): L | undefined =>
     en?.trim() || es?.trim()
       ? { pt, en: en?.trim() || pt, ...(es?.trim() ? { es: es.trim() } : {}) }

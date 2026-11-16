@@ -2,6 +2,7 @@ import type {
   Apartment,
   ApartmentVars,
   Accordion,
+  CleanVars,
   Amenity,
   CheckinCard,
   ItemPatch,
@@ -124,7 +125,7 @@ export function overlayWithPatches(
 export function editorValues(
   building: BuildingTemplate,
   patches: ItemPatches | undefined,
-  vars: ApartmentVars,
+  vars: CleanVars,
   doorCode?: Apartment["checkin"]["doorCode"],
 ) {
   const p = patches ?? {};
@@ -174,7 +175,7 @@ const compact = (p: ItemPatches): ItemPatches =>
 export function buildItemPatches(
   src: PatchSource,
   building: BuildingTemplate,
-  vars: ApartmentVars,
+  vars: CleanVars,
 ): ItemPatches {
   const o = src.overrides;
   const patches: ItemPatches = {};

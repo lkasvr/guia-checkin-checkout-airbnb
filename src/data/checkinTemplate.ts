@@ -1,4 +1,4 @@
-import type { Alert, Apartment, ApartmentVars, CheckinCard, L, Step } from "@/data/types";
+import type { Alert, Apartment, ApartmentVars, CheckinCard, CleanVars, L, Step } from "@/data/types";
 import type { BuildingTemplate } from "@/data/buildingModel";
 import { withPrerequisiteCard } from "@/data/prerequisiteCard";
 import { translateEs } from "@/data/es";
@@ -182,12 +182,13 @@ export function deriveVars(content: Apartment): ApartmentVars {
  * de onde os marcadores saem para o guia, o conteúdo gravado
  * (`guideContentFromStored`) e o formulário (`varsFromInput`), para que o
  * guia, os editores e o cálculo dos ajustes concordem. Nunca na conversão do
- * modo antigo (ver `deriveVars`).
+ * modo antigo (ver `deriveVars`). Devolve `CleanVars`, o tipo que os editores e
+ * o cálculo dos ajustes exigem.
  */
-export function cleanVars(vars: ApartmentVars): ApartmentVars {
+export function cleanVars(vars: ApartmentVars): CleanVars {
   return {
     ...vars,
     UNIDADE: cleanUnit(vars.UNIDADE),
     CHECKOUT_HORA: cleanCheckoutTime(vars.CHECKOUT_HORA),
-  };
+  } as CleanVars;
 }
