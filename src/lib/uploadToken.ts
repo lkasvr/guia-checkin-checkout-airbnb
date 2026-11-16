@@ -20,7 +20,9 @@ const MAX_MINIATURA_BYTES = 2 * MB;
 
 /**
  * O `clientPayload` com que o envio pede o token de uma Miniatura, declarando o tipo do arquivo
- * que vai subir. A rota recusa o pedido de outro tipo, e o token ainda só aceita JPEG.
+ * que vai subir. São duas barreiras, em momentos diferentes: a rota recusa já na emissão, com
+ * status 400, o pedido que declara outro tipo; e o token emitido faz o Blob recusar, na gravação,
+ * o arquivo que não for JPEG.
  */
 export function miniaturaRequest(contentType: string): string {
   return JSON.stringify({ miniatura: { contentType } });
