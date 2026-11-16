@@ -7,6 +7,7 @@ import type {
   Rule,
 } from "@/data/types";
 import { starterContent } from "@/data/starter";
+import { cleanUnit } from "@/lib/unit";
 import { withPrerequisiteCard } from "@/data/prerequisiteCard";
 import {
   checkinToContent,
@@ -358,7 +359,7 @@ export function buildApartmentContent(
 
   const content: Apartment = {
     ...base,
-    unit: input.unit,
+    unit: cleanUnit(input.unit),
     building: input.building,
     vars: varsFromInput(input),
     contactInfo: {

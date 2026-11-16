@@ -13,6 +13,7 @@ import {
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
 import { slugify } from "@/lib/slug";
+import { cleanUnit } from "@/lib/unit";
 import { formatPhoneBR } from "@/lib/phone";
 import { useEquipmentLibrary } from "@/app/admin/use-equipment-library";
 import { lookupIntercom, towerKey, type ReusableContacts } from "@/data/contacts";
@@ -261,7 +262,7 @@ export function ApartmentWizard({
         );
         next.intercomCode = lookupIntercom(b?.location?.intercom, next.tower);
       }
-      if (key === "unit" && !f.label) next.label = value ? `Ap ${String(value).toUpperCase()}` : "";
+      if (key === "unit" && !f.label) next.label = value ? `Ap ${cleanUnit(String(value)).toUpperCase()}` : "";
       // Prédio escolhido pela primeira vez: sugere a capa/despedida padrão
       // dele, só quando a pessoa ainda não escolheu foto própria.
       if (key === "building") {
