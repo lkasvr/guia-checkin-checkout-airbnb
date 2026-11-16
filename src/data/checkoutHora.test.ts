@@ -14,6 +14,7 @@ import { filledCheckin, filledCheckout } from "@/data/checkinTemplate";
 import { BLANK_HOME, BLANK_RULES } from "@/data/buildingModel";
 import { emptyL } from "@/data/sectionContent";
 import { starterContent } from "@/data/starter";
+import { formularioNoPredio } from "@/data/testFixtures";
 
 const vazio = emptyL();
 
@@ -116,39 +117,6 @@ describe("Montagem do guia: marcador {{CHECKOUT_HORA}}", () => {
   });
 });
 
-/** Formulário do cadastro de um apartamento no prédio, com o horário de saída digitado. */
-function formulario(checkoutHora: string): ApartmentFormInput {
-  return {
-    building: "Residencial DF Plaza",
-    unit: "2202",
-    heroImg: "",
-    footerImg: "",
-    tower: "Torre A",
-    floor: "22º andar",
-    parking: "",
-    maxGuests: "4",
-    checkinTime: "15h",
-    checkoutTime: checkoutHora,
-    doorCodeMode: "per_stay",
-    doorCode: "",
-    wifiNetwork: "",
-    wifiPassword: "",
-    ownRules: [],
-    smoking: "no",
-    pets: "no",
-    hostWhatsapp: "",
-    coHostName: "",
-    coHostWhatsapp: "",
-    portariaPhone: "",
-    intercomCode: "",
-    internalNotes: "",
-    locationAddress: "",
-    locationMapsUrl: "",
-    homeVideo: "",
-    overrides: {},
-  };
-}
-
 /** O quadradinho "Check-out" da Capa, como foi gravado. */
 function quadradinhoCheckout(conteudo: Apartment): string | undefined {
   return conteudo.hero.facts.find((f) => f.v.pt === "Check-out")?.k.pt;
@@ -156,12 +124,12 @@ function quadradinhoCheckout(conteudo: Apartment): string | undefined {
 
 describe("Gravação do cadastro: horário de saída digitado com \"Até às\"", () => {
   it("\"Até às 11h\" grava a variável CHECKOUT_HORA como \"11h\"", () => {
-    const gravado = buildApartmentContent(formulario("Até às 11h"), "Anfitriã", undefined, predio);
+    const gravado = buildApartmentContent(formularioNoPredio({ checkoutTime: "Até às 11h" }), "Anfitriã", undefined, predio);
     assert.equal(gravado.vars?.CHECKOUT_HORA, "11h");
   });
 
   it("o quadradinho \"Check-out\" da Capa continua como foi digitado", () => {
-    const gravado = buildApartmentContent(formulario("Até às 11h"), "Anfitriã", undefined, predio);
+    const gravado = buildApartmentContent(formularioNoPredio({ checkoutTime: "Até às 11h" }), "Anfitriã", undefined, predio);
     assert.equal(quadradinhoCheckout(gravado), "Até às 11h");
   });
 });
@@ -173,12 +141,12 @@ function abrirEditorDoCheckout(form: ApartmentFormInput): ApartmentFormInput {
 
 describe("Gravação do cadastro: ajustes no check-out", () => {
   it("o editor aberto mostra o horário como o guia mostra", () => {
-    const form = abrirEditorDoCheckout(formulario("Até às 11h"));
+    const form = abrirEditorDoCheckout(formularioNoPredio({ checkoutTime: "Até às 11h" }));
     assert.equal(form.checkoutOverride?.steps[0].body.pt, saidaAs("11h"));
   });
 
   it("editor aberto e sem edição: salvar não gera ajuste no check-out", () => {
-    const form = abrirEditorDoCheckout(formulario("Até às 11h"));
+    const form = abrirEditorDoCheckout(formularioNoPredio({ checkoutTime: "Até às 11h" }));
     assert.equal(buildOverrides(form, predio).patches?.checkout, undefined);
   });
 });
