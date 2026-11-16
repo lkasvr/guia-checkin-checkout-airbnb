@@ -8,7 +8,6 @@ import type {
 } from "@/data/types";
 import { starterContent } from "@/data/starter";
 import { cleanUnit } from "@/lib/unit";
-import { cleanCheckoutTime } from "@/lib/checkoutTime";
 import { withPrerequisiteCard } from "@/data/prerequisiteCard";
 import {
   checkinToContent,
@@ -29,7 +28,7 @@ import {
 } from "@/data/sectionContent";
 import type { ApartmentOverrides, BuildingTemplate } from "@/data/buildingModel";
 import { buildItemPatches, overlayWithPatches } from "@/data/patches";
-import { deriveVars } from "@/data/checkinTemplate";
+import { cleanVars, deriveVars } from "@/data/checkinTemplate";
 import { lookupIntercom, portariaContact, toTel, withPortaria } from "@/data/contacts";
 
 // Quem já importava daqui continua importando daqui.
@@ -100,19 +99,13 @@ export function overlayBuildingLiveContent(
  * que está gravado no banco: conserta o que foi gravado antes das regras atuais
  * e sobrepõe o prédio.
  *
- * - A unidade sai sem o "Ap" na frente: o guia já escreve "Apartamento …" e
- *   "Ap …" antes dela, e quem digitou "Ap 2202" gerava "Ap Ap 2202". Vale para
- *   a unidade principal (título, rodapé) e para a do marcador {{UNIDADE}} (o
- *   modelo escreve "apartamento {{UNIDADE}}"), então um apartamento gravado
- *   com "Ap 2202" aparece limpo sem ninguém salvar de novo. Na gravação, quem
- *   limpa é `buildApartmentContent` e `varsFromInput`.
- * - O marcador {{CHECKOUT_HORA}} recebe só o horário, sem o "Até às" na
- *   frente: o modelo escreve "O horário limite de saída é {{CHECKOUT_HORA}}",
- *   e quem digitou "Até às 11h" gerava "é Até às 11h". O quadradinho
- *   "Check-out" da Capa fica como foi digitado. Na gravação, quem limpa é
- *   `varsFromInput`.
- * - Os marcadores saem sempre preenchidos: os gravados ou, em conteúdo antigo
- *   sem eles, os lidos da Capa (`deriveVars`), já limpos.
+ * - A unidade principal (título, rodapé) sai sem o "Ap" na frente: o guia já
+ *   escreve "Apartamento …" e "Ap …" antes dela, e quem digitou "Ap 2202"
+ *   gerava "Ap Ap 2202".
+ * - Os marcadores saem sempre preenchidos, os gravados ou, em conteúdo antigo,
+ *   os lidos da Capa, e limpos por `cleanVars`: um apartamento gravado com
+ *   "Ap 2202" ou "Até às 11h" aparece limpo sem ninguém salvar de novo. Na
+ *   gravação, quem limpa é `buildApartmentContent` e `varsFromInput`.
  * - `footer.img` não existia antes de uma versão: conteúdo gravado antes dela
  *   não tem a chave, e o guia quebraria ao mostrar a foto de despedida.
  */
@@ -121,15 +114,10 @@ export function guideContentFromStored(
   building: BuildingTemplate | null,
   overrides: ApartmentOverrides,
 ): Apartment {
-  const vars = deriveVars(stored);
   const content: Apartment = {
     ...stored,
     unit: cleanUnit(stored.unit),
-    vars: {
-      ...vars,
-      UNIDADE: cleanUnit(vars.UNIDADE),
-      CHECKOUT_HORA: cleanCheckoutTime(vars.CHECKOUT_HORA),
-    },
+    vars: cleanVars(deriveVars(stored)),
     footer: { ...stored.footer, img: stored.footer.img ?? "/media/mesa.webp" },
   };
   // Sempre passa pelo overlay: com prédio ele traz o conteúdo ao vivo (modelo +
@@ -190,10 +178,9 @@ export type ApartmentFormInput = {
 
 /**
  * Valores que preenchem os marcadores {{TORRE}}, {{ANDAR}}… do check-in/check-out
- * do prédio. A unidade sai sem o "Ap" e o horário de saída sem o "Até às",
- * como o guia os mostra (`guideContentFromStored`): os editores do check-in e
- * do check-out mostram o mesmo texto que o guia, o cálculo dos ajustes compara
- * com esse texto, e o que se grava já sai limpo.
+ * do prédio, limpos por `cleanVars` como o guia os mostra: os editores do
+ * check-in e do check-out mostram o mesmo texto que o guia, o cálculo dos
+ * ajustes compara com esse texto, e o que se grava já sai limpo.
  */
 export const varsFromInput = (
   input: Pick<ApartmentFormInput, "tower" | "floor" | "unit" | "parking" | "checkoutTime"> &
@@ -205,15 +192,15 @@ export const varsFromInput = (
       : undefined;
   const andarL = tr(input.floor, input.floorEn, input.floorEs);
   const vagaL = tr(input.parking, input.parkingEn, input.parkingEs);
-  return {
+  return cleanVars({
     TORRE: input.tower,
     ANDAR: input.floor,
-    UNIDADE: cleanUnit(input.unit),
+    UNIDADE: input.unit,
     VAGA: input.parking,
-    CHECKOUT_HORA: cleanCheckoutTime(input.checkoutTime),
+    CHECKOUT_HORA: input.checkoutTime,
     ...(andarL ? { ANDAR_L: andarL } : {}),
     ...(vagaL ? { VAGA_L: vagaL } : {}),
-  };
+  });
 };
 
 /** Título de regra gerado automaticamente (fumo/animais) — não entra na lista de "regras específicas". */
