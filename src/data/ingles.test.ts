@@ -1,7 +1,12 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { Apartment, ApartmentVars, CheckinCard, L } from "@/data/types";
-import { buildOverrides, guideContentFromStored, type BuildingTemplate } from "@/data/buildApartmentContent";
+import {
+  buildApartmentContent,
+  buildOverrides,
+  guideContentFromStored,
+  type BuildingTemplate,
+} from "@/data/buildApartmentContent";
 import { BLANK_HOME } from "@/data/buildingModel";
 import { textoNoIdioma, type Lang } from "@/data/idioma";
 import { legacyToPatches } from "@/data/patches";
@@ -392,6 +397,7 @@ describe("Texto sem chave no dicionário e sem inglês digitado", () => {
   it("texto igual a um nome herdado de Object (\"constructor\", \"toString\") sai como está", () => {
     for (const pt of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
       assert.equal(textoNoIdioma(semIngles(pt), "en"), pt);
+      assert.equal(textoNoIdioma(semIngles(pt), "es"), pt);
     }
   });
 
@@ -557,5 +563,27 @@ describe("Guia em espanhol: os mesmos textos continuam como antes do dicionário
       "La <strong>hora límite de salida es a las 11h</strong>. ¿Necesitas late check-out? Habla con la anfitriona.",
       "Cierra las ventanas, apaga el aire acondicionado y revisa que no olvides nada. Solo cierra la puerta al salir.",
     ]);
+  });
+});
+
+describe("Capa: a legenda do andar em espanhol", () => {
+  /** A legenda do andar na Capa de um apartamento cadastrado no prédio, lida num idioma. */
+  function legendaDoAndar(andar: string, idioma: Lang): string {
+    const gravado = buildApartmentContent(formularioNoPredio({ floor: andar }), "Anfitriã", undefined, dfPlaza);
+    const guia = guideContentFromStored(gravado, dfPlaza, { patches: {} });
+    const fato = guia.hero.facts.find((f) => f.v.pt === andar);
+    assert.ok(fato, `a Capa não tem a legenda "${andar}"`);
+    return textoNoIdioma(fato.v, idioma);
+  }
+
+  it("\"22º andar\" sem tradução sai \"Piso 22\" em espanhol, e não no inglês do dicionário", () => {
+    assert.equal(legendaDoAndar("22º andar", "es"), "Piso 22");
+    assert.equal(legendaDoAndar("22º andar", "en"), "22nd floor");
+    assert.equal(legendaDoAndar("22º andar", "pt"), "22º andar");
+  });
+
+  it("aceita as mesmas grafias do inglês", () => {
+    assert.equal(legendaDoAndar("5° andar", "es"), "Piso 5");
+    assert.equal(legendaDoAndar("5 Andar", "es"), "Piso 5");
   });
 });
