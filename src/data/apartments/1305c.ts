@@ -1,7 +1,5 @@
 import type { Apartment } from "@/data/types";
-
-const CHAT =
-  '<a class="chatlink" href="https://www.airbnb.com/guest/messages" target="_blank" rel="noopener">chat</a>';
+import { CHAT_LINK } from "@/data/chatLink";
 
 export const ap1305c: Apartment = {
   slug: "1305c",
@@ -63,8 +61,8 @@ export const ap1305c: Apartment = {
           {
             n: "2",
             body: {
-              pt: `Vá à <strong>portaria 24h da Torre C</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`,
-              en: `Go to the <strong>24h Tower C lobby</strong>, next to the <strong>Spoleto</strong> restaurant, and show your <strong>ID</strong> (the same one sent via ${CHAT}).`,
+              pt: `Vá à <strong>portaria 24h da Torre C</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT_LINK}).`,
+              en: `Go to the <strong>24h Tower C lobby</strong>, next to the <strong>Spoleto</strong> restaurant, and show your <strong>ID</strong> (the same one sent via ${CHAT_LINK}).`,
             },
           },
           {
@@ -77,8 +75,8 @@ export const ap1305c: Apartment = {
           {
             n: "4",
             body: {
-              pt: `Digite na fechadura eletrônica a <strong>senha enviada pelo ${CHAT}</strong>. Pronto, pode entrar.`,
-              en: `Enter the <strong>code sent via ${CHAT}</strong> on the electronic lock. That's it, you're in.`,
+              pt: `Digite na fechadura eletrônica a <strong>senha enviada pelo ${CHAT_LINK}</strong>. Pronto, pode entrar.`,
+              en: `Enter the <strong>code sent via ${CHAT_LINK}</strong> on the electronic lock. That's it, you're in.`,
             },
           },
         ],

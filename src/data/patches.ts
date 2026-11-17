@@ -13,7 +13,13 @@ import type {
   Step,
 } from "@/data/types";
 import type { ApartmentOverrides, BuildingTemplate } from "@/data/buildingModel";
-import { filledCheckin, filledCheckout, deriveVars } from "@/data/checkinTemplate";
+import {
+  deriveVars,
+  filledCheckin,
+  filledCheckout,
+  legacyCheckinCopy,
+  legacyCheckoutCopy,
+} from "@/data/checkinTemplate";
 import {
   accordionId,
   amenityId,
@@ -375,17 +381,18 @@ export function legacyToPatches(
   }
   // Check-in/check-out sempre foram cópias do modelo (nunca ao vivo), gravadas
   // já preenchidas com os marcadores como foram digitados. Por isso o modelo é
-  // preenchido com `deriveVars`, sem o `cleanVars` do guia: a diferença
+  // preenchido com `deriveVars`, sem o `cleanVars` do guia, e como a cópia do
+  // modo antigo (`legacyCheckinCopy`, sem o dicionário inglês): a diferença
   // "Ap 2202" × "2202" ou "Até às 11h" × "11h" viraria ajuste, e o ajuste
   // congelaria o texto sujo no cartão ou no passo.
-  const ciModel = filledCheckin(building, vars).cards;
+  const ciModel = legacyCheckinCopy(building, vars).cards;
   patches.checkin = toPatch(
     ciModel,
     matchPatch<CheckinCard>(ciModel, content.checkin.cards, cardId),
     cardId,
     true,
   );
-  const coModel = filledCheckout(building, vars).steps;
+  const coModel = legacyCheckoutCopy(building, vars).steps;
   patches.checkout = toPatch(
     coModel,
     matchPatch<Step>(coModel, content.checkout?.steps ?? [], stepId),

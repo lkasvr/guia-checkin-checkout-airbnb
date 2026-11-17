@@ -3,13 +3,14 @@
  * modelos) e do conteúdo do 1305C / Residencial DF Plaza. Chave = texto em
  * português exatamente como está gravado; valor = espanhol.
  *
- * O texto que o anfitrião digita nos formulários só existe em português
- * (o inglês é uma cópia do português), então só ganha espanhol se cair aqui
- * ou se vier com `es` no próprio conteúdo. Fora disso o guia mostra o inglês.
+ * O texto que o anfitrião digita nos formulários chega com espanhol só se ele
+ * o digitar (e, com "Inglês (opcional)" em branco, com o inglês gravado como
+ * cópia do português). Sem `es` no próprio conteúdo, o espanhol vem daqui;
+ * fora disso o guia mostra o inglês: o digitado, o do dicionário inglês
+ * (`src/data/en.ts`) ou, por último, o português (ver `textoNoIdioma`).
  */
 
-const CHAT =
-  '<a class="chatlink" href="https://www.airbnb.com/guest/messages" target="_blank" rel="noopener">chat</a>';
+import { CHAT_LINK } from "@/data/chatLink";
 
 const ES: Record<string, string> = {
   // ── Padrões do sistema ─────────────────────────────────────────────────
@@ -68,10 +69,10 @@ const ES: Record<string, string> = {
   "Entrando no prédio": "Entrando al edificio",
   '<strong>De Uber/táxi?</strong> Desça no DF Plaza Shopping, entrada do restaurante <strong>Coco Bambu (2º piso)</strong>.<span class="hint">Essa entrada fica a poucos metros da portaria da {{TORRE}}.</span>':
     '<strong>¿En Uber/taxi?</strong> Bájate en el DF Plaza Shopping, en la entrada del restaurante <strong>Coco Bambu (2.º piso)</strong>.<span class="hint">Esa entrada está a pocos metros de la recepción de la {{TORRE}}.</span>',
-  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>{{PORTARIA_REF}}, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`]:
-    `Ve a la <strong>recepción 24 h de la {{TORRE}}</strong>{{PORTARIA_REF}}, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT}).`,
-  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`]:
-    `Ve a la <strong>recepción 24 h de la {{TORRE}}</strong>, junto al restaurante <strong>Spoleto</strong>, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT}).`,
+  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>{{PORTARIA_REF}}, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT_LINK}).`]:
+    `Ve a la <strong>recepción 24 h de la {{TORRE}}</strong>{{PORTARIA_REF}}, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT_LINK}).`,
+  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT_LINK}).`]:
+    `Ve a la <strong>recepción 24 h de la {{TORRE}}</strong>, junto al restaurante <strong>Spoleto</strong>, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT_LINK}).`,
   "Suba ao <strong>{{ANDAR}}</strong>, apartamento <strong>{{UNIDADE}}</strong>.":
     "Sube al <strong>{{ANDAR}}</strong>, apartamento <strong>{{UNIDADE}}</strong>.",
   [`Na fechadura eletrônica, digite {{SENHA_FECHADURA}}. Pronto, pode entrar.`]:
@@ -94,8 +95,8 @@ const ES: Record<string, string> = {
   // inglês diferente, então continua precisando bater aqui também.
   "<strong>De Uber/táxi?</strong> Desça no DF Plaza Shopping, entrada do restaurante <strong>Coco Bambu (2º piso)</strong>.<span class=\"hint\">Essa entrada fica a poucos metros da portaria da Torre C.</span>":
     '<strong>¿En Uber/taxi?</strong> Bájate en el DF Plaza Shopping, en la entrada del restaurante <strong>Coco Bambu (2.º piso)</strong>.<span class="hint">Esa entrada está a pocos metros de la recepción de la Torre C.</span>',
-  [`Vá à <strong>portaria 24h da Torre C</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`]:
-    `Ve a la <strong>recepción 24 h de la Torre C</strong>, junto al restaurante <strong>Spoleto</strong>, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT}).`,
+  [`Vá à <strong>portaria 24h da Torre C</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT_LINK}).`]:
+    `Ve a la <strong>recepción 24 h de la Torre C</strong>, junto al restaurante <strong>Spoleto</strong>, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT_LINK}).`,
   "Suba ao <strong>13º andar</strong>, apartamento <strong>1305C</strong>.":
     "Sube al <strong>piso 13</strong>, apartamento <strong>1305C</strong>.",
   "Retire o carro e use o cartão na entrada do estacionamento residencial: <strong>Subsolo −3, vaga nº 269</strong>.":
@@ -222,10 +223,16 @@ const ES: Record<string, string> = {
 
 /** Espanhol de um texto em português, se conhecido (`undefined` = usar o inglês). */
 export function translateEs(pt: string): string | undefined {
-  const hit = ES[pt];
-  if (hit !== undefined) return hit;
+  // Só chave própria: `ES["constructor"]` acharia a função herdada de Object.
+  if (Object.hasOwn(ES, pt)) return ES[pt];
   // "4 hóspedes" (gerado pelo formulário do apartamento).
   const guests = /^(\d+) hóspedes$/.exec(pt);
   if (guests) return `${guests[1]} huéspedes`;
+  // "22º andar" (a legenda do andar na Capa), como "13º andar" → "Piso 13" acima.
+  // Sem esta regra, o espanhol caía no inglês do dicionário ("22nd floor"). Aceita
+  // as mesmas grafias do inglês (`translateEn`). O marcador {{ANDAR}} não passa
+  // por aqui: no check-in, o valor em espanhol fica como foi digitado.
+  const andar = /^(\d+)\s*[º°ªo]?\s*andar$/i.exec(pt);
+  if (andar) return `Piso ${andar[1]}`;
   return undefined;
 }
