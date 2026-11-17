@@ -48,7 +48,7 @@ const dfPlazaRules = {
       icon: "👥",
       title: { pt: "Somente hóspedes registrados", en: "Registered guests only" },
       text: {
-        pt: "Sobre convidados, consulte a anfitriã antes.",
+        pt: "Sobre convidados, consulte a pessoa anfitriã antes.",
         en: "For visitors, please check with the host first.",
       },
     },
@@ -169,7 +169,7 @@ const dfPlazaCheckoutTemplate = {
     {
       n: "1",
       body: {
-        pt: "O <strong>horário limite de saída é {{CHECKOUT_HORA}}</strong>. Precisa de late checkout? Fale com a anfitriã.",
+        pt: "O <strong>horário limite de saída é {{CHECKOUT_HORA}}</strong>. Precisa de late checkout? Fale com a pessoa anfitriã.",
         en: "<strong>Check-out is until {{CHECKOUT_HORA}}</strong>. Need a late checkout? Message the host.",
       },
     },

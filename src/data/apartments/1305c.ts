@@ -147,7 +147,7 @@ export const ap1305c: Apartment = {
       {
         n: "1",
         body: {
-          pt: "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a anfitriã.",
+          pt: "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a pessoa anfitriã.",
           en: "<strong>Check-out is until 11am</strong>. Need a late checkout? Message the host.",
         },
       },
@@ -196,14 +196,14 @@ export const ap1305c: Apartment = {
       {
         icon: "💬",
         name: "Anna Júlia P. Oliveira",
-        role: { pt: "Anfitriã · WhatsApp", en: "Host · WhatsApp" },
+        role: { pt: "Anfitrião(ã) · WhatsApp", en: "Host · WhatsApp" },
         phone: "(61) 98250-0188",
         tel: "+5561982500188",
       },
       {
         icon: "💬",
         name: "Anna Júlia · 2",
-        role: { pt: "Anfitriã · WhatsApp", en: "Host · WhatsApp" },
+        role: { pt: "Anfitrião(ã) · WhatsApp", en: "Host · WhatsApp" },
         phone: "(61) 98608-5715",
         tel: "+5561986085715",
       },
@@ -379,7 +379,7 @@ export const ap1305c: Apartment = {
         img: "/media/cinema.webp",
         title: { pt: "Home Cinema", en: "Home Cinema" },
         text: {
-          pt: "Agende com a anfitriã ou portaria com 48h de antecedência.",
+          pt: "Agende com a pessoa anfitriã ou a portaria com 48h de antecedência.",
           en: "Book via the host or front desk 48h in advance.",
         },
       },

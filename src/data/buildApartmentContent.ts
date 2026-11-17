@@ -362,7 +362,7 @@ export function buildApartmentContent(
     contacts.push({
       icon: "💬",
       name: hostName,
-      role: t("Anfitrião · WhatsApp", "Host · WhatsApp"),
+      role: t("Anfitrião(ã) · WhatsApp", "Host · WhatsApp"),
       phone: input.hostWhatsapp,
       tel: toTel(input.hostWhatsapp),
     });
