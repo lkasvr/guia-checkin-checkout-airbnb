@@ -8,7 +8,7 @@ import {
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
 import { legacyToPatches } from "@/data/patches";
-import { filledCheckin, filledCheckout } from "@/data/checkinTemplate";
+import { legacyCheckinCopy, legacyCheckoutCopy } from "@/data/checkinTemplate";
 import { BLANK_HOME, BLANK_RULES } from "@/data/buildingModel";
 import { emptyL } from "@/data/sectionContent";
 import { starterContent } from "@/data/starter";
@@ -158,8 +158,8 @@ describe("Gravação do cadastro: ajustes no check-out", () => {
 function apartamentoModoAntigo(checkoutHora: string): Apartment {
   return {
     ...apartamentoGravado(checkoutHora),
-    checkin: filledCheckin(predio, varsGravadas(checkoutHora)),
-    checkout: filledCheckout(predio, varsGravadas(checkoutHora)),
+    checkin: legacyCheckinCopy(predio, varsGravadas(checkoutHora)),
+    checkout: legacyCheckoutCopy(predio, varsGravadas(checkoutHora)),
   };
 }
 

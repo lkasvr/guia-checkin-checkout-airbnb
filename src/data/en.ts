@@ -218,7 +218,22 @@ const EN: Record<string, string> = {
     "Northeastern Brazilian cooking and carne de sol, with grilled dishes to share.",
 };
 
+/** Ordinal inglês: 1st, 2nd, 3rd, 4th… 11th, 12th, 13th… 21st, 22nd, 23rd. */
+function ordinal(n: number): string {
+  const centena = n % 100;
+  if (centena >= 11 && centena <= 13) return `${n}th`;
+  const sufixo = { 1: "st", 2: "nd", 3: "rd" }[n % 10] ?? "th";
+  return `${n}${sufixo}`;
+}
+
 /** Inglês de um texto em português, se conhecido (`undefined` = sem inglês no dicionário). */
 export function translateEn(pt: string): string | undefined {
-  return EN[pt];
+  const hit = EN[pt];
+  if (hit !== undefined) return hit;
+  // "22º andar" (o campo "Andar" do apartamento), como o espanhol faz com "N hóspedes".
+  // O campo é digitado à mão: aceita também "22° andar" (sinal de grau),
+  // "22o andar", "22 andar" e "Andar" com maiúscula.
+  const andar = /^(\d+)\s*[º°ªo]?\s*andar$/i.exec(pt);
+  if (andar) return `${ordinal(Number(andar[1]))} floor`;
+  return undefined;
 }

@@ -1,11 +1,14 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import type { Apartment, ApartmentVars, CheckinCard, L } from "@/data/types";
-import { guideContentFromStored, type BuildingTemplate } from "@/data/buildApartmentContent";
+import { buildOverrides, guideContentFromStored, type BuildingTemplate } from "@/data/buildApartmentContent";
 import { BLANK_HOME } from "@/data/buildingModel";
 import { textoNoIdioma, type Lang } from "@/data/idioma";
+import { legacyToPatches } from "@/data/patches";
+import { PREREQUISITE_CARD } from "@/data/prerequisiteCard";
 import { emptyL, toL } from "@/data/sectionContent";
 import { starterContent } from "@/data/starter";
+import { abrirEditor, formularioNoPredio } from "@/data/testFixtures";
 
 const vazio = emptyL();
 
@@ -160,10 +163,11 @@ describe("Guia em inglês: texto sem inglês sai pelo dicionário", () => {
     ]);
   });
 
-  it("o subtítulo do check-out e o passo 3 saem no inglês do dicionário", () => {
-    const [sub, , passo3] = textosDaSaida(guiaNoPredio(dfPlaza));
-    assert.deepEqual(lidos([sub, passo3], "en"), [
+  it("o subtítulo do check-out e os passos 1 e 3 saem no inglês do dicionário, com o horário preenchido", () => {
+    const saida = textosDaSaida(guiaNoPredio(dfPlaza));
+    assert.deepEqual(lidos(saida, "en"), [
       "A few quick steps before you go. Safe travels!",
+      "<strong>Check-out is until 11h</strong>. Need a late checkout? Message the host.",
       "Close the windows, turn off the A/C and double-check for forgotten items. Just shut the door on your way out.",
     ]);
   });
@@ -184,6 +188,96 @@ describe("Cartão de check-in \"Chegou de carro?\"", () => {
       "▶ Video tutorial · arriving & parking",
     ]);
   });
+});
+
+describe("Marcador {{ANDAR}} em inglês", () => {
+  /** O passo "Suba ao…" do Cartão "Entrando no prédio", lido num idioma. */
+  const subaAo = (guia: Apartment, idioma: Lang) =>
+    textoNoIdioma(cartao(guia, "t:entrando-no-predio").steps[0].body, idioma);
+
+  it("\"22º andar\" sem tradução digitada: o andar sai com o ordinal inglês", () => {
+    assert.equal(
+      subaAo(guiaNoPredio(dfPlaza), "en"),
+      "Go up to the <strong>22nd floor</strong>, apartment <strong>2202</strong>.",
+    );
+  });
+
+  it("com tradução digitada do andar, vale a digitada", () => {
+    const guia = guiaNoPredio(dfPlaza, { ANDAR_L: { pt: "22º andar", en: "top floor (22)" } });
+    assert.equal(subaAo(guia, "en"), "Go up to the <strong>top floor (22)</strong>, apartment <strong>2202</strong>.");
+  });
+
+  it("o espanhol do andar fica como está", () => {
+    assert.equal(
+      subaAo(guiaNoPredio(dfPlaza), "es"),
+      "Sube al <strong>22º andar</strong>, apartamento <strong>2202</strong>.",
+    );
+  });
+
+  it("texto do modelo sem inglês e sem chave no dicionário: o andar não sai em inglês no meio do português", () => {
+    const predio: BuildingTemplate = {
+      ...dfPlaza,
+      checkinTemplate: {
+        ...dfPlaza.checkinTemplate,
+        cards: [
+          {
+            id: "t:elevador",
+            title: semIngles("Elevador"),
+            steps: [{ n: "1", body: semIngles("Pegue o elevador social até o {{ANDAR}}.") }],
+          },
+        ],
+      },
+    };
+    const passo = cartao(guiaNoPredio(predio), "t:elevador").steps[0].body;
+    assert.equal(textoNoIdioma(passo, "en"), "Pegue o elevador social até o 22º andar.");
+    assert.equal(textoNoIdioma(passo, "es"), "Pegue o elevador social até o 22º andar.");
+  });
+
+  it("texto do modelo sem inglês: nem o andar digitado nem a senha entram em inglês no meio do português", () => {
+    const predio: BuildingTemplate = {
+      ...dfPlaza,
+      checkinTemplate: {
+        ...dfPlaza.checkinTemplate,
+        cards: [
+          {
+            id: "t:porta",
+            title: semIngles("Porta"),
+            steps: [{ n: "1", body: semIngles("No {{ANDAR}}, digite {{SENHA_FECHADURA}}.") }],
+          },
+        ],
+      },
+    };
+    const guia = guiaNoPredio(predio, { ANDAR_L: { pt: "22º andar", en: "top floor (22)" } });
+    const passo = cartao(guia, "t:porta").steps[0].body;
+    const portugues = textoNoIdioma(passo, "pt");
+    assert.match(portugues, /^No 22º andar, digite <strong>a senha enviada pelo <a .*>chat<\/a><\/strong>\.$/);
+    assert.equal(textoNoIdioma(passo, "en"), portugues);
+    assert.equal(textoNoIdioma(passo, "es"), portugues);
+  });
+
+  const ordinais: [andar: string, ingles: string][] = [
+    ["1º andar", "1st floor"],
+    ["2º andar", "2nd floor"],
+    ["3º andar", "3rd floor"],
+    ["11º andar", "11th floor"],
+    ["12º andar", "12th floor"],
+    ["13º andar", "13th floor"],
+    ["21º andar", "21st floor"],
+    ["22º andar", "22nd floor"],
+    // O campo "Andar" é digitado à mão.
+    ["22° andar", "22nd floor"],
+    ["22o andar", "22nd floor"],
+    ["22 andar", "22nd floor"],
+    ["22º Andar", "22nd floor"],
+  ];
+  for (const [andar, ingles] of ordinais) {
+    it(`"${andar}" sai como "${ingles}"`, () => {
+      assert.equal(
+        subaAo(guiaNoPredio(dfPlaza, { ANDAR: andar }), "en"),
+        `Go up to the <strong>${ingles}</strong>, apartment <strong>2202</strong>.`,
+      );
+    });
+  }
 });
 
 describe("Guia em inglês: inglês digitado vence o dicionário", () => {
@@ -250,6 +344,136 @@ describe("Texto sem chave no dicionário e sem inglês digitado", () => {
     const texto = guiaNoPredio(dfPlaza).amenities.items[0].text;
     assert.equal(textoNoIdioma(texto, "en"), "Reserve a sala pelo aplicativo do condomínio.");
     assert.equal(textoNoIdioma(texto, "es"), "Reserve a sala pelo aplicativo do condomínio.");
+  });
+});
+
+/**
+ * Apartamento do modo antigo no DF Plaza (prédio ligado e sem ajustes): o
+ * check-in e o check-out ficaram gravados como cópia do modelo, preenchida
+ * antes do dicionário inglês. Onde o modelo não tinha inglês, o `en` da cópia é
+ * o português preenchido; o andar ficou "22º andar" também no inglês; o
+ * espanhol veio do dicionário espanhol.
+ */
+function apartamentoModoAntigo(): Apartment {
+  return {
+    ...starterContent("Apartamento", "2202", "Residencial DF Plaza"),
+    vars,
+    checkin: {
+      sub: {
+        pt: "Da portaria até a porta do apartamento.",
+        en: "From the lobby to your apartment door.",
+        es: "Desde la recepción hasta la puerta del apartamento.",
+      },
+      cards: [
+        PREREQUISITE_CARD,
+        {
+          id: "t:entrando-no-predio",
+          title: { pt: "Entrando no prédio", en: "Entering the building", es: "Entrando al edificio" },
+          steps: [
+            {
+              n: "3",
+              body: {
+                pt: "Suba ao <strong>22º andar</strong>, apartamento <strong>2202</strong>.",
+                en: "Go up to the <strong>22º andar</strong>, apartment <strong>2202</strong>.",
+                es: "Sube al <strong>22º andar</strong>, apartamento <strong>2202</strong>.",
+              },
+            },
+          ],
+        },
+        {
+          id: "t:chegou-de-carro",
+          title: { pt: "Chegou de carro?", en: "Chegou de carro?", es: "¿Llegas en auto?" },
+          steps: [],
+          video: {
+            src: "/media/como-estacionar.mp4",
+            label: {
+              pt: "▶ Tutorial em vídeo · como chegar e estacionar",
+              en: "▶ Tutorial em vídeo · como chegar e estacionar",
+              es: "▶ Tutorial en video · cómo llegar y estacionar",
+            },
+          },
+        },
+      ],
+    },
+    checkout: {
+      sub: {
+        pt: "Alguns passos rápidos antes de você sair. Boa viagem!",
+        en: "Alguns passos rápidos antes de você sair. Boa viagem!",
+        es: "Unos pasos rápidos antes de irte. ¡Buen viaje!",
+      },
+      steps: [
+        {
+          n: "1",
+          body: {
+            pt: "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a anfitriã.",
+            en: "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a anfitriã.",
+            es: "La <strong>hora límite de salida es a las 11h</strong>. ¿Necesitas late check-out? Habla con la anfitriona.",
+          },
+        },
+        {
+          n: "2",
+          body: {
+            pt: "Deixe o <strong>Cartão Branco</strong> de garagem sobre a mesa de jantar (em caso de não devolução, o condomínio cobra R$ 300 pela reposição).",
+            en: "Leave the <strong>White garage Card</strong> on the dining table (if it isn't returned, the building charges R$ 300 for a replacement).",
+          },
+        },
+        {
+          n: "4",
+          body: {
+            pt: "Feche as janelas, desligue o ar-condicionado e confira se não esqueceu nada. É só fechar a porta ao sair.",
+            en: "Feche as janelas, desligue o ar-condicionado e confira se não esqueceu nada. É só fechar a porta ao sair.",
+            es: "Cierra las ventanas, apaga el aire acondicionado y revisa que no olvides nada. Solo cierra la puerta al salir.",
+          },
+        },
+      ],
+    },
+  };
+}
+
+describe("Conversão do modo antigo: a cópia sem o inglês do dicionário não vira ajuste", () => {
+  it("o check-in gravado não vira ajuste em nenhum cartão", () => {
+    const { patches } = legacyToPatches(apartamentoModoAntigo(), dfPlaza, {}, true);
+    assert.equal(patches.checkin, undefined);
+  });
+
+  it("o check-out gravado não vira ajuste em nenhum passo", () => {
+    const { patches } = legacyToPatches(apartamentoModoAntigo(), dfPlaza, {}, true);
+    assert.equal(patches.checkout, undefined);
+  });
+
+  it("depois de convertido, o guia em inglês mostra o andar e os passos de saída em inglês", () => {
+    const conteudo = apartamentoModoAntigo();
+    const { patches } = legacyToPatches(conteudo, dfPlaza, {}, true);
+    const guia = guideContentFromStored(conteudo, dfPlaza, { patches });
+    assert.equal(
+      textoNoIdioma(cartao(guia, "t:entrando-no-predio").steps[0].body, "en"),
+      "Go up to the <strong>22nd floor</strong>, apartment <strong>2202</strong>.",
+    );
+    assert.deepEqual(lidos(textosDaSaida(guia), "en"), [
+      "A few quick steps before you go. Safe travels!",
+      "<strong>Check-out is until 11h</strong>. Need a late checkout? Message the host.",
+      "Close the windows, turn off the A/C and double-check for forgotten items. Just shut the door on your way out.",
+    ]);
+  });
+});
+
+describe("Gravação do cadastro: editores do check-in e do check-out no prédio sem inglês", () => {
+  it("o editor do check-out abre com o inglês do dicionário no passo sem inglês", () => {
+    const form = abrirEditor(formularioNoPredio({}), dfPlaza, "checkout");
+    assert.equal(
+      form.checkoutOverride?.steps[2].body.en,
+      "Close the windows, turn off the A/C and double-check for forgotten items. Just shut the door on your way out.",
+    );
+  });
+
+  it("editor do check-out aberto e sem edição: salvar não gera ajuste", () => {
+    const form = abrirEditor(formularioNoPredio({}), dfPlaza, "checkout");
+    assert.equal(buildOverrides(form, dfPlaza).patches?.checkout, undefined);
+  });
+
+  it("editor do check-in aberto e sem edição: salvar não gera ajuste", () => {
+    const form = abrirEditor(formularioNoPredio({}), dfPlaza, "checkin");
+    assert.equal(buildOverrides(form, dfPlaza).patches?.checkin, undefined);
   });
 });
 
