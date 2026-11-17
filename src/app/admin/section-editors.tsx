@@ -7,7 +7,17 @@ import { MEDIA_ACCEPT, type MediaAccept } from "@/lib/mediaAccept";
 import { isVideoUrl } from "@/lib/miniatura";
 import type { ReusableVideo } from "@/app/admin/actions";
 import { equipmentKey, type EquipmentModel } from "@/data/equipmentLibrary";
+import { legacyId, newId } from "@/data/itemMerge";
 import {
+  amenityKey,
+  placeKey,
+  type AmenityModel,
+  type LibraryModel,
+  type PlaceModel,
+} from "@/data/sectionLibrary";
+import {
+  amenityFromContent,
+  placeFromContent,
   emptyAccordion,
   emptyDiagram,
   emptyAlert,
@@ -415,15 +425,115 @@ export function RulesListEditor({
   );
 }
 
+/**
+ * Opções já cadastradas em outros prédios e apartamentos, logo acima da lista:
+ * um toque adiciona o item completo (foto, título, texto, horário, traduções,
+ * site e mapa) com um id novo, pronto para ajustar. Esconde o que já está na
+ * lista e filtra pelo que a pessoa digita na busca.
+ */
+function LibraryPicker<T extends { img?: string }>({
+  models,
+  usedKeys,
+  titleOf,
+  noun,
+  onPick,
+}: {
+  models: LibraryModel<T>[];
+  usedKeys: Set<string>;
+  titleOf: (t: T) => string;
+  noun: string;
+  onPick: (m: LibraryModel<T>) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [showAll, setShowAll] = useState(false);
+  const available = models.filter((m) => !usedKeys.has(m.key));
+  if (available.length === 0) return null;
+
+  // Mesmo título com conteúdo diferente (ex.: piscina de outro prédio): mostra a origem.
+  const perKey = new Map<string, number>();
+  for (const m of models) perKey.set(m.key, (perKey.get(m.key) ?? 0) + 1);
+
+  const typed = legacyId(query).slice(2);
+  const matches = available.filter((m) => !typed || m.key.slice(2).includes(typed));
+  const limit = showAll || typed ? matches.length : 8;
+  const shown = matches.slice(0, limit);
+  const hidden = matches.length - shown.length;
+
+  return (
+    <div className="mt-3 rounded-xl border border-dashed border-line p-3">
+      <span className="text-[12.5px] font-semibold text-soft">
+        Já cadastrado em outros prédios e apartamentos — toque para adicionar {noun} completo
+        (foto, textos e traduções):
+      </span>
+      {available.length > 8 && (
+        <input
+          className={`${field} mt-2 w-full text-[14px]`}
+          value={query}
+          placeholder="Buscar pelo nome…"
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      )}
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {shown.map((m, i) => {
+          const img = m.item.img;
+          const label = titleOf(m.item);
+          return (
+            <button
+              key={`${m.key}-${i}`}
+              type="button"
+              title={`Salvo em: ${m.source}`}
+              onClick={() => onPick(m)}
+              className="flex items-center gap-2 rounded-full border border-line bg-card py-1 pl-1 pr-3 text-[13px] font-semibold text-ink"
+            >
+              <span className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-bg">
+                {img ? (
+                  isVideoUrl(img) ? (
+                    <span className="text-[14px]">🎬</span>
+                  ) : (
+                    <Image src={img} alt="" fill sizes="28px" className="object-cover" />
+                  )
+                ) : (
+                  <span className="text-[12px]">🖼️</span>
+                )}
+              </span>
+              <span>
+                {label}
+                {(perKey.get(m.key) ?? 1) > 1 && (
+                  <span className="font-normal text-soft"> · {m.source}</span>
+                )}
+              </span>
+            </button>
+          );
+        })}
+        {hidden > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="rounded-full px-3 py-1.5 text-[13px] font-semibold text-terra underline underline-offset-2"
+          >
+            + {hidden} {hidden === 1 ? "outro" : "outros"}
+          </button>
+        )}
+        {typed && matches.length === 0 && (
+          <span className="text-[13px] text-soft">Nada com esse nome. Para criar um novo, use o botão de adicionar abaixo.</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function AmenityListEditor({
   lockShared,
   value,
   onChange,
+  library = [],
 }: {
   /** Apartamento seguindo o modelo do prédio: texto de apoio e vídeo de A Casa vêm do prédio. */
   lockShared?: boolean;
   value: AmenitiesValue;
   onChange: (v: AmenitiesValue) => void;
+  /** Itens de Lazer já cadastrados em outros prédios/apartamentos (ver `useSectionLibrary`). */
+  library?: AmenityModel[];
 }) {
   return (
     <div>
@@ -435,6 +545,15 @@ export function AmenityListEditor({
           onChange={(sub) => onChange({ ...value, sub })}
         />
       )}
+      <LibraryPicker
+        models={library}
+        usedKeys={new Set(value.items.map((a) => amenityKey({ title: { pt: a.title.pt, en: "" } })))}
+        titleOf={(a) => a.title.pt}
+        noun="o item"
+        onPick={(m) =>
+          onChange({ ...value, items: [...value.items, amenityFromContent(m.item, newId())] })
+        }
+      />
       <div className="mt-3 grid gap-2">
         {value.items.map((a, i) => (
           <div key={i} className={rowCls}>
@@ -502,17 +621,29 @@ export function PlaceListEditor({
   lockShared,
   value,
   onChange,
+  library = [],
 }: {
   /** Apartamento seguindo o modelo do prédio: texto de apoio e vídeo de A Casa vêm do prédio. */
   lockShared?: boolean;
   value: PlacesValue;
   onChange: (v: PlacesValue) => void;
+  /** Lugares já cadastrados em outros prédios/apartamentos (ver `useSectionLibrary`). */
+  library?: PlaceModel[];
 }) {
   return (
     <div>
       {!lockShared && (
         <LField label="Texto de apoio" value={value.sub} onChange={(sub) => onChange({ ...value, sub })} />
       )}
+      <LibraryPicker
+        models={library}
+        usedKeys={new Set(value.items.map((p) => placeKey({ title: p.title })))}
+        titleOf={(p) => p.title}
+        noun="o lugar"
+        onPick={(m) =>
+          onChange({ ...value, items: [...value.items, placeFromContent(m.item, newId())] })
+        }
+      />
       <div className="mt-3 grid gap-2">
         {value.items.map((p, i) => (
           <div key={i} className={rowCls}>

@@ -20,6 +20,7 @@ import type { BuildingTemplate } from "@/data/buildApartmentContent";
 import { formatPhoneBR } from "@/lib/phone";
 import { isVideoUrl } from "@/lib/miniatura";
 import { useEquipmentLibrary } from "@/app/admin/use-equipment-library";
+import { useSectionLibrary } from "@/app/admin/use-section-library";
 import {
   amenitiesFromContent,
   checkinFromContent,
@@ -108,6 +109,7 @@ export function BuildingEditor({
   const [name, setName] = useState(buildingName ?? "");
   const [form, setForm] = useState<BuildingEditPayload>(initial);
   const equipmentLibrary = useEquipmentLibrary();
+  const sectionLibrary = useSectionLibrary();
 
   function updateIntercom(
     i: number,
@@ -389,6 +391,7 @@ export function BuildingEditor({
         <AmenityListEditor
           value={form.amenities}
           onChange={(amenities) => setForm((f) => ({ ...f, amenities }))}
+          library={sectionLibrary.amenities}
         />
       </div>
 
@@ -398,6 +401,7 @@ export function BuildingEditor({
         <PlaceListEditor
           value={form.tourism}
           onChange={(tourism) => setForm((f) => ({ ...f, tourism }))}
+          library={sectionLibrary.tourism}
         />
       </div>
 
@@ -407,6 +411,7 @@ export function BuildingEditor({
         <PlaceListEditor
           value={form.dining}
           onChange={(dining) => setForm((f) => ({ ...f, dining }))}
+          library={sectionLibrary.dining}
         />
       </div>
 

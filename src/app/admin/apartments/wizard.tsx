@@ -11,6 +11,7 @@ import { isVideoUrl } from "@/lib/miniatura";
 import { cleanUnit } from "@/lib/unit";
 import { formatPhoneBR } from "@/lib/phone";
 import { useEquipmentLibrary } from "@/app/admin/use-equipment-library";
+import { useSectionLibrary } from "@/app/admin/use-section-library";
 import { lookupIntercom, towerKey, type ReusableContacts } from "@/data/contacts";
 import {
   createApartmentDetailed,
@@ -232,6 +233,7 @@ export function ApartmentWizard({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const equipmentLibrary = useEquipmentLibrary();
+  const sectionLibrary = useSectionLibrary();
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => {
@@ -751,6 +753,7 @@ export function ApartmentWizard({
             lockShared={hasPreviewBuilding}
             value={form.overrideAmenities}
             onChange={(v) => set("overrideAmenities", v)}
+            library={sectionLibrary.amenities}
           />
         )}
       </SectionOverrideBlock>
@@ -767,6 +770,7 @@ export function ApartmentWizard({
             lockShared={hasPreviewBuilding}
             value={form.overrideTourism}
             onChange={(v) => set("overrideTourism", v)}
+            library={sectionLibrary.tourism}
           />
         )}
       </SectionOverrideBlock>
@@ -783,6 +787,7 @@ export function ApartmentWizard({
             lockShared={hasPreviewBuilding}
             value={form.overrideDining}
             onChange={(v) => set("overrideDining", v)}
+            library={sectionLibrary.dining}
           />
         )}
       </SectionOverrideBlock>
