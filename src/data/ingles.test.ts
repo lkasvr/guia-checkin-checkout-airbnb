@@ -392,6 +392,7 @@ describe("Texto sem chave no dicionário e sem inglês digitado", () => {
   it("texto igual a um nome herdado de Object (\"constructor\", \"toString\") sai como está", () => {
     for (const pt of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
       assert.equal(textoNoIdioma(semIngles(pt), "en"), pt);
+      assert.equal(textoNoIdioma(semIngles(pt), "es"), pt);
     }
   });
 

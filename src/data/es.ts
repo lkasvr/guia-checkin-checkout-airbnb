@@ -224,8 +224,8 @@ const ES: Record<string, string> = {
 
 /** Espanhol de um texto em português, se conhecido (`undefined` = usar o inglês). */
 export function translateEs(pt: string): string | undefined {
-  const hit = ES[pt];
-  if (hit !== undefined) return hit;
+  // Só chave própria: `ES["constructor"]` acharia a função herdada de Object.
+  if (Object.hasOwn(ES, pt)) return ES[pt];
   // "4 hóspedes" (gerado pelo formulário do apartamento).
   const guests = /^(\d+) hóspedes$/.exec(pt);
   if (guests) return `${guests[1]} huéspedes`;
