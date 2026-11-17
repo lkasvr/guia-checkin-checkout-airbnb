@@ -225,6 +225,22 @@ function ordinal(n: number): string {
   return `${n}${sufixo}`;
 }
 
+/**
+ * Horário de saída em inglês, para o marcador {{CHECKOUT_HORA}}: "11h" →
+ * "11am", "14h30" → "2:30pm", "12h" → "12pm" (`undefined` fora desse formato).
+ * Fica fora de `translateEn` de propósito: um texto avulso "15h" continua como
+ * está, e o espanhol, que sem tradução cai no inglês, não ganha "3pm".
+ */
+export function horaEmIngles(hora: string): string | undefined {
+  const m = /^(\d{1,2})\s*[h:]\s*(\d{2})?\s*h?$/i.exec(hora.trim());
+  if (!m) return undefined;
+  const h = Number(m[1]);
+  const min = m[2];
+  if (h > 23 || (min !== undefined && Number(min) > 59)) return undefined;
+  const minutos = min && min !== "00" ? `:${min}` : "";
+  return `${h % 12 || 12}${minutos}${h < 12 ? "am" : "pm"}`;
+}
+
 /** Inglês de um texto em português, se conhecido (`undefined` = sem inglês no dicionário). */
 export function translateEn(pt: string): string | undefined {
   const hit = EN[pt];

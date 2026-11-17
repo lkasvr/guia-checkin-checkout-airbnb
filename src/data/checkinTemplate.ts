@@ -2,6 +2,7 @@ import type { Alert, Apartment, ApartmentVars, CheckinCard, CleanVars, L, Step }
 import type { BuildingTemplate } from "@/data/buildingModel";
 import { withPrerequisiteCard } from "@/data/prerequisiteCard";
 import { CHAT_LINK } from "@/data/chatLink";
+import { horaEmIngles } from "@/data/en";
 import { translateEs } from "@/data/es";
 import { inglesConhecido, textoNoIdioma, type Lang } from "@/data/idioma";
 import { portariaRefToken } from "@/data/towers";
@@ -57,13 +58,21 @@ const comoTexto = (v: TokenValue): L => (typeof v === "string" ? { pt: v, en: v 
 
 /**
  * O guia, os editores e o cálculo dos ajustes: o inglês do texto é o digitado
- * ou o do dicionário (`inglesConhecido`), e o {{ANDAR}} em inglês é o
- * digitado ou, sem ele, o do dicionário ("22º andar" → "22nd floor"), pela
- * mesma regra do guia (`textoNoIdioma`).
+ * ou o do dicionário (`inglesConhecido`); o {{ANDAR}} em inglês é o digitado
+ * ou, sem ele, o do dicionário ("22º andar" → "22nd floor"), pela mesma regra
+ * do guia (`textoNoIdioma`); e o {{CHECKOUT_HORA}} sai no formato inglês
+ * ("11h" → "11am").
  */
 const DICIONARIO: FonteDoIngles = {
   texto: inglesConhecido,
-  marcadores: (tokens) => ({ ...tokens, ANDAR: textoNoIdioma(comoTexto(tokens.ANDAR), "en") }),
+  marcadores: (tokens) => {
+    const hora = comoTexto(tokens.CHECKOUT_HORA).pt;
+    return {
+      ...tokens,
+      ANDAR: textoNoIdioma(comoTexto(tokens.ANDAR), "en"),
+      CHECKOUT_HORA: horaEmIngles(hora) ?? hora,
+    };
+  },
 };
 
 /** A cópia do modo antigo: o `en` gravado no modelo e os marcadores de sempre (ver `legacyCheckinCopy`). */

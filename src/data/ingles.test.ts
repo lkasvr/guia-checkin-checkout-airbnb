@@ -167,7 +167,7 @@ describe("Guia em inglês: texto sem inglês sai pelo dicionário", () => {
     const saida = textosDaSaida(guiaNoPredio(dfPlaza));
     assert.deepEqual(lidos(saida, "en"), [
       "A few quick steps before you go. Safe travels!",
-      "<strong>Check-out is until 11h</strong>. Need a late checkout? Message the host.",
+      "<strong>Check-out is until 11am</strong>. Need a late checkout? Message the host.",
       "Close the windows, turn off the A/C and double-check for forgotten items. Just shut the door on your way out.",
     ]);
   });
@@ -280,6 +280,42 @@ describe("Marcador {{ANDAR}} em inglês", () => {
   }
 });
 
+describe("Marcador {{CHECKOUT_HORA}} em inglês", () => {
+  /** O passo 1 do check-out ("O horário limite de saída é…"), lido num idioma. */
+  const passo1 = (guia: Apartment, idioma: Lang) => textoNoIdioma(textosDaSaida(guia)[1], idioma);
+
+  const horarios: [hora: string, ingles: string][] = [
+    ["11h", "11am"],
+    ["10h30", "10:30am"],
+    ["11h00", "11am"],
+    ["12h", "12pm"],
+    ["14h", "2pm"],
+    ["10:00", "10am"],
+  ];
+  for (const [hora, ingles] of horarios) {
+    it(`"${hora}" sai como "${ingles}"`, () => {
+      assert.equal(
+        passo1(guiaNoPredio(dfPlaza, { CHECKOUT_HORA: hora }), "en"),
+        `<strong>Check-out is until ${ingles}</strong>. Need a late checkout? Message the host.`,
+      );
+    });
+  }
+
+  it("horário fora do formato sai como foi digitado", () => {
+    assert.equal(
+      passo1(guiaNoPredio(dfPlaza, { CHECKOUT_HORA: "meio-dia" }), "en"),
+      "<strong>Check-out is until meio-dia</strong>. Need a late checkout? Message the host.",
+    );
+  });
+
+  it("o espanhol do horário fica como está", () => {
+    assert.equal(
+      passo1(guiaNoPredio(dfPlaza, { CHECKOUT_HORA: "14h" }), "es"),
+      "La <strong>hora límite de salida es a las 14h</strong>. ¿Necesitas late check-out? Habla con la anfitriona.",
+    );
+  });
+});
+
 describe("Guia em inglês: inglês digitado vence o dicionário", () => {
   it("regra com inglês digitado sai no digitado, não no dicionário", () => {
     const predio: BuildingTemplate = {
@@ -310,7 +346,7 @@ describe("Guia em inglês: inglês digitado vence o dicionário", () => {
       },
     };
     const [, passo1] = textosDaSaida(guiaNoPredio(predio));
-    assert.equal(textoNoIdioma(passo1, "en"), "Please leave by <strong>11h</strong>.");
+    assert.equal(textoNoIdioma(passo1, "en"), "Please leave by <strong>11am</strong>.");
   });
 });
 
@@ -451,7 +487,7 @@ describe("Conversão do modo antigo: a cópia sem o inglês do dicionário não 
     );
     assert.deepEqual(lidos(textosDaSaida(guia), "en"), [
       "A few quick steps before you go. Safe travels!",
-      "<strong>Check-out is until 11h</strong>. Need a late checkout? Message the host.",
+      "<strong>Check-out is until 11am</strong>. Need a late checkout? Message the host.",
       "Close the windows, turn off the A/C and double-check for forgotten items. Just shut the door on your way out.",
     ]);
   });
