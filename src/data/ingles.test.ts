@@ -45,7 +45,7 @@ const dfPlaza: BuildingTemplate = {
         id: "t:somente-hospedes-registrados",
         icon: "👥",
         title: semIngles("Somente hóspedes registrados"),
-        text: semIngles("Sobre convidados, consulte a anfitriã antes."),
+        text: semIngles("Sobre convidados, consulte a pessoa anfitriã antes."),
       },
     ],
   },
@@ -96,7 +96,7 @@ const dfPlaza: BuildingTemplate = {
       {
         n: "1",
         body: semIngles(
-          "O <strong>horário limite de saída é {{CHECKOUT_HORA}}</strong>. Precisa de late checkout? Fale com a anfitriã.",
+          "O <strong>horário limite de saída é {{CHECKOUT_HORA}}</strong>. Precisa de late checkout? Fale com a pessoa anfitriã.",
         ),
       },
       {
@@ -316,7 +316,7 @@ describe("Marcador {{CHECKOUT_HORA}} em inglês", () => {
   it("o espanhol do horário fica como está", () => {
     assert.equal(
       passo1(guiaNoPredio(dfPlaza, { CHECKOUT_HORA: "14h" }), "es"),
-      "La <strong>hora límite de salida es a las 14h</strong>. ¿Necesitas late check-out? Habla con la anfitriona.",
+      "La <strong>hora límite de salida es a las 14h</strong>. ¿Necesitas late check-out? Habla con la persona anfitriona.",
     );
   });
 });
@@ -472,9 +472,9 @@ function apartamentoModoAntigo(): Apartment {
         {
           n: "1",
           body: {
-            pt: "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a anfitriã.",
-            en: "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a anfitriã.",
-            es: "La <strong>hora límite de salida es a las 11h</strong>. ¿Necesitas late check-out? Habla con la anfitriona.",
+            pt: "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a pessoa anfitriã.",
+            en: "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a pessoa anfitriã.",
+            es: "La <strong>hora límite de salida es a las 11h</strong>. ¿Necesitas late check-out? Habla con la persona anfitriona.",
           },
         },
         {
@@ -553,14 +553,14 @@ describe("Guia em espanhol: os mesmos textos continuam como antes do dicionário
       "Plancha solo en la tabla",
       "Nunca sobre la cama ni los muebles.",
       "Solo huéspedes registrados",
-      "Si quieres recibir visitas, consulta antes con la anfitriona.",
+      "Si quieres recibir visitas, consulta antes con la persona anfitriona.",
     ]);
   });
 
   it("o subtítulo do check-out e os passos 1 e 3 saem no espanhol do dicionário espanhol", () => {
     assert.deepEqual(lidos(textosDaSaida(guiaNoPredio(dfPlaza)), "es"), [
       "Unos pasos rápidos antes de irte. ¡Buen viaje!",
-      "La <strong>hora límite de salida es a las 11h</strong>. ¿Necesitas late check-out? Habla con la anfitriona.",
+      "La <strong>hora límite de salida es a las 11h</strong>. ¿Necesitas late check-out? Habla con la persona anfitriona.",
       "Cierra las ventanas, apaga el aire acondicionado y revisa que no olvides nada. Solo cierra la puerta al salir.",
     ]);
   });

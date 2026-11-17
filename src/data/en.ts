@@ -42,6 +42,7 @@ const EN: Record<string, string> = {
   "Animais são bem-vindos": "Pets are welcome",
   "Anfitrião · WhatsApp": "Host · WhatsApp",
   "Anfitriã · WhatsApp": "Host · WhatsApp",
+  "Anfitrião(ã) · WhatsApp": "Host · WhatsApp",
   "Coanfitrião/gestor · WhatsApp": "Co-host/manager · WhatsApp",
   "Emergência médica": "Medical emergency",
   "Incêndio e resgate": "Fire and rescue",
@@ -113,7 +114,11 @@ const EN: Record<string, string> = {
   "Alguns passos rápidos antes de você sair. Boa viagem!": "A few quick steps before you go. Safe travels!",
   "O <strong>horário limite de saída é {{CHECKOUT_HORA}}</strong>. Precisa de late checkout? Fale com a anfitriã.":
     "<strong>Check-out is until {{CHECKOUT_HORA}}</strong>. Need a late checkout? Message the host.",
+  "O <strong>horário limite de saída é {{CHECKOUT_HORA}}</strong>. Precisa de late checkout? Fale com a pessoa anfitriã.":
+    "<strong>Check-out is until {{CHECKOUT_HORA}}</strong>. Need a late checkout? Message the host.",
   "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a anfitriã.":
+    "<strong>Check-out is until 11am</strong>. Need a late checkout? Message the host.",
+  "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a pessoa anfitriã.":
     "<strong>Check-out is until 11am</strong>. Need a late checkout? Message the host.",
   "Deixe o <strong>Cartão Branco</strong> de garagem sobre a mesa de jantar (a não devolução gera taxa de R$ 300).":
     "Leave the <strong>White garage Card</strong> on the dining table (non-return incurs a R$ 300 fee).",
@@ -140,6 +145,7 @@ const EN: Record<string, string> = {
   "Nunca sobre a cama ou os móveis.": "Never on the bed or furniture.",
   "Somente hóspedes registrados": "Registered guests only",
   "Sobre convidados, consulte a anfitriã antes.": "For visitors, please check with the host first.",
+  "Sobre convidados, consulte a pessoa anfitriã antes.": "For visitors, please check with the host first.",
   "Cartão de garagem · R$ 300": "Garage card · R$ 300",
   "Taxa em caso de perda ou não devolução.": "Fee in case of loss or non-return.",
 
@@ -195,6 +201,7 @@ const EN: Record<string, string> = {
   "Acesso pela digital cadastrada no check-in. Use calçado fechado.":
     "Access via the fingerprint registered at check-in. Closed shoes required.",
   "Agende com a anfitriã ou portaria com 48h de antecedência.": "Book via the host or front desk 48h in advance.",
+  "Agende com a pessoa anfitriã ou a portaria com 48h de antecedência.": "Book via the host or front desk 48h in advance.",
   "Lavanderia": "Laundry",
   "Máquinas industriais. Funciona com fichas vendidas no local.": "Industrial machines. Works with tokens sold on site.",
   "Sala de jogos": "Game room",

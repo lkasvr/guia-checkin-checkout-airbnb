@@ -36,8 +36,7 @@ const ES: Record<string, string> = {
   "Dentro do apartamento é proibido fumar.": "Dentro del apartamento está prohibido fumar.",
   "Não são permitidos animais": "No se permiten mascotas",
   "Animais são bem-vindos": "Las mascotas son bienvenidas",
-  "Anfitrião · WhatsApp": "Anfitrión · WhatsApp",
-  "Anfitriã · WhatsApp": "Anfitriona · WhatsApp",
+  "Anfitrião(ã) · WhatsApp": "Anfitrión(a) · WhatsApp",
   "Coanfitrião/gestor · WhatsApp": "Coanfitrión/gestor · WhatsApp",
   "Emergência médica": "Emergencia médica",
   "Incêndio e resgate": "Incendio y rescate",
@@ -107,10 +106,10 @@ const ES: Record<string, string> = {
 
   // ── Saída ──────────────────────────────────────────────────────────────
   "Alguns passos rápidos antes de você sair. Boa viagem!": "Unos pasos rápidos antes de irte. ¡Buen viaje!",
-  "O <strong>horário limite de saída é {{CHECKOUT_HORA}}</strong>. Precisa de late checkout? Fale com a anfitriã.":
-    "La <strong>hora límite de salida es a las {{CHECKOUT_HORA}}</strong>. ¿Necesitas late check-out? Habla con la anfitriona.",
-  "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a anfitriã.":
-    "La <strong>hora límite de salida es a las 11 h</strong>. ¿Necesitas late check-out? Habla con la anfitriona.",
+  "O <strong>horário limite de saída é {{CHECKOUT_HORA}}</strong>. Precisa de late checkout? Fale com a pessoa anfitriã.":
+    "La <strong>hora límite de salida es a las {{CHECKOUT_HORA}}</strong>. ¿Necesitas late check-out? Habla con la persona anfitriona.",
+  "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a pessoa anfitriã.":
+    "La <strong>hora límite de salida es a las 11 h</strong>. ¿Necesitas late check-out? Habla con la persona anfitriona.",
   "Deixe o <strong>Cartão Branco</strong> de garagem sobre a mesa de jantar (a não devolução gera taxa de R$ 300).":
     "Deja la <strong>Tarjeta Blanca</strong> del garaje sobre la mesa del comedor (la no devolución genera un cargo de R$ 300).",
   "Ensaque o lixo e deixe na lixeira comum do corredor, perto dos elevadores.":
@@ -132,7 +131,7 @@ const ES: Record<string, string> = {
   "Passe roupa só na tábua": "Plancha solo en la tabla",
   "Nunca sobre a cama ou os móveis.": "Nunca sobre la cama ni los muebles.",
   "Somente hóspedes registrados": "Solo huéspedes registrados",
-  "Sobre convidados, consulte a anfitriã antes.": "Si quieres recibir visitas, consulta antes con la anfitriona.",
+  "Sobre convidados, consulte a pessoa anfitriã antes.": "Si quieres recibir visitas, consulta antes con la persona anfitriona.",
   "Cartão de garagem · R$ 300": "Tarjeta de garaje · R$ 300",
   "Taxa em caso de perda ou não devolução.": "Cargo en caso de pérdida o no devolución.",
 
@@ -189,8 +188,8 @@ const ES: Record<string, string> = {
   "Acesso pela digital cadastrada no check-in. Use calçado fechado.":
     "Acceso con la huella digital registrada en el check-in. Usa calzado cerrado.",
   "Home Cinema": "Home Cinema",
-  "Agende com a anfitriã ou portaria com 48h de antecedência.":
-    "Reserva con la anfitriona o la recepción con 48 h de anticipación.",
+  "Agende com a pessoa anfitriã ou a portaria com 48h de antecedência.":
+    "Reserva con la persona anfitriona o la recepción con 48 h de anticipación.",
   "Lavanderia": "Lavandería",
   "Máquinas industriais. Funciona com fichas vendidas no local.":
     "Máquinas industriales. Funcionan con fichas que se venden en el lugar.",

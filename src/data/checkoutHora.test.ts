@@ -33,7 +33,7 @@ const predio: BuildingTemplate = {
       {
         n: "1",
         body: {
-          pt: "O <strong>horário limite de saída é {{CHECKOUT_HORA}}</strong>. Precisa de late checkout? Fale com a anfitriã.",
+          pt: "O <strong>horário limite de saída é {{CHECKOUT_HORA}}</strong>. Precisa de late checkout? Fale com a pessoa anfitriã.",
           en: "The <strong>check-out time is {{CHECKOUT_HORA}}</strong>. Need a late check-out? Talk to the host.",
         },
       },
@@ -69,15 +69,15 @@ function passoDeSaida(guia: Apartment): L {
 
 /** O texto esperado do passo de saída, em português, com o horário dado. */
 function saidaAs(horario: string): string {
-  return `O <strong>horário limite de saída é ${horario}</strong>. Precisa de late checkout? Fale com a anfitriã.`;
+  return `O <strong>horário limite de saída é ${horario}</strong>. Precisa de late checkout? Fale com a pessoa anfitriã.`;
 }
 
 describe("Montagem do guia: marcador {{CHECKOUT_HORA}}", () => {
   it("\"Até às 11h\" gravado: o passo de saída mostra só o horário, \"11am\" em inglês", () => {
     assert.deepEqual(passoDeSaida(guiaGravado("Até às 11h")), {
-      pt: "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a anfitriã.",
+      pt: "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a pessoa anfitriã.",
       en: "The <strong>check-out time is 11am</strong>. Need a late check-out? Talk to the host.",
-      es: "La <strong>hora límite de salida es a las 11h</strong>. ¿Necesitas late check-out? Habla con la anfitriona.",
+      es: "La <strong>hora límite de salida es a las 11h</strong>. ¿Necesitas late check-out? Habla con la persona anfitriona.",
     });
   });
 
