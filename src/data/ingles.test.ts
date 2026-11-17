@@ -369,6 +369,25 @@ describe("Prédio criado com os subtítulos do conteúdo inicial sem inglês", (
   });
 });
 
+describe("Texto atual do seed do DF Plaza sem inglês", () => {
+  const textos: [pt: string, en: string][] = [
+    [
+      "<strong>Não esqueça o Cartão Branco</strong> antes de descer para guardar o carro. Perda ou não devolução: reposição de <strong>R$ 300</strong>, cobrada pelo condomínio.",
+      "<strong>Don't forget the White Card</strong> before going down to park. Loss or non-return: <strong>R$ 300</strong> replacement fee, charged by the building.",
+    ],
+    [
+      "Deixe o <strong>Cartão Branco</strong> de garagem sobre a mesa de jantar (em caso de não devolução, o condomínio cobra R$ 300 pela reposição).",
+      "Leave the <strong>White garage Card</strong> on the dining table (if it isn't returned, the building charges R$ 300 for a replacement).",
+    ],
+  ];
+  for (const [pt, en] of textos) {
+    it(`"${pt.slice(0, 40)}…" sai no inglês do seed, com o en vazio ou igual ao pt`, () => {
+      assert.equal(textoNoIdioma({ pt, en: "" }, "en"), en);
+      assert.equal(textoNoIdioma({ pt, en: pt }, "en"), en);
+    });
+  }
+});
+
 describe("Texto sem chave no dicionário e sem inglês digitado", () => {
   it("texto igual a um nome herdado de Object (\"constructor\", \"toString\") sai como está", () => {
     for (const pt of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {

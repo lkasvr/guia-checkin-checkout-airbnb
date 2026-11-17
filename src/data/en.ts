@@ -11,8 +11,9 @@
  *
  * Cobre as mesmas chaves do espanhol, menos as que são iguais nos dois
  * idiomas por natureza ("Check-in", "Coworking"): essas não têm chave e saem
- * como estão. O inglês vem do seed e do conteúdo estático do 1305C; texto que
- * só existe em versão antiga no banco usa o inglês gravado no DF Plaza do
+ * como estão. Tem, a mais, o texto atual do seed do DF Plaza que o espanhol
+ * ainda não tem. O inglês vem do seed e do conteúdo estático do 1305C; texto
+ * que só existe em versão antiga no banco usa o inglês gravado no DF Plaza do
  * banco de desenvolvimento.
  */
 
@@ -91,6 +92,9 @@ const EN: Record<string, string> = {
     "<strong>Write it down:</strong> GPS is unreliable underground. {{VAGA}}, near the tower elevator.",
   "<strong>Não esqueça o Cartão Branco</strong> antes de descer para guardar o carro. Perda ou não devolução: taxa de <strong>R$ 300</strong>.":
     "<strong>Don't forget the White Card</strong> before going down to park. Loss or non-return: <strong>R$ 300</strong> fee.",
+  // O mesmo aviso no texto atual do seed (`prisma/seed.ts`), que o espanhol ainda não tem.
+  "<strong>Não esqueça o Cartão Branco</strong> antes de descer para guardar o carro. Perda ou não devolução: reposição de <strong>R$ 300</strong>, cobrada pelo condomínio.":
+    "<strong>Don't forget the White Card</strong> before going down to park. Loss or non-return: <strong>R$ 300</strong> replacement fee, charged by the building.",
   "▶ Tutorial em vídeo · como chegar e estacionar": "▶ Video tutorial · arriving & parking",
 
   // ── 1305C / demo: texto próprio deles, com os dados reais já embutidos ──
@@ -113,6 +117,9 @@ const EN: Record<string, string> = {
     "<strong>Check-out is until 11am</strong>. Need a late checkout? Message the host.",
   "Deixe o <strong>Cartão Branco</strong> de garagem sobre a mesa de jantar (a não devolução gera taxa de R$ 300).":
     "Leave the <strong>White garage Card</strong> on the dining table (non-return incurs a R$ 300 fee).",
+  // O mesmo passo no texto atual do seed, que o espanhol ainda não tem.
+  "Deixe o <strong>Cartão Branco</strong> de garagem sobre a mesa de jantar (em caso de não devolução, o condomínio cobra R$ 300 pela reposição).":
+    "Leave the <strong>White garage Card</strong> on the dining table (if it isn't returned, the building charges R$ 300 for a replacement).",
   "Ensaque o lixo e deixe na lixeira comum do corredor, perto dos elevadores.":
     "Bag the trash and drop it in the shared hallway bin, near the elevators.",
   "Feche as janelas, desligue o ar-condicionado e confira se não esqueceu nada. É só fechar a porta ao sair.":
