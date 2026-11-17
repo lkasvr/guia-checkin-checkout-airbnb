@@ -229,5 +229,11 @@ export function translateEs(pt: string): string | undefined {
   // "4 hóspedes" (gerado pelo formulário do apartamento).
   const guests = /^(\d+) hóspedes$/.exec(pt);
   if (guests) return `${guests[1]} huéspedes`;
+  // "22º andar" (a legenda do andar na Capa), como "13º andar" → "Piso 13" acima.
+  // Sem esta regra, o espanhol caía no inglês do dicionário ("22nd floor"). Aceita
+  // as mesmas grafias do inglês (`translateEn`). O marcador {{ANDAR}} não passa
+  // por aqui: no check-in, o valor em espanhol fica como foi digitado.
+  const andar = /^(\d+)\s*[º°ªo]?\s*andar$/i.exec(pt);
+  if (andar) return `Piso ${andar[1]}`;
   return undefined;
 }
