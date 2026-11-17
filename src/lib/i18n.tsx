@@ -9,9 +9,9 @@ import {
   type ReactNode,
 } from "react";
 import type { L } from "@/data/types";
-import { translateEs } from "@/data/es";
+import { textoNoIdioma, type Lang } from "@/data/idioma";
 
-export type Lang = "pt" | "en" | "es";
+export type { Lang } from "@/data/idioma";
 
 export const LANGS: Lang[] = ["pt", "en", "es"];
 
@@ -57,12 +57,7 @@ export function LanguageProvider({
     document.documentElement.lang = HTML_LANG[l];
   }, []);
 
-  // Espanhol: o próprio conteúdo (`es`), depois o dicionário dos textos padrão
-  // e, sem tradução, o inglês.
-  const t = useCallback(
-    (v: L) => (lang === "pt" ? v.pt : lang === "en" ? v.en : (v.es ?? translateEs(v.pt) ?? v.en)),
-    [lang],
-  );
+  const t = useCallback((v: L) => textoNoIdioma(v, lang), [lang]);
 
   return (
     <LangContext.Provider value={{ lang, setLang, t }}>
