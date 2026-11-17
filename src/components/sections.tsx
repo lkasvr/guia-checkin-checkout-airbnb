@@ -257,13 +257,19 @@ export function CheckIn({ ap }: { ap: Apartment }) {
         </Reveal>
       )}
 
-      {ap.checkin.cards.map((card, ci) => (
+      {ap.checkin.cards.map((card, ci) => {
+        // Foto colocada por engano no campo de vídeo: mostra como banner em vez de um
+        // player preto sem nada pra tocar.
+        const imageInVideo = !!card.video && !isVideoUrl(card.video.src);
+        const bannerSrc = card.banner || (imageInVideo ? card.video!.src : "");
+        const video = card.video && !imageInVideo ? card.video : undefined;
+        return (
         <Reveal key={ci}>
-          <div className={`${CARD} ${card.banner ? "px-[22px] pb-6 pt-0" : "p-[24px_22px]"}`}>
-            {card.banner && (
+          <div className={`${CARD} ${bannerSrc ? "px-[22px] pb-6 pt-0" : "p-[24px_22px]"}`}>
+            {bannerSrc && (
               <div className="relative -mx-[22px] mb-[18px] h-[210px] sm:h-[260px]">
                 <Media
-                  src={card.banner}
+                  src={bannerSrc}
                   fill
                   sizes={FULL_COLUMN_SIZES}
                   className="object-cover object-[center_35%]"
@@ -292,21 +298,22 @@ export function CheckIn({ ap }: { ap: Apartment }) {
               </div>
             ))}
 
-            {card.video && (
+            {video && (
               <div className="mt-[18px]">
                 <p className="mb-2.5 text-[13px] font-bold uppercase tracking-[0.14em] text-coffee">
-                  {t(card.video.label)}
+                  {t(video.label)}
                 </p>
                 <GuideVideo
-                  src={card.video.src}
-                  miniatura={card.video.poster}
+                  src={video.src}
+                  miniatura={video.poster}
                   className="block w-full rounded-2xl border border-line bg-black"
                 />
               </div>
             )}
           </div>
         </Reveal>
-      ))}
+        );
+      })}
       {toast}
     </section>
   );
@@ -433,7 +440,7 @@ export function Rules({ ap }: { ap: Apartment }) {
               </span>
               <div>
                 <b className={`block text-[16.5px] ${r.hot ? "text-terra" : ""}`}>{t(r.title)}</b>
-                <span className="block text-[15px] text-soft">{t(r.text)}</span>
+                <Rich as="span" html={t(r.text)} className="block text-[15px] text-soft" />
               </div>
             </div>
           </Reveal>
@@ -656,9 +663,11 @@ export function Home({ ap }: { ap: Apartment }) {
               </div>
               <div className="p-[14px_16px_16px]">
                 <b className="block text-[16px]">{t(s.title)}</b>
-                <span className="mt-[3px] block text-[14px] leading-[1.45] text-soft">
-                  {t(s.text)}
-                </span>
+                <Rich
+                  as="span"
+                  html={t(s.text)}
+                  className="mt-[3px] block text-[14px] leading-[1.45] text-soft"
+                />
               </div>
             </div>
           ))}
@@ -772,7 +781,11 @@ export function Amenities({ ap }: { ap: Apartment }) {
                     🕐 {t(a.hours)}
                   </span>
                 )}
-                <span className="mt-1.5 block text-[13.5px] leading-[1.4] text-soft">{t(a.text)}</span>
+                <Rich
+                  as="span"
+                  html={t(a.text)}
+                  className="mt-1.5 block text-[13.5px] leading-[1.4] text-soft"
+                />
               </div>
             </div>
           </Reveal>
@@ -824,7 +837,7 @@ function PlaceCards({
             )}
             <div className="p-[16px_18px_18px]">
               <h4 className="font-display text-[21px] font-normal leading-[1.2]">{p.title}</h4>
-              <p className="mt-1.5 text-[14.5px] text-soft">{t(p.text)}</p>
+              <Rich as="p" html={t(p.text)} className="mt-1.5 text-[14.5px] text-soft" />
               <span className="mt-2.5 inline-block rounded-full bg-terra-soft px-2.5 py-1 text-[12px] font-bold uppercase tracking-[0.1em] text-terra">
                 {p.meta}
               </span>
