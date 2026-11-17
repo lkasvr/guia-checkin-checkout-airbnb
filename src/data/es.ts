@@ -3,9 +3,11 @@
  * modelos) e do conteúdo do 1305C / Residencial DF Plaza. Chave = texto em
  * português exatamente como está gravado; valor = espanhol.
  *
- * O texto que o anfitrião digita nos formulários só existe em português
- * (o inglês é uma cópia do português), então só ganha espanhol se cair aqui
- * ou se vier com `es` no próprio conteúdo. Fora disso o guia mostra o inglês.
+ * O texto que o anfitrião digita nos formulários chega com espanhol só se ele
+ * o digitar (e, com "Inglês (opcional)" em branco, com o inglês gravado como
+ * cópia do português). Sem `es` no próprio conteúdo, o espanhol vem daqui;
+ * fora disso o guia mostra o inglês: o digitado, o do dicionário inglês
+ * (`src/data/en.ts`) ou, por último, o português (ver `textoNoIdioma`).
  */
 
 const CHAT =
