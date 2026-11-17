@@ -722,16 +722,25 @@ export function Home({ ap }: { ap: Apartment }) {
 
               {acc.diagram && (
                 <figure className="mt-4 border-t border-dashed border-line pt-3.5">
-                  <Zoomable src={acc.diagram.img} alt={acc.diagram.alt}>
-                    <Image
+                  {isVideoUrl(acc.diagram.img) ? (
+                    // Vídeo colocado no campo "Foto com itens numerados": toca como vídeo em vez
+                    // de aparecer como imagem quebrada.
+                    <GuideVideo
                       src={acc.diagram.img}
-                      alt={acc.diagram.alt}
-                      width={600}
-                      height={532}
-                      sizes="(max-width:640px) 92vw, 600px"
-                      className="mx-auto h-auto w-full max-w-[460px] rounded-xl border border-line bg-white p-1.5"
+                      className="mx-auto block max-h-[60svh] w-full max-w-[460px] rounded-xl border border-line bg-black"
                     />
-                  </Zoomable>
+                  ) : (
+                    <Zoomable src={acc.diagram.img} alt={acc.diagram.alt}>
+                      <Image
+                        src={acc.diagram.img}
+                        alt={acc.diagram.alt}
+                        width={600}
+                        height={532}
+                        sizes="(max-width:640px) 92vw, 600px"
+                        className="mx-auto h-auto w-full max-w-[460px] rounded-xl border border-line bg-white p-1.5"
+                      />
+                    </Zoomable>
+                  )}
                   <ol className="mt-3.5 grid list-none gap-x-4 gap-y-1.5 text-[15px] leading-[1.35] sm:grid-cols-2">
                     {acc.diagram.legend.map((it) => (
                       <li key={it.n} className="flex items-start gap-2.5">
