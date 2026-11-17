@@ -1,6 +1,7 @@
 import type { Alert, Apartment, ApartmentVars, CheckinCard, CleanVars, L, Step } from "@/data/types";
 import type { BuildingTemplate } from "@/data/buildingModel";
 import { withPrerequisiteCard } from "@/data/prerequisiteCard";
+import { CHAT_LINK } from "@/data/chatLink";
 import { translateEs } from "@/data/es";
 import { inglesConhecido, textoNoIdioma, type Lang } from "@/data/idioma";
 import { portariaRefToken } from "@/data/towers";
@@ -11,9 +12,6 @@ type DoorCode = Apartment["checkin"]["doorCode"];
 /** Valor de um marcador: igual em qualquer idioma (torre, vaga…) ou um por idioma (frases prontas). */
 type TokenValue = string | L;
 type Tokens = Record<string, TokenValue>;
-
-const CHAT_LINK =
-  '<a class="chatlink" href="https://www.airbnb.com/guest/messages" target="_blank" rel="noopener">chat</a>';
 
 /** Troca `{{TOKEN}}` pelo valor correspondente — usado no template de check-in/check-out do prédio. */
 function fillTokens(text: string, tokens: Tokens, lang: Lang): string {

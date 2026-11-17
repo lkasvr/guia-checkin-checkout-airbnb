@@ -10,8 +10,7 @@
  * (`src/data/en.ts`) ou, por último, o português (ver `textoNoIdioma`).
  */
 
-const CHAT =
-  '<a class="chatlink" href="https://www.airbnb.com/guest/messages" target="_blank" rel="noopener">chat</a>';
+import { CHAT_LINK } from "@/data/chatLink";
 
 const ES: Record<string, string> = {
   // ── Padrões do sistema ─────────────────────────────────────────────────
@@ -71,10 +70,10 @@ const ES: Record<string, string> = {
   "Entrando no prédio": "Entrando al edificio",
   '<strong>De Uber/táxi?</strong> Desça no DF Plaza Shopping, entrada do restaurante <strong>Coco Bambu (2º piso)</strong>.<span class="hint">Essa entrada fica a poucos metros da portaria da {{TORRE}}.</span>':
     '<strong>¿En Uber/taxi?</strong> Bájate en el DF Plaza Shopping, en la entrada del restaurante <strong>Coco Bambu (2.º piso)</strong>.<span class="hint">Esa entrada está a pocos metros de la recepción de la {{TORRE}}.</span>',
-  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>{{PORTARIA_REF}}, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`]:
-    `Ve a la <strong>recepción 24 h de la {{TORRE}}</strong>{{PORTARIA_REF}}, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT}).`,
-  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`]:
-    `Ve a la <strong>recepción 24 h de la {{TORRE}}</strong>, junto al restaurante <strong>Spoleto</strong>, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT}).`,
+  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>{{PORTARIA_REF}}, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT_LINK}).`]:
+    `Ve a la <strong>recepción 24 h de la {{TORRE}}</strong>{{PORTARIA_REF}}, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT_LINK}).`,
+  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT_LINK}).`]:
+    `Ve a la <strong>recepción 24 h de la {{TORRE}}</strong>, junto al restaurante <strong>Spoleto</strong>, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT_LINK}).`,
   "Suba ao <strong>{{ANDAR}}</strong>, apartamento <strong>{{UNIDADE}}</strong>.":
     "Sube al <strong>{{ANDAR}}</strong>, apartamento <strong>{{UNIDADE}}</strong>.",
   [`Na fechadura eletrônica, digite {{SENHA_FECHADURA}}. Pronto, pode entrar.`]:
@@ -97,8 +96,8 @@ const ES: Record<string, string> = {
   // inglês diferente, então continua precisando bater aqui também.
   "<strong>De Uber/táxi?</strong> Desça no DF Plaza Shopping, entrada do restaurante <strong>Coco Bambu (2º piso)</strong>.<span class=\"hint\">Essa entrada fica a poucos metros da portaria da Torre C.</span>":
     '<strong>¿En Uber/taxi?</strong> Bájate en el DF Plaza Shopping, en la entrada del restaurante <strong>Coco Bambu (2.º piso)</strong>.<span class="hint">Esa entrada está a pocos metros de la recepción de la Torre C.</span>',
-  [`Vá à <strong>portaria 24h da Torre C</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`]:
-    `Ve a la <strong>recepción 24 h de la Torre C</strong>, junto al restaurante <strong>Spoleto</strong>, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT}).`,
+  [`Vá à <strong>portaria 24h da Torre C</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT_LINK}).`]:
+    `Ve a la <strong>recepción 24 h de la Torre C</strong>, junto al restaurante <strong>Spoleto</strong>, y presenta tu <strong>documento</strong> (el mismo que enviaste por el ${CHAT_LINK}).`,
   "Suba ao <strong>13º andar</strong>, apartamento <strong>1305C</strong>.":
     "Sube al <strong>piso 13</strong>, apartamento <strong>1305C</strong>.",
   "Retire o carro e use o cartão na entrada do estacionamento residencial: <strong>Subsolo −3, vaga nº 269</strong>.":

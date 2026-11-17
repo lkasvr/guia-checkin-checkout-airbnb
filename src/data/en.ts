@@ -16,8 +16,7 @@
  * banco de desenvolvimento.
  */
 
-const CHAT =
-  '<a class="chatlink" href="https://www.airbnb.com/guest/messages" target="_blank" rel="noopener">chat</a>';
+import { CHAT_LINK } from "@/data/chatLink";
 
 const EN: Record<string, string> = {
   // ── Padrões do sistema ─────────────────────────────────────────────────
@@ -73,10 +72,10 @@ const EN: Record<string, string> = {
   "Entrando no prédio": "Entering the building",
   '<strong>De Uber/táxi?</strong> Desça no DF Plaza Shopping, entrada do restaurante <strong>Coco Bambu (2º piso)</strong>.<span class="hint">Essa entrada fica a poucos metros da portaria da {{TORRE}}.</span>':
     '<strong>By Uber/taxi?</strong> Get off at DF Plaza Shopping, at the <strong>Coco Bambu restaurant entrance (2nd floor)</strong>.<span class="hint">This entrance is just a few meters from the {{TORRE}} lobby.</span>',
-  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>{{PORTARIA_REF}}, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`]:
-    `Go to the <strong>24h {{TORRE}} lobby</strong>{{PORTARIA_REF}}, and show your <strong>ID</strong> (the same one sent via ${CHAT}).`,
-  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`]:
-    `Go to the <strong>24h {{TORRE}} lobby</strong>, next to the <strong>Spoleto</strong> restaurant, and show your <strong>ID</strong> (the same one sent via ${CHAT}).`,
+  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>{{PORTARIA_REF}}, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT_LINK}).`]:
+    `Go to the <strong>24h {{TORRE}} lobby</strong>{{PORTARIA_REF}}, and show your <strong>ID</strong> (the same one sent via ${CHAT_LINK}).`,
+  [`Vá à <strong>portaria 24h da {{TORRE}}</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT_LINK}).`]:
+    `Go to the <strong>24h {{TORRE}} lobby</strong>, next to the <strong>Spoleto</strong> restaurant, and show your <strong>ID</strong> (the same one sent via ${CHAT_LINK}).`,
   "Suba ao <strong>{{ANDAR}}</strong>, apartamento <strong>{{UNIDADE}}</strong>.":
     "Go up to the <strong>{{ANDAR}}</strong>, apartment <strong>{{UNIDADE}}</strong>.",
   [`Na fechadura eletrônica, digite {{SENHA_FECHADURA}}. Pronto, pode entrar.`]:
@@ -97,8 +96,8 @@ const EN: Record<string, string> = {
   // ── 1305C / demo: texto próprio deles, com os dados reais já embutidos ──
   "<strong>De Uber/táxi?</strong> Desça no DF Plaza Shopping, entrada do restaurante <strong>Coco Bambu (2º piso)</strong>.<span class=\"hint\">Essa entrada fica a poucos metros da portaria da Torre C.</span>":
     '<strong>By Uber/taxi?</strong> Get off at DF Plaza Shopping, at the <strong>Coco Bambu restaurant entrance (2nd floor)</strong>.<span class="hint">This entrance is just a few meters from the Tower C lobby.</span>',
-  [`Vá à <strong>portaria 24h da Torre C</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT}).`]:
-    `Go to the <strong>24h Tower C lobby</strong>, next to the <strong>Spoleto</strong> restaurant, and show your <strong>ID</strong> (the same one sent via ${CHAT}).`,
+  [`Vá à <strong>portaria 24h da Torre C</strong>, ao lado do restaurante <strong>Spoleto</strong>, e apresente seu <strong>documento</strong> (o mesmo enviado pelo ${CHAT_LINK}).`]:
+    `Go to the <strong>24h Tower C lobby</strong>, next to the <strong>Spoleto</strong> restaurant, and show your <strong>ID</strong> (the same one sent via ${CHAT_LINK}).`,
   "Suba ao <strong>13º andar</strong>, apartamento <strong>1305C</strong>.":
     "Go up to the <strong>13th floor</strong>, apartment <strong>1305C</strong>.",
   "Retire o carro e use o cartão na entrada do estacionamento residencial: <strong>Subsolo −3, vaga nº 269</strong>.":
