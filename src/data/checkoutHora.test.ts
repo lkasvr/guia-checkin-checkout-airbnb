@@ -8,7 +8,7 @@ import {
   type BuildingTemplate,
 } from "@/data/buildApartmentContent";
 import { legacyToPatches } from "@/data/patches";
-import { filledCheckin, filledCheckout } from "@/data/checkinTemplate";
+import { legacyCheckinCopy, legacyCheckoutCopy } from "@/data/checkinTemplate";
 import { BLANK_HOME, BLANK_RULES } from "@/data/buildingModel";
 import { emptyL } from "@/data/sectionContent";
 import { starterContent } from "@/data/starter";
@@ -73,10 +73,10 @@ function saidaAs(horario: string): string {
 }
 
 describe("Montagem do guia: marcador {{CHECKOUT_HORA}}", () => {
-  it("\"Até às 11h\" gravado: o passo de saída mostra só \"11h\" nos três idiomas", () => {
+  it("\"Até às 11h\" gravado: o passo de saída mostra só o horário, \"11am\" em inglês", () => {
     assert.deepEqual(passoDeSaida(guiaGravado("Até às 11h")), {
       pt: "O <strong>horário limite de saída é 11h</strong>. Precisa de late checkout? Fale com a anfitriã.",
-      en: "The <strong>check-out time is 11h</strong>. Need a late check-out? Talk to the host.",
+      en: "The <strong>check-out time is 11am</strong>. Need a late check-out? Talk to the host.",
       es: "La <strong>hora límite de salida es a las 11h</strong>. ¿Necesitas late check-out? Habla con la anfitriona.",
     });
   });
@@ -158,8 +158,8 @@ describe("Gravação do cadastro: ajustes no check-out", () => {
 function apartamentoModoAntigo(checkoutHora: string): Apartment {
   return {
     ...apartamentoGravado(checkoutHora),
-    checkin: filledCheckin(predio, varsGravadas(checkoutHora)),
-    checkout: filledCheckout(predio, varsGravadas(checkoutHora)),
+    checkin: legacyCheckinCopy(predio, varsGravadas(checkoutHora)),
+    checkout: legacyCheckoutCopy(predio, varsGravadas(checkoutHora)),
   };
 }
 

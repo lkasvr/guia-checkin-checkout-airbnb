@@ -10,6 +10,7 @@ import {
   stepId,
   uniqueIds,
 } from "@/data/itemMerge";
+import { inglesDigitado } from "@/data/idioma";
 
 /**
  * Formas de formulário pras seções que viram editáveis tanto no prédio quanto
@@ -19,9 +20,10 @@ import {
  * nunca se perder ao salvar uma seção que não mexeu neles.
  *
  * Todo campo de texto traduzível usa `LInput` (português + inglês/espanhol
- * opcionais, digitados à mão): sem inglês, cai no português; sem espanhol,
- * o guia tenta traduzir sozinho pelo dicionário (`@/data/es`) na hora de
- * exibir. Isso é diferente de deixar tudo em branco.
+ * opcionais, digitados à mão): sem inglês, grava a cópia do português; sem
+ * espanhol, fica sem. Na hora de exibir, o guia tenta traduzir sozinho o que
+ * ficou sem tradução pelos dicionários (`@/data/en`, `@/data/es`; ver
+ * `textoNoIdioma`). Isso é diferente de deixar tudo em branco.
  *
  * Cada item de lista carrega um `id` que não muda quando o texto muda: é ele
  * que liga o item do apartamento ao do modelo (ver `itemMerge.ts`).
@@ -29,15 +31,15 @@ import {
 
 export type LInput = { pt: string; en: string; es: string };
 export const emptyL = (pt = ""): LInput => ({ pt, en: "", es: "" });
-/** `LInput` → `L` real do guia: inglês vazio cai no português; espanhol vazio fica indefinido (deixa o dicionário decidir). */
+/** `LInput` → `L` real do guia: inglês vazio grava a cópia do português e espanhol vazio fica indefinido (nos dois, o dicionário decide ao exibir). */
 export const toL = (v: LInput): L => {
   const pt = v.pt.trim();
   const en = v.en.trim();
   const es = v.es.trim();
   return { pt, en: en || pt, ...(es ? { es } : {}) };
 };
-/** `L` → `LInput`: mostra o inglês só se for diferente do português (senão pareceria "já traduzido" sem ser). */
-export const fromL = (l: L): LInput => ({ pt: l.pt, en: l.en === l.pt ? "" : l.en, es: l.es ?? "" });
+/** `L` → `LInput`: mostra só o inglês digitado (a cópia do português pareceria "já traduzido" sem ser). */
+export const fromL = (l: L): LInput => ({ pt: l.pt, en: inglesDigitado(l) ?? "", es: l.es ?? "" });
 
 export type StepInput = { id?: string; n: string; body: LInput };
 export type AlertInput = { icon: string; body: LInput };

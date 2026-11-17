@@ -9,7 +9,7 @@ import {
 } from "@/data/buildApartmentContent";
 import { apartmentPreview } from "@/data/apartmentPreview";
 import { BLANK_HOME, BLANK_RULES } from "@/data/buildingModel";
-import { filledCheckin, filledCheckout } from "@/data/checkinTemplate";
+import { legacyCheckinCopy, legacyCheckoutCopy } from "@/data/checkinTemplate";
 import { emptyL } from "@/data/sectionContent";
 import { starterContent } from "@/data/starter";
 import { abrirEditor, formularioNoPredio } from "@/data/testFixtures";
@@ -100,7 +100,7 @@ describe("Montagem do guia: marcador {{UNIDADE}}", () => {
     const guia = guiaGravado("Ap 2202");
     assert.deepEqual(passoEntrando(guia), {
       pt: "Suba ao 22º andar, apartamento 2202.",
-      en: "Go up to the 22º andar, apartment 2202.",
+      en: "Go up to the 22nd floor, apartment 2202.",
       es: "Sube al 22º andar, apartamento 2202.",
     });
   });
@@ -187,8 +187,8 @@ describe("Gravação do cadastro: ajustes no Cartão de check-in", () => {
 function apartamentoModoAntigo(unidade: string): Apartment {
   return {
     ...apartamentoGravado(unidade),
-    checkin: filledCheckin(predio, varsGravadas(unidade)),
-    checkout: filledCheckout(predio, varsGravadas(unidade)),
+    checkin: legacyCheckinCopy(predio, varsGravadas(unidade)),
+    checkout: legacyCheckoutCopy(predio, varsGravadas(unidade)),
   };
 }
 
