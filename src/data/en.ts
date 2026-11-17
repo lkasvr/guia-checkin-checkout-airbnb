@@ -243,8 +243,8 @@ export function horaEmIngles(hora: string): string | undefined {
 
 /** Inglês de um texto em português, se conhecido (`undefined` = sem inglês no dicionário). */
 export function translateEn(pt: string): string | undefined {
-  const hit = EN[pt];
-  if (hit !== undefined) return hit;
+  // Só chave própria: `EN["constructor"]` acharia a função herdada de Object.
+  if (Object.hasOwn(EN, pt)) return EN[pt];
   // "22º andar" (o campo "Andar" do apartamento), como o espanhol faz com "N hóspedes".
   // O campo é digitado à mão: aceita também "22° andar" (sinal de grau),
   // "22o andar", "22 andar" e "Andar" com maiúscula.
